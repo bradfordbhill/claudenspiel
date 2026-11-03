@@ -142,7 +142,7 @@
   function earnDeeds(st) {
     if (typeof KDeeds === 'undefined') return;
     var book = lsGet('cs.deeds') || {}, fresh = KDeeds.award(st, book); lsSet('cs.deeds', book);
-    if (fresh.length) setTimeout(function () { toast('📜 Deed' + (fresh.length > 1 ? 's' : '') + ' earned: ' + fresh.map(function (f) { return f.deed.name + (st.players.filter(function (q) { return !q.bot; }).length > 1 ? ' (' + f.by + ')' : ''); }).join(', ')); }, 300);
+    if (fresh.length) setTimeout(function () { SFX.play('deed'); toast('📜 Deed' + (fresh.length > 1 ? 's' : '') + ' earned: ' + fresh.map(function (f) { return f.deed.name + (st.players.filter(function (q) { return !q.bot; }).length > 1 ? ' (' + f.by + ')' : ''); }).join(', ')); }, 300);
   }
   function deedsPage() {
     var book = lsGet('cs.deeds') || {}, got = book.deeds || {}, n = KDeeds.LIST.filter(function (d) { return got[d.id]; }).length;
@@ -230,10 +230,41 @@
   function cur() { return app.page === 'sandbox' ? app.sandbox : app.page === 'online' ? (N.room && N.room.status !== 'lobby' ? N.ctx : null) : app.page === 'game' ? app.game : null; }
 
   /* ---------------- effects: crumble, ◇ and ● flying to their piles ---------------- */
+  // Claudenspiel's sounds, synthesized with Web Audio so the game stays one file. Off unless prefs.sound is on.
+  var SFX = (function () {
+    var ac = null, noiseBuf = null;
+    function ctx() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; }
+    function out(g) { var c = ac, m = c.createGain(); m.gain.value = (prefs.volume != null ? +prefs.volume : 0.6) * g; m.connect(c.destination); return m; }
+    // One note: oscillator type, frequency, length (s), loudness, delay (s).
+    function tone(type, f, len, g, at, bend) { var c = ac, o = c.createOscillator(), e = out(g), t = c.currentTime + (at || 0); o.type = type; o.frequency.setValueAtTime(f, t); if (bend) o.frequency.exponentialRampToValueAtTime(f * bend, t + len);
+      e.gain.setValueAtTime(0.0001, t); e.gain.exponentialRampToValueAtTime(e.gain.value || 0.001, t + 0.005); var v = e.gain.value; e.gain.setValueAtTime(v, t + 0.005); e.gain.exponentialRampToValueAtTime(0.0001, t + len); o.connect(e); o.start(t); o.stop(t + len + 0.05); }
+    // A burst of filtered noise: filter type, frequency, length, loudness, delay.
+    function noise(ft, f, len, g, at) { var c = ac; if (!noiseBuf) { noiseBuf = c.createBuffer(1, c.sampleRate, c.sampleRate); var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+      var s = c.createBufferSource(), fl = c.createBiquadFilter(), e = out(g), t = c.currentTime + (at || 0); s.buffer = noiseBuf; fl.type = ft; fl.frequency.value = f; fl.Q.value = 1.2;
+      e.gain.setValueAtTime(e.gain.value, t); e.gain.exponentialRampToValueAtTime(0.0001, t + len); s.connect(fl); fl.connect(e); s.start(t); s.stop(t + len + 0.05); }
+    var SUIT = { Bone: 260, Goblet: 1700, Sword: 1150, Sceptre: 880, Leaf: 560, Tome: 720 };
+    var S = {
+      play: function (suit) { var f = SUIT[suit] || 700; noise('bandpass', f, 0.07, 0.5); tone('sine', f / 2, 0.09, 0.25); if (suit === 'Sword') tone('triangle', 2400, 0.25, 0.06, 0.01); if (suit === 'Goblet') tone('sine', 2600, 0.2, 0.06, 0.01); },
+      grounds: function (id) { if (id === 'marsh') { for (var i = 0; i < 3; i++) tone('square', 180 + i * 40, 0.06, 0.05, i * 0.12, 0.6); noise('lowpass', 400, 0.4, 0.2); }
+        else if (id === 'battlefield') { tone('sawtooth', 147, 0.7, 0.08, 0, 1.01); tone('sawtooth', 220, 0.6, 0.05, 0.08); }
+        else { for (var j = 0; j < 4; j++) noise('bandpass', 300 + j * 60, 0.08, 0.3, j * 0.09); } },
+      claim: function () { noise('lowpass', 260, 0.16, 0.7); tone('sine', 110, 0.18, 0.4, 0, 0.7); },
+      coin: function (n) { for (var i = 0; i < (n || 1); i++) { tone('triangle', 2500 + i * 180, 0.18, 0.12, i * 0.09); tone('triangle', 3300 + i * 140, 0.12, 0.08, i * 0.09 + 0.03); } },
+      ruin: function (over) { noise('highpass', 1600, 0.12, 0.6); noise('lowpass', 500, 0.35, 0.4, 0.05); if (over) for (var i = 0; i < 6; i++) noise('lowpass', 160, 0.08, 0.35, i * 0.05); },
+      curse: function () { noise('highpass', 3000, 0.4, 0.08); tone('sawtooth', 220, 0.5, 0.06); tone('sawtooth', 261.6, 0.5, 0.05, 0.12); },
+      bell: function () { [220, 440, 554, 660, 880].forEach(function (f, i) { tone('sine', f, 2.8 - i * 0.3, 0.12 / (i + 1)); }); },
+      deed: function () { noise('highpass', 4000, 0.05, 0.12); noise('highpass', 4200, 0.05, 0.12, 0.08); S.claim(); },
+      win: function (arch) { var sad = arch === 'Archbishop' || arch === 'Cryptkeeper'; var notes = sad ? [196, 233, 294, 392] : arch === 'Warmonger' ? [196, 196, 262, 392] : [262, 330, 392, 523];
+        notes.forEach(function (f, i) { tone('triangle', f, i === 3 ? 0.9 : 0.22, 0.14, i * 0.18); tone('square', f, i === 3 ? 0.9 : 0.2, 0.03, i * 0.18); }); },
+      lose: function () { tone('sawtooth', 98, 1.6, 0.06); noise('lowpass', 300, 1.5, 0.15); },
+      turn: function () { tone('sine', 1320, 0.5, 0.08); tone('sine', 1980, 0.4, 0.04, 0.01); }
+    };
+    return { play: function (name) { if (!prefs.sound || !ctx()) return; try { S[name].apply(null, [].slice.call(arguments, 1)); } catch (e) {} } };
+  })();
   var FX = (function () {
     var layer = document.createElement('div'); layer.className = 'fxlayer'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer);
     // With reduced motion on, skip the flying and crumbling; the text popups stay.
-    var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches, calm = reduced;
     function topUid(st, k) { return E.top(st, k); }
     function valuesByUid(st) {
       var m = {}; st.players.forEach(function (p, i) { E.kingdom(st, i).forEach(function (k) { var u = E.top(st, k), q = E.valueParts(st, k, i); m[u + ':' + i] = { k: k, v: q.base + q.tokens, p: i }; }); }); return m;
@@ -261,6 +292,14 @@
         else if (act.t === 'claim' || act.t === 'play') ev.push({ t: 'ap', k: act.k, n: gain });
         else ev.push({ t: 'ap', k: null, n: gain });
       }
+      // Claudenspiel: card landings, claims, the bought claim, banking, the last round, the end of the game.
+      if ((act.t === 'play' || act.t === 'sbPlace') && act.k && E.top(b, act.k)) { var lu = E.top(b, act.k), ld = E.rawDef(b, lu); ev.push({ t: 'land', k: act.k, suit: ld.suit, grounds: ld.type === 'Grounds' ? ld.id : null }); }
+      if (act.t === 'claim') ev.push({ t: 'claim', k: act.k, p: a.cur });
+      if (act.t === 'buyClaim') ev.push({ t: 'buy' });
+      var banked = b.log.slice(a.log.length).filter(function (l) { return / banks \d◇ from unspent/.test(l); });
+      if (banked.length) ev.push({ t: 'bank', n: +(/banks (\d)/.exec(banked[0]) || [0, 1])[1] });
+      if (b.lastRound && !a.lastRound) ev.push({ t: 'lastround' });
+      if (b.winner != null && a.winner == null) ev.push({ t: 'end', winner: b.winner, arch: b.players[b.winner].arch, humanWon: !b.players[b.winner].bot, anyHuman: b.players.some(function (q) { return !q.bot; }) });
       return ev;
     }
     // Animation pieces: floating text, gems and marbles flying to the score piles, crumbling cards, the Curse flare.
@@ -312,10 +351,34 @@
       }
     }
     // Play the listed animations, slightly staggered.
+    // The meeple's landing: a puff of dithered dust in the player's colour.
+    function puff(r, col, delay) { for (var q = 0; q < 6; q++) { var d = piece('dust px', '', r.left + r.width * (0.2 + q * 0.12), r.top + r.height * 0.85); d.style.background = col;
+        d.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(' + ((q - 2.5) * 6) + 'px,-' + (6 + (q % 3) * 4) + 'px)', opacity: 0.8, offset: .5 }, { transform: 'translate(' + ((q - 2.5) * 10) + 'px,-2px)', opacity: 0 }],
+          { duration: 420, delay: delay || 0, easing: 'steps(5)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); } }
+    // A card arriving: it drops in from two pixels up and settles in steps, like a sprite.
+    function land(k) { var el = document.querySelector('.cell [data-cell="' + k + '"]'); var card = el && el.closest('.cell'); if (card && card.animate) card.animate([{ transform: 'translateY(-6px)' }, { transform: 'translateY(1px)', offset: .7 }, { transform: 'translateY(0)' }], { duration: 260, easing: 'steps(4)' }); }
+    function banner(text) { var b = rectOf('.boardwrap'); if (!b) return; var d = piece('banner', esc(text), b.left + b.width / 2, b.top + 24);
+      d.animate([{ transform: 'translate(-50%,-18px) scaleY(.1)', opacity: 0 }, { transform: 'translate(-50%,0) scaleY(1)', opacity: 1, offset: .2 }, { transform: 'translate(-50%,0) scaleY(1)', opacity: 1, offset: .85 }, { transform: 'translate(-50%,-6px)', opacity: 0 }], { duration: 2600, easing: 'steps(12)', fill: 'both' }).onfinish = function () { d.remove(); }; }
     function run(ev) {
       if (!ev || !ev.length) return;
+      calm = reduced || prefs.motion === 'calm';
+      ev.forEach(function (e) {   // sounds first (they play whatever the Motion setting)
+        if (e.t === 'land') { if (e.grounds) SFX.play('grounds', e.grounds); else SFX.play('play', e.suit); }
+        else if (e.t === 'claim') SFX.play('claim');
+        else if (e.t === 'buy') SFX.play('coin', 2);
+        else if (e.t === 'bank') SFX.play('coin', e.n);
+        else if (e.t === 'crumble') SFX.play('ruin', e.over);
+        else if (e.t === 'cursed') SFX.play('curse');
+        else if (e.t === 'lastround') SFX.play('bell');
+        else if (e.t === 'end') { if (!e.anyHuman || e.humanWon) SFX.play('win', e.arch); else SFX.play('lose'); }
+      });
+      if (prefs.motion === 'off') return;
       var nV = 0, nA = 0;
       ev.forEach(function (e, i) {
+        if (e.t === 'land' && !calm) land(e.k);
+        if (e.t === 'claim' && !calm) { var rcl = cellRect(e.k), st = cur() && cur().state; if (rcl) puff(rcl, (st && st.players[e.p] && st.players[e.p].color) || '#888', 80); }
+        if (e.t === 'buy') popup('Second claim', 'ap', center(), 0);
+        if (e.t === 'lastround') banner('🔔 The last round');
         if (e.t === 'cursed') { var rc = cellRect(e.k); if (rc) { popup('Cursed!', 'curse', rc, i * 100); if (!calm) flare(rc, i * 100); } }
         if (e.t === 'note') { var rn = cellRect(e.k); if (rn) popup(e.text, e.cls, rn, i * 100); }
         if (e.t === 'crumble') { if (!calm) crumble(e, i); else { var r0 = cellRect(e.k); if (r0) popup(e.over ? 'Overwhelmed!' : 'Ruined', 'ruin', r0); } }
@@ -645,6 +708,8 @@
       '<label><input type="checkbox" data-tog="showOW"' + (u.showOW ? ' checked' : '') + '> Overwhelm pressure</label>' +
       '<label><input type="checkbox" data-tog="coords"' + (u.coords ? ' checked' : '') + '> Grid</label>' +
       (ctx.kind === 'game' && hasBots(ctx.state) ? '<label title="How fast the bots play">Bots <select data-pref="botSpeed">' + [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast'], ['instant', 'Instant']].map(function (o) { return '<option value="' + o[0] + '"' + ((prefs.botSpeed || 'normal') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' : '') +
+      '<label title="Sound effects (Claudenspiel)"><input type="checkbox" data-tog-pref="sound"' + (prefs.sound ? ' checked' : '') + '> Sound</label>' +
+      '<label title="Animations">Motion <select data-pref="motion">' + [['full', 'Full'], ['calm', 'Calm'], ['off', 'Off']].map(function (o) { return '<option value="' + o[0] + '"' + ((prefs.motion || 'full') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       '<button class="btn sm" data-act="debug" title="Copy the log and board state to the clipboard">Copy debug report</button>' +
       '<button class="btn sm" data-act="keys" title="Keyboard shortcuts">Keys</button>' +
       '<button class="btn sm" data-act="suits" title="Which suits pressure which">Suits</button>' +
@@ -1330,7 +1395,7 @@
         '<li>Press <b>End turn</b>. Every 6● you didn’t spend banks 1◇ (at most 2). Reaching <b>52◇</b> starts the <b>last round</b>: everyone gets the same number of turns, then the highest total wins.</li></ol>' +
         '<p class="muted">The hint line above the board suggests a next step while you learn.</p>' },
       { id: 'claudenspiel', title: 'What Claudenspiel changes', html: '<p>Claudenspiel is Claude’s own fork of Kartenspiel. Its rules differ:</p><ul>' +
-        '<li><b>The last round:</b> reaching the target starts it. Everyone gets the same number of turns, then the highest total wins; a tie goes to whoever got there first. With three or more players, earlier seats start with 3◇ for each seat after them, since later seats see the score to beat.</li>' +
+        '<li><b>The last round:</b> reaching the target starts it. Everyone gets the same number of turns, then the highest total wins; a tie goes to whoever got there first. With three or more players, earlier seats start with a few ◇, since later seats see the score to beat: 6◇ and 4◇ for the first two of three players, 9◇, 6◇ and 3◇ for the first three of four.</li>' +
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
         '<li><b>A second claim:</b> once a turn, after claiming, press <b>Buy a claim</b> and pay 10● to claim once more.</li>' +
         '<li><b>Grounds:</b> terrain cards. You place them like a Structure, but nobody claims them and they never count as an enemy. <i>Marsh</i>: cards next to it need one more enemy to be Overwhelmed. <i>Battlefield</i>: one fewer. <i>Crossroads</i>: placing next to it costs 3● less.</li>' +
@@ -1942,7 +2007,7 @@
 
   /* ---------------- keyboard shortcuts ---------------- */
   // Most keys press the same on-screen button a click would, so they follow its rules (a disabled button = no effect).
-  var KEYS = [['Space', 'Start your turn, or the highlighted button in a dialog or the prompt bar'], ['E', 'End turn'], ['1–9', 'Pick a card in your hand, or an option in a dialog'],
+  var KEYS = [['M', 'Sound on or off'], ['Space', 'Start your turn, or the highlighted button in a dialog or the prompt bar'], ['E', 'End turn'], ['1–9', 'Pick a card in your hand, or an option in a dialog'],
     ['C', 'Claim (if only one card can be claimed; otherwise the options light up)'], ['A', 'Use the selected card’s ability'], ['D', 'Discard 2, draw 1'], ['U or Ctrl+Z', 'Undo'],
     ['Y / N', 'Answer yes / no'], ['S', 'Skip an optional choice'], ['Esc', 'Cancel: deselect, close a dialog, leave a mode'],
     ['Q (hold)', 'Quickview overlay while held'], ['W (hold)', 'War overlay while held'], ['O', 'Cycle the overlay: None, Quickview, War'],
@@ -1991,6 +2056,7 @@
       case 'f': return press('[data-act="fit"]');
       case '+': case '=': return press('[data-act="zoomin"]');
       case '-': case '_': return press('[data-act="zoomout"]');
+      case 'm': setPref('sound', !prefs.sound); toast(prefs.sound ? 'Sound on' : 'Sound off'); if (prefs.sound) SFX.play('claim'); return true;
       case 'g': ctx.ui.coords = !ctx.ui.coords; render(); return true;
       case 'o': var order = ['none', 'quick', 'war']; ctx.ui.overlay = order[(order.indexOf(ctx.ui.overlay || 'none') + 1) % order.length]; peek = null; render(); return true;
       case 'q': case 'w': if (!e.repeat) { if (peek == null) peek = ctx.ui.overlay || 'none'; ctx.ui.overlay = lower === 'q' ? 'quick' : 'war'; render(); } return true;
@@ -2243,6 +2309,7 @@
     if (t.hasAttribute('data-sbn')) { sbSetup.n = +t.value; render(); return; }
     if (t.hasAttribute('data-sbarch')) { sbSetup.arch[+t.getAttribute('data-sbarch')] = t.value; return; }
     if (t.hasAttribute('data-pref')) { setPref(t.getAttribute('data-pref'), t.value); render(); return; }
+    if (t.hasAttribute('data-tog-pref')) { setPref(t.getAttribute('data-tog-pref'), t.checked); if (t.checked) SFX.play('claim'); render(); return; }
     if (t.hasAttribute('data-set')) { var f = t.getAttribute('data-set'); setup[f] = t.type === 'checkbox' ? t.checked : (f === 'n' ? +t.value : t.value); render(); return; }
     if (t.hasAttribute('data-pkind')) {   // picking a bot renames a default-named seat after it
       var pk = setup.players[+t.getAttribute('data-pkind')], was = pk.kind || 'human', named = /^Player \d$/.test(pk.name) || pk.name === BOT_NAMES[was];

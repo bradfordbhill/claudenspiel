@@ -48,3 +48,4 @@ node tools/logo.js                              # redraw the logo (needs Playwri
 | 0.1 | The fork: separate saves and look; a 116-card deck; the last round; Seat start off; Orchard 3◇ a card; Observatory +10◇ for all six suits; Revenge and Repent playable from hand; Brambles placeable. Archetype spread 0.68 → 0.16 |
 | 0.2 | Grounds (Marsh, Battlefield, Crossroads); banking; buying a second claim; a seat handicap for 3+ players; the race bar; Obelisk 6◇; Fountain reworked. Seats even at every table size |
 | 0.3 | The Book of Deeds (19 deeds); target 52◇; Mausoleum 4◇ for cards buried under it; its own icon; a safety term for the bots, measured and left off |
+| 0.4 | Sound and animations (with Sound and Motion settings); Cathedral +1◇ per Sceptre card it doesn't own; Orchard +1◇ per Leaf card in the region; seat handicap by table size; bots play Grounds on purpose; Mausoleum back to 3◇ |

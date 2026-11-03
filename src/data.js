@@ -43,7 +43,7 @@ var KData = (function () {
     "cost": 0,
     "copies": 1,
     "income": 8,
-    "text": "3◇ per buried card in your Kingdom, and 4◇ for each one buried under the Mausoleum itself. You cannot play Leaf cards.",
+    "text": "3◇ per buried card in your Kingdom. You cannot play Leaf cards.",
     "place": [
      "N",
      "E",
@@ -53,8 +53,7 @@ var KData = (function () {
     "overwhelm": null,
     "score": {
      "kind": "perBuriedInKingdom",
-     "n": 3,
-     "m": 1
+     "n": 3
     },
     "sees": {
      "area": "kingdom"
@@ -800,7 +799,7 @@ var KData = (function () {
     "cost": 0,
     "copies": 1,
     "income": 8,
-    "text": "3◇ for each card in the largest contiguous region in your Kingdom. You cannot play Goblet cards.",
+    "text": "3◇ for each card in the largest contiguous region in your Kingdom, and 1◇ more for each Leaf card in it. You cannot play Goblet cards.",
     "place": [
      "N",
      "E",
@@ -810,7 +809,8 @@ var KData = (function () {
     "overwhelm": null,
     "score": {
      "kind": "largestRegion",
-     "n": 3
+     "n": 3,
+     "m": 1
     },
     "sees": {
      "area": "kingdom"
@@ -1166,7 +1166,7 @@ var KData = (function () {
     "cost": 0,
     "copies": 1,
     "income": 8,
-    "text": "6◇ per Sceptre card in your Kingdom. You cannot play Tome cards.",
+    "text": "6◇ per Sceptre card in your Kingdom, and 1◇ for each Sceptre card on the board that you do not own. You cannot play Tome cards.",
     "place": [
      "N",
      "E",
@@ -1175,8 +1175,9 @@ var KData = (function () {
     ],
     "overwhelm": null,
     "score": {
-     "kind": "perSuitInKingdom",
+     "kind": "perSuitSplit",
      "n": 6,
+     "m": 1,
      "suit": "Sceptre"
     },
     "sees": {

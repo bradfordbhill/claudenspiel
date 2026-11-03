@@ -2,6 +2,23 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 3 November 2026 · 0.4, sound, motion and a fairer table
+
+**Changes, and why.**
+- *Bots lay Grounds on purpose.* Instead of 0.3's general carefulness (no stronger, and it smothered War), only a move that lays a Grounds card is credited with what it does: shelter for the bot's own endangered cards (Marsh) and pressure on rivals' (Battlefield). Marsh went from 25 to 51 plays per 100 games, Battlefield from 12 to 37; a test checks that a tactician lays its Marsh beside its endangered card.
+- *Orchard +1◇ for each Leaf card in the largest region* (the Gardener was down to 0.88). It also gives the Gardener a reason to want Leaf cards, not only any cards. Gardener 0.88 → 0.96.
+- *Seat handicap by table size*: 3 players 6 · 4 · 0, 4 players 9 · 6 · 3 · 0, 2 players none. Seat 2 of 3 had read 0.82–0.83 in two runs; now 3-player seats are 0.91–1.11.
+- *Cathedral +1◇ for each Sceptre card on the board it doesn't own.* With the Grounds-playing bots the Archbishop fell to 0.74, and the per-size breakdown showed why: it was weak at 3 and 4 players in every run (0.54–0.69), because Sceptre cards are contested at a bigger table. Scoring the board's Sceptre cards (as Palace does for Goblets) grows with the table. Archbishop 0.74 → 0.95.
+- *Mausoleum back to 3◇.* With the new bots the 0.3 bonus pushed the Cryptkeeper to 1.20 (1.36 at 3 players); without it, 0.93.
+- *Sound and animations* (the UI wishlist's first items): synthesized with Web Audio, off until switched on (Sound box or M); a card landing knocks in its suit's pitch, claims press a seal, banking clinks, Ruins crack, the last round rings a bell and unrolls a banner, the end plays a short fanfare in the winner's mood. Motion: full, calm (or the system's reduced motion) or off. A browser test counted 99 tones and 70 noise bursts in one bot game, with no errors.
+
+**Measured** (836 games, weighted to 3 players: 349 two-player, 376 three-player, 111 four-player): Archbishop 0.95 · Cryptkeeper 0.93 · Gardener 0.96 · Hedonist 1.14 · Philosopher 1.13 · Warmonger 0.90, spread **0.24**. By table size: 3 players is the tightest yet (0.96–1.11); 4 players is the roughest (Cryptkeeper 0.48, Philosopher 1.46) but only 111 games.
+
+**Open questions.**
+- Archetype strength depends on table size. Measure 4 players properly (a few hundred games) before touching anything for it.
+- Hedonist and Philosopher sit a little high (1.13–1.14).
+- Warmonger is low in 2-player games (0.75–0.80 in the last three runs).
+
 ## 3 November 2026 · 0.3, the Book of Deeds
 
 **Changes, and why.**

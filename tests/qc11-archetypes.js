@@ -13,7 +13,7 @@ function give(st,p,id){ let u=st.deck.find(x=>st.cards[x].def===id);
 const ask=(st,p,kind,options,count,prompt)=>{ const s=JSON.parse(JSON.stringify(st)); s.pending={kind,player:p,count,options,prompt:prompt||'Discard'}; return B.choose(s,p,'greedy'); };
 
 // 1. Every archetype's goal is read from its Foundation.
-const want={ Archbishop:['perSuitInKingdom','Sceptre','Tome',false], Hedonist:['perSuitSplit','Goblet','Sceptre',false], Warmonger:['none','Sword','Bone',true],
+const want={ Archbishop:['perSuitSplit','Sceptre','Tome',false], Hedonist:['perSuitSplit','Goblet','Sceptre',false], Warmonger:['none','Sword','Bone',true],
   Cryptkeeper:['perBuriedInKingdom','Bone','Leaf',false], Gardener:['largestRegion','Leaf','Goblet',false], Philosopher:['perDistinctSuitInKingdom','Tome','Sword',false] };
 ARCH.forEach(a=>{ const g=B.profile(game(a,a===ARCH[0]?ARCH[1]:ARCH[0]),0), w=want[a];
   chk('Goal', g&&g.kind===w[0]&&g.suit===w[1]&&g.weak===w[2]&&g.war===w[3], a+' reads its goal ('+(g&&[g.kind,g.suit,'cannot play '+g.weak,g.war?'paid for War':''].join(' ').trim())+')'); });

@@ -18,7 +18,9 @@ var KEngine = (function () {
   var DIRS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
   var DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
   var SUITS = ['Sceptre', 'Goblet', 'Sword', 'Bone', 'Leaf', 'Tome'];
-  var BANK_RATE = 6, BANK_MAX = 2, CLAIM_PRICE = 10;   // Claudenspiel's economy: banking and the bought claim
+  var BANK_RATE = 6, BANK_MAX = 2, CLAIM_PRICE = 10;
+  // Each seat's starting ◇ (the seat handicap) by table size: 2 players are already even.
+  var SEAT_TOKENS = { 2: [0, 0], 3: [6, 4, 0], 4: [9, 6, 3, 0], 5: [12, 9, 6, 3, 0] };   // Claudenspiel's economy: banking and the bought claim
 
   // K / XY convert between [x, y] and the "x,y" key used by st.board.
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -169,7 +171,7 @@ var KEngine = (function () {
       case 'perDistinctSuitInKingdom':
         // Claudenspiel: m more when all six suits are there (Observatory).
         var ss = {}; kingdom(st, p).forEach(function (x) { suitsOf(st, top(st, x)).forEach(function (q) { ss[q] = 1; }); }); var nd = Object.keys(ss).length; return n * nd + (m && nd >= SUITS.length ? m : 0);
-      case 'largestRegion': return n * largestRegion(st, p);
+      case 'largestRegion': var rc = regionCells(st, p); return n * rc.length + (m ? m * rc.filter(function (x) { return hasSuit(st, top(st, x), 'Leaf'); }).length : 0);
       case 'perCardNorth': return n * northKeys(st, k).length;
       case 'flatDoubledIfSurrounded': return nb.every(function (x) { return top(st, x); }) ? n * 2 : n;
       case 'flatMinusPerAdjacentNotOwned':
@@ -182,12 +184,14 @@ var KEngine = (function () {
   // Occupied cells north of k in the same column.
   function northKeys(st, k) { var p = XY(k); return keys(st).filter(function (x) { var q = XY(x); return q[0] === p[0] && q[1] < p[1]; }); }
   // Size of the largest connected group of cells in p's Kingdom (flood fill).
-  function largestRegion(st, p) {
-    var kd = kingdom(st, p), seen = {}, best = 0;
+  function largestRegion(st, p) { return regionCells(st, p).length; }
+  // The cells of p's largest connected group (Claudenspiel: Orchard also counts the Leaf cards in it).
+  function regionCells(st, p) {
+    var kd = kingdom(st, p), seen = {}, best = [];
     kd.forEach(function (s) {
-      if (seen[s]) return; var q = [s], size = 0; seen[s] = 1;
-      while (q.length) { var x = q.pop(); size++; n4(x).forEach(function (y) { if (!seen[y] && kd.indexOf(y) >= 0) { seen[y] = 1; q.push(y); } }); }
-      if (size > best) best = size;
+      if (seen[s]) return; var q = [s], cells = []; seen[s] = 1;
+      while (q.length) { var x = q.pop(); cells.push(x); n4(x).forEach(function (y) { if (!seen[y] && kd.indexOf(y) >= 0) { seen[y] = 1; q.push(y); } }); }
+      if (cells.length > best.length) best = cells;
     });
     return best;
   }
@@ -1078,7 +1082,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, seatTokens: setup.seatTokens != null ? +setup.seatTokens : (setup.players.length > 2 ? 3 : 0) /* 2 players are already even */, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -1097,7 +1101,9 @@ var KEngine = (function () {
       st.players.forEach(function (pl, i) { draw(st, i, st.opts.handSize); });
       // Seat handicap (Claudenspiel): with the last round, later seats see the score to beat, so earlier seats start
       // with opts.seatTokens◇ for every seat after them.
-      if (st.opts.seatTokens) st.players.forEach(function (pl, i) { pl.tokens = st.opts.seatTokens * (st.players.length - 1 - i); });
+      // seatTokens is ◇ per later seat, or a list with each seat's ◇; the default list depends on the table size.
+      var stk = st.opts.seatTokens; if (stk == null) stk = SEAT_TOKENS[st.players.length] || 3;
+      st.players.forEach(function (pl, i) { pl.tokens = Array.isArray(stk) ? +stk[i] || 0 : stk * (st.players.length - 1 - i); });
       st.players[0].turns = 1;
       log(st, 'New game: ' + st.players.map(function (p) { return p.name + ' (' + p.arch + ')'; }).join(', ') + '.');
       beginTurn(st);

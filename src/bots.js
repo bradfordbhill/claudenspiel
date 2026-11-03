@@ -177,13 +177,17 @@ var KBots = (function () {
       for(const u of pl().hand){ const d=st.defs[st.cards[u].def]; if(E.playBlock(st,p,u)) continue;
         if(!E.needsPlacement(d)){ if((E.isFree(st,u)?0:+d.cost)>cash) continue; let s=resolve(ap(st,{t:'cast',uid:u}),p,strat); if(!s||s.pending) continue; const v=evalState(st,s,p,strat)+(gs?0:0.8-0.12*d.cost); if(v>bv){bv=v;best={s,u,d}} continue; }
         const L=E.legalCells(st,u); const ks=Object.keys(L).filter(k=>L[k]<=cash).slice(0,cells);
-        for(const k of ks){ let s=resolve(ap(st,{t:'play',uid:u,k}),p,strat); if(!s||s.pending) continue; const c=st.turn.claimed?s:(bestClaim(s,p,strat)||s); const v=evalState(st,c,p,strat)-(gs?0:0.12*L[k]); if(v>bv){bv=v;best={s,u,d,k}} } }
+        for(const k of ks){ let s=resolve(ap(st,{t:'play',uid:u,k}),p,strat); if(!s||s.pending) continue; const c=st.turn.claimed?s:(bestClaim(s,p,strat)||s); const v=evalState(st,c,p,strat)-(gs?0:0.12*L[k])+(d.type==='Grounds'&&!gs?groundsWorth(st,c,p):0); if(v>bv){bv=v;best={s,u,d,k}} } }
       if(!best) break; st=best.s; stats.played[best.d.id]=(stats.played[best.d.id]||0)+1;
       if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; } }
     if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; }
     if(strat!=='greedy'&&strat!=='quick') st=useAbilities(st,p,strat,stats); else st=useAbilities(st,p,'greedy',stats);
     st=buyClaim(st,p,strat,stats);
     return swapDead(st,p,stats); }
+  // Claudenspiel: what laying a Grounds card does, which the ◇-and-● scoring can't see: Marsh shelters the bot's own cards
+  // that are close to Overwhelm, Battlefield exposes rivals' cards, Crossroads opens cheap spaces next to its own.
+  function groundsWorth(st0,st,p){ return GROUNDS_W*((danger(st0,p)-danger(st,p)) + 0.6*(pressure(st,p)-pressure(st0,p))); }
+  let GROUNDS_W=+(typeof process!=='undefined'&&process.env&&process.env.CS_GROUNDS!=null?process.env.CS_GROUNDS:1);
   // Claudenspiel: pay for a second claim when the best claim is worth more than the ● would bank (10● ≈ 1.7◇).
   function buyClaim(st,p,strat,stats){ if(!st.opts.buyClaim||!st.turn.claimed||st.turn.boughtClaim) return st;
     const s=ap(st,{t:'buyClaim'}); if(!s) return st; const c=bestClaim(s,p,strat); if(!c) return st;

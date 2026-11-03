@@ -58,7 +58,7 @@ chk('Second claim', /Reserves/.test(tryA(st,{t:'buyClaim'}).error||''), 'Reserve
 
 // 3c. The seat handicap: earlier seats start with 3◇ for every seat after them.
 const s3=game(['Gardener','Warmonger','Hedonist']);
-chk('Seat handicap', s3.players.map(q=>q.tokens).join(',')==='6,3,0', '3 players start on 6◇, 3◇ and 0◇');
+chk('Seat handicap', s3.players.map(q=>q.tokens).join(',')==='6,4,0', '3 players start on 6◇, 4◇ and 0◇');
 chk('Seat handicap', game(['Gardener','Warmonger']).players.every(q=>!q.tokens), 'two players get none (they are already even)');
 chk('Seat handicap', game(['Gardener','Warmonger','Hedonist'],{seatTokens:0}).players.every(q=>!q.tokens), 'it can be switched off (seatTokens 0)');
 

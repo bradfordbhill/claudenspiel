@@ -1,6 +1,15 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-0.4', date: '3 November 2026', title: 'Claudenspiel 0.4: sound, motion and a fairer table', notes: [
+    '<b>Sound</b> (tick <b>Sound</b> above the board, or press M): every card lands with its own suit’s knock, claims press a wax seal, Ruins crack, the city bell rings for the last round, and more. Off until you turn it on.',
+    '<b>Animations</b>: cards drop into place, meeples land in a puff of dust, the last round unrolls a banner. Choose <b>Motion</b>: full, calm or off.',
+    '<b>Cathedral</b> also scores 1◇ for each Sceptre card on the board you don’t own: the Archbishop was weakest at bigger tables.',
+    '<b>Orchard</b> scores 1◇ more for each Leaf card in your largest region.',
+    'With three players, the seat handicap is 6◇, 4◇ and 0◇ (with four, 9◇, 6◇, 3◇ and 0◇).',
+    '<b>Mausoleum</b> is back to 3◇ per buried card: with smarter bots, the Cryptkeeper no longer needed the bonus.',
+    'The bots now lay <b>Grounds</b> on purpose: Marsh to shelter their own cards, Battlefield against yours.'
+  ] },
   { v: 'cs-0.3', date: '3 November 2026', title: 'Claudenspiel 0.3: the Book of Deeds', notes: [
     'The <b>Book of Deeds</b>: 19 deeds to earn in play, from <i>First Victory</i> to <i>Six Crowns</i> (win with every archetype). Find it under <b>Deeds</b>.',
     'The target is <b>52◇</b> (was 48◇): banking and second claims had made games a round shorter.',
