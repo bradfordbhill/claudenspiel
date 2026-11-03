@@ -138,6 +138,20 @@
     (function next(i) { if (i >= ps.length) { toast('Starter cards restored.'); render(); return; } saveCard(ps[i]).then(function () { next(i + 1); }); })(0);
   }
   // Show a message in the status bar for 4 seconds.
+  // Claudenspiel's Book of Deeds (src/deeds.js), kept in this browser.
+  function earnDeeds(st) {
+    if (typeof KDeeds === 'undefined') return;
+    var book = lsGet('cs.deeds') || {}, fresh = KDeeds.award(st, book); lsSet('cs.deeds', book);
+    if (fresh.length) setTimeout(function () { toast('📜 Deed' + (fresh.length > 1 ? 's' : '') + ' earned: ' + fresh.map(function (f) { return f.deed.name + (st.players.filter(function (q) { return !q.bot; }).length > 1 ? ' (' + f.by + ')' : ''); }).join(', ')); }, 300);
+  }
+  function deedsPage() {
+    var book = lsGet('cs.deeds') || {}, got = book.deeds || {}, n = KDeeds.LIST.filter(function (d) { return got[d.id]; }).length;
+    var arch = ['Archbishop', 'Hedonist', 'Warmonger', 'Cryptkeeper', 'Gardener', 'Philosopher'];
+    var items = KDeeds.LIST.map(function (d) { var g = got[d.id];
+      return '<div class="deed' + (g ? ' got' : '') + '"><b>' + (g ? '📜 ' : '') + esc(d.name) + '</b><span>' + esc(d.text) + '</span>' + (g ? '<span class="small muted">' + esc(g.by) + ' as ' + esc(g.arch) + ', ' + new Date(g.at).toLocaleDateString() + '</span>' : '') +
+        (d.progress ? '<span class="small muted">' + arch.map(function (a) { return (book.wins && book.wins[a] ? '✓ ' : '○ ') + a; }).join(' · ') + '</span>' : '') + '</div>'; }).join('');
+    return '<div class="page scroll"><div class="pane deeds"><h2>The Book of Deeds</h2><p>' + n + ' of ' + KDeeds.LIST.length + ' deeds earned, in ' + (book.games || 0) + ' finished game' + (book.games === 1 ? '' : 's') + '. Deeds are earned by the people at the table, not the bots, and kept in this browser.</p><div class="deedgrid">' + items + '</div></div></div>';
+  }
   function toast(m) { app.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { app.toast = null; render(); }, 4000); }
 
   /* ---------------- contexts (game / sandbox) ---------------- */
@@ -153,7 +167,9 @@
     var r = E.apply(ctx.state, a);
     if (r.error) { ctx.err = r.error; render(); return false; }
     ctx.err = null; ctx.hist.push(ctx.state); if (ctx.hist.length > 80) ctx.hist.shift();
+    var ended = ctx.kind === 'game' && ctx.state.winner == null && r.winner != null;
     ctx.state = r;
+    if (ended) earnDeeds(r);
     if (ctx.kind === 'sandbox' && ctx.ui.autoCheck && /^sb(Place|Suit|Move|Remove|Bury|Unbury)$/.test(a.t)) { var r2 = E.apply(ctx.state, { t: 'sbCheck', quiet: true }); if (!r2.error) ctx.state = r2; }
     uiAfter(ctx, a);
     lsSet(ctx.kind === 'game' ? 'cs.game' : 'cs.sandbox', ctx.state);
@@ -639,7 +655,7 @@
   // Claudenspiel: the race to the target, every player on one track. A bell marks the last round once it has begun.
   function raceBar(ctx) {
     var st = ctx.state; if (ctx.kind !== 'game') return '';
-    var sc = E.scores(st), T = +st.opts.target || 48, top = Math.max(T, Math.max.apply(null, sc.map(function (s) { return s.total; })));
+    var sc = E.scores(st), T = +st.opts.target || 52, top = Math.max(T, Math.max.apply(null, sc.map(function (s) { return s.total; })));
     var lanes = st.players.map(function (pl, i) {
       var t = sc[i].total, w = Math.max(1, Math.round(100 * Math.min(t, top) / top));
       return '<div class="lane' + (i === st.cur ? ' cur' : '') + (pl.out ? ' out' : '') + '" title="' + esc(pl.name) + ': ' + t + '◇ of ' + T + '◇"><span class="lname">' + esc(pl.name) + '</span>' +
@@ -809,7 +825,7 @@
     var focusSel = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-focus-key');
     var hs = $('.bottom .hand, .mhand .hand'), hsl = hs ? hs.scrollLeft : 0;
     var tabs = ONLINE ? [['home', 'Home'], ['new', 'Play locally'], ['game', 'Local game'], ['online', 'Online'], ['profile', 'Profile'], ['library', 'Cards'], ['help', 'Help']]
-      : [['new', 'New game'], ['game', 'Game'], ['sandbox', 'Sandbox'], ['library', 'Library'], ['builder', 'Card builder'], ['help', 'Help']];
+      : [['new', 'New game'], ['game', 'Game'], ['sandbox', 'Sandbox'], ['library', 'Library'], ['builder', 'Card builder'], ['deeds', 'Deeds'], ['help', 'Help']];
     var h = '<div class="win raised' + (isMobile() && inGame() ? ' mwin' : '') + '"><div class="titlebar">' + crest() + '<span>' + (ONLINE ? 'Claudenspiel' : 'Claudenspiel — the workshop') + '</span><span class="grow"></span><span class="small" style="font-weight:400">' + esc(ONLINE ? (N.user ? (N.guest ? 'Playing as ' + N.user + ' (guest)' : 'Signed in as ' + N.user) : '') : 'Library: ' + app.libSource + ', ' + app.lib.length + ' cards') + '</span></div>';
     h += '<div class="menubar" role="tablist">' + tabs.map(function (t) { var dis = t[0] === 'game' && !app.game; return '<button class="tab' + (app.page === t[0] ? ' on' : '') + '" role="tab" data-page="' + t[0] + '"' + (dis ? ' disabled style="opacity:.5"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div>';
     h += '<div class="content">' + pageHTML() + '</div>';
@@ -852,13 +868,14 @@
       case 'new': return newGamePage();
       case 'help': return helpPage();
       case 'notes': return notesPage();
+      case 'deeds': return deedsPage();
       default: return ONLINE ? homePage() : newGamePage();
     }
   }
 
   /* ----- new game ----- */
   // New game page options, kept for the next game.
-  var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 48, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true };
+  var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 52, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true };
   (function () { var s = lsGet('cs.setup'); if (s && s.players && s.players.length) for (var k in s) setup[k] = s[k]; })();   // the last game's setup
   function archetypes() { return sortLib(app.lib.filter(function (c) { return c.type === 'Foundation' && c.archetype; })); }
   function ensureSetup() {
@@ -1310,7 +1327,7 @@
         (ONLINE ? '<li>On <b>Home</b>, choose <b>Single player</b> (against bots), <b>Pass-and-Play</b> (one device) or <b>Online</b>.</li>' : '<li>Open <b>New game</b>, pick 2–5 players and their archetypes, and press <b>Start game</b>.</li>') +
         '<li>On your first turn, play your <b>Foundation</b>: drag it onto the board.</li>' +
         '<li>Play more cards next to your cards, then <b>claim</b> one with a meeple.</li>' +
-        '<li>Press <b>End turn</b>. Every 6● you didn’t spend banks 1◇ (at most 2). Reaching <b>48◇</b> starts the <b>last round</b>: everyone gets the same number of turns, then the highest total wins.</li></ol>' +
+        '<li>Press <b>End turn</b>. Every 6● you didn’t spend banks 1◇ (at most 2). Reaching <b>52◇</b> starts the <b>last round</b>: everyone gets the same number of turns, then the highest total wins.</li></ol>' +
         '<p class="muted">The hint line above the board suggests a next step while you learn.</p>' },
       { id: 'claudenspiel', title: 'What Claudenspiel changes', html: '<p>Claudenspiel is Claude’s own fork of Kartenspiel. Its rules differ:</p><ul>' +
         '<li><b>The last round:</b> reaching the target starts it. Everyone gets the same number of turns, then the highest total wins; a tie goes to whoever got there first. With three or more players, earlier seats start with 3◇ for each seat after them, since later seats see the score to beat.</li>' +
@@ -1324,7 +1341,7 @@
         '<li><b>Play cards</b> while your ● lasts. Green-bordered cards in your hand are ones you can afford.</li>' +
         '<li><b>Claim once:</b> the card you just placed, or an unclaimed card next to it. It produces its ● right away.</li>' +
         '<li>Any time: <b>Discard 2, draw 1</b>.</li>' +
-        '<li><b>End turn.</b> At 48◇ or more, you win.</li></ol>' },
+        '<li><b>End turn.</b> At 52◇ or more, the last round begins; when it ends, the highest total wins.</li></ol>' },
       { id: 'play', title: 'Playing cards', html: '<ul>' +
         '<li><b>Placing:</b> drag a card onto a <b>green space</b>, or ' + tap.toLowerCase() + ' the card, then the space. The number on the space is the cost there.</li>' +
         '<li><b>Where it fits:</b> next to another card, on a side its placement icon allows (✛ any side; arrows for some sides; ✕ corners only). The other sides must be clear.</li>' +
@@ -2035,7 +2052,7 @@
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 48, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false });
+        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }

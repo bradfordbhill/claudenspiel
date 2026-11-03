@@ -9,7 +9,8 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 0.2 Obelisk 6◇, doubled when surrounded (the strongest card under every kind of bot).
 - ▶ Cathedral: the Archbishop is still below par. Try 6◇ a Sceptre card plus 2◇ for each Sceptre card on the board that you don't own (mirrors Palace).
 - ✅ 0.2 Fountain: 3◇ per Leaf neighbour, joins on any side (it was the weakest card).
-- ▶ Cryptkeeper slipped to 0.89 in 0.2: look at Mausoleum and the burying cards.
+- ✅ 0.3 Mausoleum 4◇ for each card buried under it (3◇ elsewhere): the Cryptkeeper is back to 1.05.
+- ▶ The Gardener drifted to 0.88 at 52◇: look at Orchard.
 - ○ Death Ray: 2◇ for 12● is the worst printed value; give it 4◇ or make it cheaper.
 - ○ Re-run the Genius-only balance study after every balance release.
 
@@ -23,14 +24,15 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 0.1 The last round: reaching the target starts it, everyone gets the same number of turns, the highest total wins.
 - ✅ 0.1 Seat start off by default (with equal turns it double-paid later seats).
 - ✅ 0.2 Seat handicap: with 3+ players, earlier seats start with 3◇ per later seat (measured: it evens 3 and 4 players; 2 players need none).
-- ▶ Games got a round shorter (median 5): try a 52◇ target.
+- ✅ 0.3 Target 52◇: games back to 6 rounds.
+- ▶ 3-player seat 2 looks weak (0.83): try a 2◇/4◇ handicap instead of 3◇ a step.
 - ○ Catch-up draw: 15◇ or more behind the leader, draw 1 extra card at the start of your turn.
 - ○ Meeple recall for 4● at the start of a turn, instead of costing the whole turn.
 
 ## New card types and cards
 - ✅ 0.1 Revenge and Repent can also be played from hand (draw 2, discard 1); Brambles can be placed like any Structure.
 - ✅ 0.2 Grounds: Marsh (neighbours need one more enemy to be Overwhelmed), Battlefield (one fewer), Crossroads (placing next to it costs 3● less).
-- ▶ Teach the bots to use Grounds, then measure them.
+- ▶ Teach the bots to use Grounds deliberately. (0.3 tried a general safety term: no stronger, and it smothered War, so it is off.)
 - ○ More Grounds, one per suit: a Tome Library (cards next to it draw a card when placed), a Bone Barrow (burials next to it count twice), a Sceptre Shrine (cards next to it can't be Cursed).
 - ▶ You'll Regret That: give it a normal play too, so no card is ever dead in hand.
 - ○ Cartographer (Tome Structure, 9●): look at the top 3 cards of the deck and put them back in any order.

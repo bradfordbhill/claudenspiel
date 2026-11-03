@@ -108,9 +108,11 @@ var KBots = (function () {
   function trial(st,me,strat,opts){ let best=opts[0],bv=-1e9; for(const o of opts){ const n=ap(st,{t:'answer',v:o}); if(!n) continue; const v=evalState(st,n,me,strat); if(v>bv){bv=v;best=o;} } return best; }
   // How much better st is than st0 for player p: own ◇ and ● gained, progress toward its archetype's goal,
   // minus what opponents gained. A player paid for War (Warcamp) values it like a warlord, whatever its style.
+  let SAFETY=+(typeof process!=='undefined'&&process.env&&process.env.CS_SAFETY!=null?process.env.CS_SAFETY:0);   // off: measured, careful play is no stronger (51.6% vs 50.6% over 494 paired games), and it smothers War
   function evalState(st0,st,p,strat){ if(strat==='gsim') return gEval(st,p)-gEval(st0,p);
     const rem=6, g=profile(st,p);
-    let mine=(tot(st,p)-tot(st0,p)) + 0.5*(E.income(st,p)-E.income(st0,p))*rem/3 + (goal(st,p)-goal(st0,p));
+    // Claudenspiel: SAFETY weighs the bot's own cards at risk of Overwhelm (CS_SAFETY in the simulator; 0 by default).
+    let mine=(tot(st,p)-tot(st0,p)) + 0.5*(E.income(st,p)-E.income(st0,p))*rem/3 + (goal(st,p)-goal(st0,p)) + SAFETY*(danger(st0,p)-danger(st,p));
     if(g&&g.war&&strat!=='warlord') mine+=2*(ruinsBy(st,p)-ruinsBy(st0,p)) + 1*(pressure(st,p)-pressure(st0,p)) + 0.15*((st.players[p].reserve||0)-(st0.players[p].reserve||0));
     if(strat==='warlord') return mine + 3*(ruinsBy(st,p)-ruinsBy(st0,p)) + 1.5*(pressure(st,p)-pressure(st0,p)) + 0.25*((st.players[p].reserve||0)-(st0.players[p].reserve||0))
       - 0.5*(oppSum(st,p,tot)-oppSum(st0,p,tot));
@@ -233,7 +235,7 @@ var KBots = (function () {
   function gEval(st,p){
     if(st.winner!=null) return st.winner===p?100:0;
     if(st.players[p].out) return 0;
-    const sc=E.scores(st), T=+st.opts.target||48, N=st.players.length; let lead=0; sc.forEach((s,i)=>{ if(!st.players[i].out) lead=Math.max(lead,s.total); });
+    const sc=E.scores(st), T=+st.opts.target||52, N=st.players.length; let lead=0; sc.forEach((s,i)=>{ if(!st.players[i].out) lead=Math.max(lead,s.total); });
     const soon=Math.min(1,Math.max(0.25,(T-lead)/14));
     let Z=0, mine=0;
     st.players.forEach((pl,q)=>{ if(pl.out) return; const g=profile(st,q);

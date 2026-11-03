@@ -2,6 +2,22 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 3 November 2026 · 0.3, the Book of Deeds
+
+**Changes, and why.**
+- *The Book of Deeds* (src/deeds.js): 19 deeds checked when a game ends, earned only by the human seats and kept in this browser (`cs.deeds`), with a Deeds page and a toast. The first piece of progression: it rewards trying things (Terraformer, Two Hands, Peacemaker) rather than grinding.
+- *Target 52◇* (was 48◇). 0.2's banking and second claims had shortened games to 5 rounds; at 52◇ they are back to 6, with a few more Ruins (1.57 against 1.38 a game) and the same balance.
+- *Mausoleum: 3◇ per buried card in the Kingdom, 4◇ for each under the Mausoleum itself.* The Cryptkeeper was lowest at 0.82. Tried three versions: 4◇ for every buried card overshot to 1.18, and 3◇ + 5◇ under the Mausoleum to 1.26 (most burials go under it, through Embalm); 3◇ + 4◇ under it came in at 1.05.
+- *Its own icon* and favicon, drawn by tools/logo.js and built into the page.
+- *A safety term for the bots* (their own cards at risk of Overwhelm), to make Marsh worth playing. A paired test (494 games, one careful seat against plain bots) found careful play no stronger: 51.6% against 50.6%. But with every bot careful, the Warmonger fell to 0.66, because war stops working against a table that hides. So it is off by default (CS_SAFETY in the simulator); a real table may play more carefully than the bots, and the Warmonger should be watched for that.
+
+**Measured** at 52◇ (1,026 games, 2–4 players): Archbishop 0.97 · Cryptkeeper 1.05 · Gardener 0.88 · Hedonist 1.05 · Philosopher 1.07 · Warmonger 0.99, spread **0.19**. Seats: 2 players 0.97 · 1.03; 3 players 1.02 · 0.83 · 1.15; 4 players 0.92 · 1.13 · 1.10 · 0.85.
+
+**Open questions.**
+- The Gardener has drifted down (0.88): the longer game at 52◇ seems to favour other plans.
+- 3-player seat 2 at 0.83 in two runs now; seat 3 is high. The seat handicap may want 2◇ and 4◇ rather than 3◇ a step. Measure with a few hundred more 3-player games.
+- Bots still play Grounds only incidentally (Marsh about 25 times per 100 games).
+
 ## 3 November 2026 · Its own repository
 
 Claudenspiel moved out of Kartenspiel's repository into this one, with its history (`git subtree split`), so the two share no files. `build.sh` now writes `index.html` here, which GitHub Pages serves at https://bradfordbhill.github.io/claudenspiel/; the publish script that pushed a copy is gone. Help's Dithry link goes to Kartenspiel's published Dithry.

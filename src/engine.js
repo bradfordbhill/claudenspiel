@@ -164,7 +164,8 @@ var KEngine = (function () {
         cnt = keys(st).filter(function (x) { return hasSuit(st, top(st, x), s.suit); });
         var inK = cnt.filter(function (x) { return kd.indexOf(x) >= 0; }).length;
         return n * inK + m * (cnt.length - inK);
-      case 'perBuriedInKingdom': return n * kingdom(st, p).reduce(function (a, x) { return a + st.board[x].length - 1; }, 0);
+      // Claudenspiel: m more for each card buried under this card itself (Mausoleum).
+      case 'perBuriedInKingdom': return n * kingdom(st, p).reduce(function (a, x) { return a + st.board[x].length - 1; }, 0) + m * (st.board[k].length - 1);
       case 'perDistinctSuitInKingdom':
         // Claudenspiel: m more when all six suits are there (Observatory).
         var ss = {}; kingdom(st, p).forEach(function (x) { suitsOf(st, top(st, x)).forEach(function (q) { ss[q] = 1; }); }); var nd = Object.keys(ss).length; return n * nd + (m && nd >= SUITS.length ? m : 0);
@@ -1077,7 +1078,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 48, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, seatTokens: setup.seatTokens != null ? +setup.seatTokens : (setup.players.length > 2 ? 3 : 0) /* 2 players are already even */, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, seatTokens: setup.seatTokens != null ? +setup.seatTokens : (setup.players.length > 2 ? 3 : 0) /* 2 players are already even */, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });

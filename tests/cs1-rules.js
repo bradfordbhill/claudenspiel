@@ -17,7 +17,7 @@ st=turnWith(st,70);
 chk('Last round', st.winner===2, 'when the round is over, the highest total wins (the last seat, 70◇ against 60◇)');
 st=game(['Gardener','Hedonist']); st=turnWith(st,55); st=turnWith(st,55);
 chk('Last round', st.winner===0, 'a tie goes to whoever reached the target first');
-st=game(['Gardener','Hedonist']); st=turnWith(st,10); st=turnWith(st,50);
+st=game(['Gardener','Hedonist']); st=turnWith(st,10); st=turnWith(st,60);
 chk('Last round', st.winner===1, 'reaching it in the last seat ends the game at once');
 st=game(['Gardener','Hedonist'],{lastRound:false}); st=turnWith(st,60);
 chk('Last round', st.winner===0, 'with the rule switched off, the classic rule applies (win at once)');

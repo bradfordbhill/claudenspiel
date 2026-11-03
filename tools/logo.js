@@ -1,4 +1,4 @@
-// Draws Claudenspiel's Fraktur logo as pixel art into assets/logo.png (the fork's own; Kartenspiel's stays untouched).
+// Draws Claudenspiel's Fraktur logo (assets/logo.png) and its icon (assets/icon-64.png, icon-192.png) as pixel art.
 // Same method as Kartenspiel's tools/art.js (UnifrakturMaguntia, hard edges, scaled up pixel for pixel by the page),
 // but in verdigris and copper. Needs Playwright with Chromium and a network connection for the font.
 // Run: node tools/logo.js   (then ./build.sh)
@@ -21,10 +21,23 @@ function logo() {
   const o = document.createElement('canvas'); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1; o.getContext('2d').drawImage(c, -x0, -y0);
   return { url: o.toDataURL('image/png'), w: o.width, h: o.height };
 }
+// The icon: a parchment card on a dusk-violet ground with an oxblood title strip and a verdigris C, scaled up pixel for pixel.
+function icon(size) {
+  const n = 64, c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'), px = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+  px(0, 0, n, n, '#3d3350'); px(18, 8, 40, 54, '#221b2e'); px(14, 4, 40, 54, '#16110c'); px(16, 6, 36, 50, '#f6efd8'); px(16, 6, 36, 8, '#5a1020'); px(18, 8, 18, 2, '#f0a86a');
+  const k = document.createElement('canvas'); k.width = k.height = n; const kg = k.getContext('2d'); kg.font = '40px UnifrakturMaguntia'; const kw = kg.measureText('C').width, x = Math.round(33 - kw / 2), y = 50;
+  kg.fillStyle = INK; for (const [dx, dy] of [[1, 1], [2, 2], [-1, 0], [1, 0], [0, -1], [0, 1]]) kg.fillText('C', x + dx, y + dy);
+  kg.fillStyle = patina(kg, y - 30, y); kg.fillText('C', x, y);
+  const d = kg.getImageData(0, 0, n, n); for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 110 ? 255 : 0; kg.putImageData(d, 0, 0); g.drawImage(k, 0, 0);
+  const o = document.createElement('canvas'); o.width = o.height = size; const og = o.getContext('2d'); og.imageSmoothingEnabled = false; og.drawImage(c, 0, 0, size, size); return o.toDataURL('image/png');
+}
 </script></body></html>`;
 (async () => {
   const b = await chromium.launch(), p = await b.newPage(); await p.setContent(PAGE); await p.evaluate(() => document.fonts.ready);
   await p.waitForFunction(() => document.fonts.check('30px UnifrakturMaguntia'));
   const r = await p.evaluate(() => logo()); fs.writeFileSync(OUT, Buffer.from(r.url.split(',')[1], 'base64'));
-  console.log('saved assets/logo.png', r.w + '×' + r.h); await b.close();
+  const ic = await p.evaluate(() => ({ fav: icon(64), touch: icon(192) }));
+  fs.writeFileSync(path.join(path.dirname(OUT), 'icon-64.png'), Buffer.from(ic.fav.split(',')[1], 'base64'));
+  fs.writeFileSync(path.join(path.dirname(OUT), 'icon-192.png'), Buffer.from(ic.touch.split(',')[1], 'base64'));
+  console.log('saved assets/logo.png', r.w + '×' + r.h, 'and assets/icon-64.png, icon-192.png'); await b.close();
 })();

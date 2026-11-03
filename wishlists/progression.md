@@ -16,7 +16,7 @@ How players grow with Claudenspiel. The rule: progress widens what you can do an
 - ○ Folios: themed packs of 12–15 new cards (the Grounds folio, a River folio) unlocked by the campaign, mixed into solo games and offered as table options.
 
 ## Recognition
-- ▶ The Book of Deeds: about 20 achievements to start (Pyrrhic: win with your Foundation one enemy from Overwhelm; Five Suits: make a stack Ascend; Patience: win after taking back a meeple; Grave Robber: bury 10 cards in one game).
+- ✅ 0.3 The Book of Deeds: 19 achievements to start (Pyrrhic: win with your Foundation one enemy from Overwhelm; Five Suits: make a stack Ascend; Patience: win after taking back a meeple; Grave Robber: bury 10 cards in one game).
 - ○ Cosmetics: card backs, meeple styles (pewter, gold leaf, bone), board backdrops (dawn, the river ford, the city gate), a heraldic shield built from mastered archetypes.
 - ○ Painted cards: paint a card in Dithry once you've mastered it, and show your version to the table.
 

@@ -1,6 +1,12 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-0.3', date: '3 November 2026', title: 'Claudenspiel 0.3: the Book of Deeds', notes: [
+    'The <b>Book of Deeds</b>: 19 deeds to earn in play, from <i>First Victory</i> to <i>Six Crowns</i> (win with every archetype). Find it under <b>Deeds</b>.',
+    'The target is <b>52◇</b> (was 48◇): banking and second claims had made games a round shorter.',
+    '<b>Mausoleum</b> still scores 3◇ per buried card in your Kingdom, and now 4◇ for each one buried under the Mausoleum itself: the Cryptkeeper was the weakest archetype.',
+    'Claudenspiel has its own icon.'
+  ] },
   { v: 'cs-0.2', date: '3 November 2026', title: 'Claudenspiel 0.2: ground, gold and the race', notes: [
     '<b>Grounds</b>, the first terrain cards: placed like a Structure, claimed by nobody, never an enemy. <b>Marsh</b> shelters its neighbours from Overwhelm, <b>Battlefield</b> exposes them, <b>Crossroads</b> makes building next to it 3● cheaper.',
     '<b>Banking</b>: every 6● you don’t spend becomes 1◇ at the end of your turn (at most 2◇).',
