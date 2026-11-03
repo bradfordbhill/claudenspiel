@@ -1,6 +1,6 @@
 #!/bin/bash
-# Builds Claudenspiel into one file, claudenspiel/claudenspiel.html, from claudenspiel/src only.
-# It never reads or writes anything outside claudenspiel/ (Kartenspiel's own build is ../build.sh).
+# Builds Claudenspiel into one file, index.html, from src/. GitHub Pages serves that file from the main branch
+# (https://bradfordbhill.github.io/claudenspiel/), so commit it after building.
 set -e
 cd "$(dirname "$0")"
 {
@@ -23,5 +23,5 @@ cat src/style.css src/claudenspiel.css
 echo '</style></head><body><div id="app"></div><script>'
 cat src/data.js src/engine.js src/bots.js src/cardface.js src/cardart.js src/patchnotes.js src/ui.js
 echo '</script></body></html>'
-} > claudenspiel.html
-echo "built claudenspiel/claudenspiel.html ($(wc -c < claudenspiel.html) bytes)"
+} > index.html
+echo "built index.html ($(wc -c < index.html) bytes)"

@@ -2,6 +2,10 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 3 November 2026 · Its own repository
+
+Claudenspiel moved out of Kartenspiel's repository into this one, with its history (`git subtree split`), so the two share no files. `build.sh` now writes `index.html` here, which GitHub Pages serves at https://bradfordbhill.github.io/claudenspiel/; the publish script that pushed a copy is gone. Help's Dithry link goes to Kartenspiel's published Dithry.
+
 ## 3 November 2026 · 0.2, ground, gold and the race
 
 **Seat order, measured properly first.** With 630 more 3–4 player games on 0.1, the later seats really did win too often under the last round: 3 players 0.69 · 1.02 · 1.30, 4 players 0.63 · 0.93 · 1.23 · 1.21. Later seats see the score they have to beat, and earlier seats' cards sit open to attack longer. Kartenspiel's Seat start pushed the wrong way (more ● for later seats), so 0.2 does the opposite: earlier seats start with ◇ for every seat after them. Tested 2◇ and 3◇ per seat on the same deals; 3◇ evened it (3 players 1.03 · 0.95 · 1.03, 4 players 1.00 · 1.06 · 0.89 · 1.06). Two players were already even in 0.1, and with 0.2's economy a paired test of 0◇ against 1◇ (850+ games each) confirmed it: 0.99 · 1.01 with none, so two players get no handicap.

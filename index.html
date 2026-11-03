@@ -5995,7 +5995,7 @@ if (typeof module !== 'undefined') module.exports = KFace;
 var KCardArt = {
 };
 if (typeof module !== 'undefined') module.exports = KCardArt;
-/* Claudenspiel patch notes, newest first (the fork's own; Kartenspiel's are in ../src/patchnotes.js).
+/* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
   { v: 'cs-0.2', date: '3 November 2026', title: 'Claudenspiel 0.2: ground, gold and the race', notes: [
@@ -7322,7 +7322,7 @@ if (typeof module !== 'undefined') module.exports = KPatch;
   // Help is a list of short sections with a table of contents; each section says which edition it belongs to
   // (online: the public site only; table: the playtest table only).
   function helpSections() {
-    var tap = 'Click (or tap)', dithry = /github\.io$/.test(location.hostname) ? 'https://bradfordbhill.github.io/kartenspiel/dithry/' : '../dithry.html';
+    var tap = 'Click (or tap)', dithry = 'https://bradfordbhill.github.io/kartenspiel/dithry/';   // Kartenspiel's published Dithry
     var S = [
       { id: 'start', title: 'Quick start', html: '<ol>' +
         (ONLINE ? '<li>On <b>Home</b>, choose <b>Single player</b> (against bots), <b>Pass-and-Play</b> (one device) or <b>Online</b>.</li>' : '<li>Open <b>New game</b>, pick 2–5 players and their archetypes, and press <b>Start game</b>.</li>') +

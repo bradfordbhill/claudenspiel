@@ -1,4 +1,4 @@
-/* Claudenspiel patch notes, newest first (the fork's own; Kartenspiel's are in ../src/patchnotes.js).
+/* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
   { v: 'cs-0.2', date: '3 November 2026', title: 'Claudenspiel 0.2: ground, gold and the race', notes: [

@@ -1,8 +1,8 @@
 # Claudenspiel
 
-Claude's own fork of Kartenspiel: a long-running side project to grow the game into the best version it can be, with more cards, more mechanics, a new interface and new design, without being bound by the original's vision. Kartenspiel stays exactly as it is; everything here is separate.
+Claude's own fork of Kartenspiel: a long-running side project to grow the game into the best version it can be, with more cards, more mechanics, a new interface and new design, without being bound by the original's vision. Kartenspiel ([bradfordbhill/kartenspiel](https://github.com/bradfordbhill/kartenspiel)) stays exactly as it is; this repository is separate.
 
-Open `claudenspiel.html` in a browser to play: single player against bots (greedy, tactician, warlord, Genius), pass-and-play, the sandbox and the card builder. There is no online play yet.
+Play it at **https://bradfordbhill.github.io/claudenspiel/**, or open `index.html` in a browser: single player against bots (greedy, tactician, warlord, Genius), pass-and-play, the sandbox and the card builder. There is no online play yet.
 
 ## The charter
 
@@ -13,11 +13,11 @@ Open `claudenspiel.html` in a browser to play: single player against bots (greed
 
 ## Kept apart from Kartenspiel
 
-- Everything lives in `claudenspiel/`: its own `src/`, `tests/`, `tools/`, `assets/` and build. Nothing outside this folder is changed by Claudenspiel work, and Kartenspiel's build, tests and site never read anything in it.
-- `build.sh` writes only `claudenspiel/claudenspiel.html`.
+- Its own repository, with its own `src/`, `tests/`, `tools/`, `assets/`, build and site. The two repositories share no files: changes here never touch Kartenspiel, and Kartenspiel's changes never arrive here.
 - Browser storage uses `cs.*` keys (Kartenspiel uses `ks.*`), so saved games, settings, the remembered setup and painted cards never mix, even in the same browser.
 - Its own logo (verdigris Fraktur, drawn by `tools/logo.js`), colours (`src/claudenspiel.css`, loaded after the shared base styles) and patch notes (`src/patchnotes.js`).
-- The fork started from Kartenspiel as of 3 November 2026 (commit 1b43db7). Kartenspiel fixes are not pulled in automatically; ones worth having are copied by hand and noted in the journal.
+- The fork started from Kartenspiel as of 3 November 2026 (commit 1b43db7), and grew in a `claudenspiel/` folder there until it moved to this repository with its history. Kartenspiel fixes are not pulled in automatically; ones worth having are copied by hand and noted in the journal.
+- Help links to Kartenspiel's published Dithry (the pixel-art tool) for drawing card art; Claudenspiel has no copy of its own yet.
 
 ## Build and test
 
@@ -39,13 +39,7 @@ node tools/logo.js                              # redraw the logo (needs Playwri
 
 ## Publishing
 
-Claudenspiel is published on its own at https://bradfordbhill.github.io/claudenspiel/, from its own repository, `bradfordbhill/claudenspiel`, never from Kartenspiel's site. The published page is the offline edition (no online play).
-
-```
-tools/publish.sh
-```
-
-It builds the game and force-pushes it as `index.html` to that repository's `main` branch, which GitHub Pages serves as-is (Settings → Pages → Deploy from a branch → `main`, `/ (root)`). The repository holds only the published page; the source stays here.
+`build.sh` writes the whole game into `index.html` at the top of the repository. GitHub Pages serves it from the `main` branch as-is (Settings → Pages → Deploy from a branch → `main`, `/ (root)`; `.nojekyll` turns off Jekyll), so publishing is: build, commit `index.html`, push.
 
 ## Releases
 
