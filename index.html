@@ -5755,7 +5755,9 @@ var KBots = (function () {
   //   4. scores where that leaves the race (gEval) and keeps the line that does best on average.
   // It then plays that line up to the first moment it learns something new (a draw, a revealed card, a prompt for
   // someone else) and thinks again from the real game. KBots.GENIUS sets how many worlds, lines and milliseconds it uses.
-  const GENIUS={ worlds:3, lines:5, budget:1500, depth:1, policy:'gsim', opp:'quick', judge:'race' };
+  // 0.7: the Genius plays its imagined lines like a tactician and judges them the tactician's way ('diff'): measured +10 points
+  // over a tactician in paired 2-player games, where the race model ('race', 'gsim') had fallen behind under Claudenspiel's rules.
+  const GENIUS={ worlds:3, lines:5, budget:1500, depth:1, policy:'tactician', opp:'quick', judge:'diff' };
   const now=()=>Date.now();
   // A small seeded random generator, so a decision is repeatable (seeded from what the player can see).
   function rng(seed){ let a=seed>>>0||1; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
@@ -6107,6 +6109,10 @@ if (typeof module !== 'undefined') module.exports = KCardArt;
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-0.8', date: '4 November 2026', title: 'Claudenspiel 0.8: a sharper Genius', notes: [
+    'The <b>Genius bot</b> is stronger: it now plays out each imagined turn the way the tactician plays, and judges where that leaves it the tactician’s way. Measured on the same deals, it wins 60% of 2-player games where a tactician in its seat wins 50%.',
+    'It still plays fair: it sees only what you would see.'
+  ] },
   { v: 'cs-0.7', date: '4 November 2026', title: 'Claudenspiel 0.7: no dead cards', notes: [
     '<b>You’ll Regret That</b> can now be played from your hand too: for 3●, choose any card next to one of yours and it produces no ●. As a reaction to a Ruin it is still free and still Curses the Structure that did it.'
   ] },

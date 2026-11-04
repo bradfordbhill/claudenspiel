@@ -51,6 +51,8 @@ node tools/anatomy.js 2 0 500 /tmp/a.json         # per-turn records of bot game
 | 0.2 | Grounds (Marsh, Battlefield, Crossroads); banking; buying a second claim; a seat handicap for 3+ players; the race bar; Obelisk 6◇; Fountain reworked. Seats even at every table size |
 | 0.3 | The Book of Deeds (19 deeds); target 52◇; Mausoleum 4◇ for cards buried under it; its own icon; a safety term for the bots, measured and left off |
 | 0.4 | Sound and animations (with Sound and Motion settings); Cathedral +1◇ per Sceptre card it doesn't own; Orchard +1◇ per Leaf card in the region; seat handicap by table size; bots play Grounds on purpose; Mausoleum back to 3◇ |
+| 0.8 | A sharper Genius: plans like a tactician, judges like one, looks ahead like a Genius (+10 points over a tactician, paired) |
+| 0.7 | You'll Regret That plays from hand (no dead cards) |
 | 0.6 | The market, on trial (a New game option); paired skill-expression tool; the finding that the Genius needs updating before it can judge rules |
 | 0.5 | "Why is this good?" hover hints; Palace 2◇ per Goblet it doesn't own; ticking counters, flying ●, heartbeat chevrons and the Genius's candle. 2-player spread 0.16 |
 | 0.7 | You'll Regret That can be played from hand (3●: a card next to one of yours makes no ●); no dead cards left |

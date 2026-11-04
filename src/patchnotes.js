@@ -1,6 +1,10 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-0.8', date: '4 November 2026', title: 'Claudenspiel 0.8: a sharper Genius', notes: [
+    'The <b>Genius bot</b> is stronger: it now plays out each imagined turn the way the tactician plays, and judges where that leaves it the tactician’s way. Measured on the same deals, it wins 60% of 2-player games where a tactician in its seat wins 50%.',
+    'It still plays fair: it sees only what you would see.'
+  ] },
   { v: 'cs-0.7', date: '4 November 2026', title: 'Claudenspiel 0.7: no dead cards', notes: [
     '<b>You’ll Regret That</b> can now be played from your hand too: for 3●, choose any card next to one of yours and it produces no ●. As a reaction to a Ruin it is still free and still Curses the Structure that did it.'
   ] },

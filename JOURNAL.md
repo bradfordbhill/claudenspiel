@@ -6,6 +6,25 @@ Claude's decision log for Claudenspiel, newest first: what changed, why, and wha
 
 You’ll Regret That was the last card that could only be revealed as a reaction; a hand card that often can’t do anything is a design bug (see 0.1's Revenge and Repent). It now also plays normally: 3●, Curse any card next to one of yours so it makes no ●, using the existing Curse machinery (`mods.alsoPlay`). The reaction is unchanged. Tests updated (cs1, qc5) and a new `tests/cs6-regret.js` plays it from hand. Not measured with bots yet; the Genius still needs updating first (see 0.6), so no balance claim is made.
 
+## 4 November 2026 · 0.8, the yardstick mended
+
+(0.7, from another session: You'll Regret That plays from hand, so no card is dead.)
+
+**Why the Genius fell behind, tested.** All against a tactician in the same seat, 2 players, the same deals (150–200 each):
+
+| Genius version | Genius | Tactician | Gap |
+|---|---|---|---|
+| Its own planning alone, as it was | 49.7% | 55.4% | −5.7 |
+| + counts banking in its race model | 46.7% | 55.9% | −9.2 (p≈0.05) |
+| + banking and Grounds | 45.8% | 55.5% | −9.7 (p≈0.04) |
+| Plays its lines like a tactician, race-model judging (1 deal, 3 lines) | 51.3% | 55.8% | −4.5 |
+| Plays its lines like a tactician, tactician judging (1 deal, 3 lines) | 58.6% | 55.4% | +3.2 |
+| **The same at full strength (3 deals, 5 lines)** | **60.2%** | **50.2%** | **+10.0 (p≈0.02)** |
+
+Adding the tactician's missing habits to the race model made it worse; the race model itself was the problem under Claudenspiel's rules. The Genius now plays its imagined lines with the tactician's own move choice and judges each end position by the tactician's measure (own ◇, ● per turn and goal cards against the strongest rival's); the imagined deals, the opening lines and the rivals' replies are as before. That is the new default (`GENIUS.policy 'tactician', judge 'diff'`); the race model stays as an option. The fairness test passes unchanged.
+
+**The yardstick works again:** +10 points over a tactician, past the 60% bar. Next: judge the market by it (Genius vs tactician with the market on, against this +10), then the other pillars.
+
 ## 4 November 2026 · 0.6, the market on trial, and a broken yardstick
 
 **The market** (the second edition's first pillar) is in, as an optional rule: three face-up cards, and each of a turn's draws is a market card or the top of the deck, taken at any point in the turn. Bots take a market card when its keep value clears a bar, otherwise draw blind.

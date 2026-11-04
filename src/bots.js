@@ -214,7 +214,9 @@ var KBots = (function () {
   //   4. scores where that leaves the race (gEval) and keeps the line that does best on average.
   // It then plays that line up to the first moment it learns something new (a draw, a revealed card, a prompt for
   // someone else) and thinks again from the real game. KBots.GENIUS sets how many worlds, lines and milliseconds it uses.
-  const GENIUS={ worlds:3, lines:5, budget:1500, depth:1, policy:'gsim', opp:'quick', judge:'race' };
+  // 0.7: the Genius plays its imagined lines like a tactician and judges them the tactician's way ('diff'): measured +10 points
+  // over a tactician in paired 2-player games, where the race model ('race', 'gsim') had fallen behind under Claudenspiel's rules.
+  const GENIUS={ worlds:3, lines:5, budget:1500, depth:1, policy:'tactician', opp:'quick', judge:'diff' };
   const now=()=>Date.now();
   // A small seeded random generator, so a decision is repeatable (seeded from what the player can see).
   function rng(seed){ let a=seed>>>0||1; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
