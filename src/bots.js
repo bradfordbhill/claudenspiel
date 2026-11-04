@@ -300,7 +300,11 @@ var KBots = (function () {
         const L=E.legalCells(w,u); Object.keys(L).filter(k=>L[k]<=cash).slice(0,24).forEach(k=>{ const s=resolve(ap(w,{t:'play',uid:u,k}),p,pol); if(!s||s.pending) return; add(s.turn.claimed?s:(bestClaim(s,p,pol)||s),u); }); });
       E.keys(w).forEach(k=>{ if(E.abilityReady(w,k)) add(resolve(ap(w,{t:'ability',k}),p,pol),'A'+k); });
       E.claimOptions(w,p).forEach(k=>add(ap(w,{t:'claim',k}),'C'+k));
-      const bw=ap(w,{t:'buyClaim'}); if(bw) E.claimOptions(bw,p).forEach(k=>add(ap(bw,{t:'claim',k}),'B'+k)); }
+      const bw=ap(w,{t:'buyClaim'}); if(bw) E.claimOptions(bw,p).forEach(k=>add(ap(bw,{t:'claim',k}),'B'+k));
+      // Second-edition trials: each market card taken first, and each card burned first, are openings too.
+      if(w.opts.market&&w.turn.toDraw>0) (w.market||[]).concat(['deck']).forEach(u=>add(ap(w,{t:'draw',from:u}),'D'+u));
+      if(w.opts.burn&&!w.turn.burned) pl.hand.forEach(u=>{ const d=E.rawDef(w,u); if(d.type==='Foundation') return;
+        (d.suit==='Bone'?E.kingdom(w,p).slice(0,8).map(k=>({t:'burn',uid:u,k})):[{t:'burn',uid:u}]).forEach(a=>{ let s=ap(w,a); if(s&&s.pending) s=resolve(s,p,pol); if(s&&d.suit==='Sceptre') s=bestClaim(s,p,pol); add(s,'X'+u); }); }); }
     out.sort((a,b)=>b.v-a.v); const seen={}, keep=[];
     for(const o of out){ if((seen[o.key]||0)>=2&&o.key!=='line') continue; seen[o.key]=(seen[o.key]||0)+1; keep.push(o); if(keep.length>=GENIUS.lines) break; }
     if(!keep.some(o=>o.key==='line')) keep.push(out.find(o=>o.key==='line'));
