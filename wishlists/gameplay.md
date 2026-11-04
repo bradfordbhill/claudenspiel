@@ -38,7 +38,7 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 0.2 Grounds: Marsh (neighbours need one more enemy to be Overwhelmed), Battlefield (one fewer), Crossroads (placing next to it costs 3● less).
 - ✅ 0.4 The bots lay Grounds on purpose (Marsh 25 → 51 plays per 100 games, Battlefield 12 → 37).
 - ○ More Grounds, one per suit: a Tome Library (cards next to it draw a card when placed), a Bone Barrow (burials next to it count twice), a Sceptre Shrine (cards next to it can't be Cursed).
-- ▶ You'll Regret That: give it a normal play too, so no card is ever dead in hand.
+- ✅ 0.7 You'll Regret That: a normal play too (3●: a card next to one of yours produces no ●), so no card is ever dead in hand.
 - ○ Cartographer (Tome Structure, 9●): look at the top 3 cards of the deck and put them back in any order.
 - ○ Pilgrim's Road (Sceptre Blessing, 6●): a card of yours can't be Ruined until your next turn, and claiming next to it costs no meeple.
 - ○ Feast Day (Goblet Action, 6●): everyone draws 1; you draw 2 and bank 1◇ for each Goblet card on the board.

@@ -1,6 +1,9 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-0.7', date: '4 November 2026', title: 'Claudenspiel 0.7: no dead cards', notes: [
+    '<b>You’ll Regret That</b> can now be played from your hand too: for 3●, choose any card next to one of yours and it produces no ●. As a reaction to a Ruin it is still free and still Curses the Structure that did it.'
+  ] },
   { v: 'cs-0.6', date: '4 November 2026', title: 'Claudenspiel 0.6: the market (on trial)', notes: [
     'A first piece of the second edition, to try: tick <b>Market</b> on the New game page. Three cards lie face up; each of your turn’s draws can be one of them or the top of the deck, at any point in your turn. Draws you leave are drawn blind when you end it.',
     'Hover a market card to read it; the race bar and the market sit together above the board.'

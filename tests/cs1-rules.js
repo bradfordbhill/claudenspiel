@@ -51,7 +51,7 @@ st=must(st,{t:'cast',uid:rv}); let guard=0; while(st.pending&&guard++<4) st=must
 chk('Revenge', st.players[0].hand.length===h0-1+2-1, 'it draws 2 and discards 1 (hand '+h0+' → '+st.players[0].hand.length+')');
 const br=take('brambles');
 chk('Brambles', !E.playBlock(st,0,br), 'Brambles can be placed like any Structure');
-chk('Reactions', !!E.playBlock(st,0,take('youll-regret-that')), 'You’ll Regret That is still a reaction only');
+chk('Reactions', !E.playBlock(st,0,take('youll-regret-that')), 'You’ll Regret That can also be played from hand');
 
 // 5. Kept apart from Kartenspiel.
 const src=['ui.js','engine.js','bots.js','cardface.js'].map(f=>fs.readFileSync(path.join(__dirname,'..','src',f),'utf8')).join('\n');

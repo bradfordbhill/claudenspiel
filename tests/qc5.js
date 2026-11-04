@@ -27,7 +27,7 @@ T('Eye of Newt',()=>{ game('Cryptkeeper'); A({t:'sbPlace',id:'sanctuary',k:'5,5'
 T('Exile',()=>{ game('Archbishop','Hedonist'); A({t:'sbPlace',id:'fairgrounds',k:'1,0'}); A({t:'sbClaim',k:'1,0',owner:1}); const x=give('exile'); A({t:'cast',uid:x}); ans('1,0');
   chk('Exile',!top('1,0').claimants.length&&st.players[1].meeples===8,'claim removed, meeple home'); });
 T('You’ll Regret That',()=>{ game('Warmonger','Archbishop'); A({t:'endTurn'}); A({t:'startTurn'}); st.players[1].ap=99; A({t:'play',uid:st.players[1].foundationUid,k:'0,1'}); A({t:'sbPlace',id:'sanctuary',k:'2,0'}); A({t:'sbClaim',k:'2,0',owner:1});
-  const y=give('youll-regret-that',1); chk('You’ll Regret That',!!E.playBlock(st,1,y),'cannot be played normally'); A({t:'endTurn'}); A({t:'startTurn'}); st.players[0].ap=99;
+  const y=give('youll-regret-that',1); chk('You’ll Regret That',!E.playBlock(st,1,y),'can be played normally too'); A({t:'endTurn'}); A({t:'startTurn'}); st.players[0].ap=99;
   const t=give('trebuchet'); A({t:'play',uid:t,k:'-1,0'}); ans('2,0'); while(st.pending&&/Repent/.test(st.pending.prompt)) ans(false);   // the deal may also hold Repent: decline it
   chk('You’ll Regret That',st.pending&&st.pending.kind==='confirm'&&st.pending.player===1&&/Regret/.test(st.pending.prompt),'victim is asked'); ans(true);
   chk('You’ll Regret That',E.noIncome(st,'-1,0')&&!st.players[1].hand.includes(y),'Trebuchet cursed'); });

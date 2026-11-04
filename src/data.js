@@ -2729,7 +2729,7 @@ var KData = (function () {
     "cost": 3,
     "copies": 1,
     "income": 0,
-    "text": "When a Structure is used to Ruin a card you own, you may play this from your hand to Curse that Structure. That Structure can no longer produce ●.",
+    "text": "When a Structure is used to Ruin a card you own, you may play this from your hand to Curse that Structure. That Structure can no longer produce ●. Or play it on your turn: choose any card next to one of yours; it produces no ●.",
     "place": [
      "N",
      "E",
@@ -2743,7 +2743,12 @@ var KData = (function () {
     "sees": {
      "area": "none"
     },
-    "onPlay": [],
+    "onPlay": [
+     {
+      "do": "curse",
+      "area": "adjacentToOwn"
+     }
+    ],
     "curse": {
      "mode": "under",
      "effect": "noIncome"
@@ -2752,12 +2757,13 @@ var KData = (function () {
     "perTurn": null,
     "incomePerToken": 0,
     "mods": {
-     "reaction": "ruinedByStructure"
+     "reaction": "ruinedByStructure",
+     "alsoPlay": true
     },
     "archetype": "",
     "weakTo": "",
     "art": "",
-    "note": "Played as a reaction on another player’s turn, at no cost."
+    "note": "Free as a reaction on another player’s turn; 3● to play from your hand."
    },
    {
     "id": "overwhelming-evidence",

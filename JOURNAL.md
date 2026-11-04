@@ -2,6 +2,10 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 4 November 2026 · 0.7, no dead cards
+
+You’ll Regret That was the last card that could only be revealed as a reaction; a hand card that often can’t do anything is a design bug (see 0.1's Revenge and Repent). It now also plays normally: 3●, Curse any card next to one of yours so it makes no ●, using the existing Curse machinery (`mods.alsoPlay`). The reaction is unchanged. Tests updated (cs1, qc5) and a new `tests/cs6-regret.js` plays it from hand. Not measured with bots yet; the Genius still needs updating first (see 0.6), so no balance claim is made.
+
 ## 4 November 2026 · 0.6, the market on trial, and a broken yardstick
 
 **The market** (the second edition's first pillar) is in, as an optional rule: three face-up cards, and each of a turn's draws is a market card or the top of the deck, taken at any point in the turn. Bots take a market card when its keep value clears a bar, otherwise draw blind.
