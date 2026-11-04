@@ -2,6 +2,26 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 4 November 2026 · 0.9, two pillars judged by the mended yardstick
+
+**Burn** (the second edition's "two uses per card", first shape): once a turn, discard a card from hand for a one-time effect set by its suit (Goblet +5●, Tome draw 2, Leaf +2◇, Sceptre claim again, Sword rivals' cards need one fewer enemy this turn, Bone buried under your own card). An optional rule (`burn: true`), with bots, interface and `tests/cs7-burn.js`.
+
+**The Genius plans the new choices.** Its opening lines now include each market card, the blind draw and each burn; before, it left them to the same rule of thumb as every bot. With both rules off its play is unchanged, so the +10 baseline stands.
+
+**Skill expression** (paired, 2 players, Genius vs tactician, deals 0–100 and 1000–1099):
+
+| Rules | Genius | Tactician | Gap | Flips (+/−) |
+|---|---|---|---|---|
+| Base (0.8) | 60.2% | 50.2% | +10.0 (p≈0.02) | 46 / 26 |
+| Market, Genius not planning picks | 55.2% | 52.7% | +2.5 (p≈0.64) | 39 / 34 |
+| **Market, Genius planning picks** | **63.7%** | **52.7%** | **+10.9 (p≈0.02)** | 53 / 31 |
+| Burn, Genius planning burns | 62.7% | 55.7% | +7.0 (p≈0.11) | 40 / 26 |
+
+**What it says.**
+- *The market's choice is real:* planning the picks is worth about 8 points (+2.5 → +10.9), and more deals turn on who sits in the seat (84 flips against 72). But the total gap is level with the base game, not above it: the market adds a decision and removes some of the deal's luck about equally. It stays a candidate: worth keeping if a later pillar makes the picks matter more (influence, where denying a rival their card is worth more).
+- *Burn adds nothing measurable.* A suit-wide effect makes every Goblet the same burn, so it is one more near-interchangeable option, which is the diagnosis's very complaint ("many choices, few decisions"). The real version is a burn effect *per card*, chosen so a card's two uses pull against each other. That needs card-by-card design and waits for the card pass.
+- Neither moved the number to 65%. Adding options to a turn of parallel solitaire does not, on its own, make decisions matter. Next: **influence** (contested claims), the pillar that changes what decisions are *about*.
+
 ## 4 November 2026 · 0.7, no dead cards
 
 You’ll Regret That was the last card that could only be revealed as a reaction; a hand card that often can’t do anything is a design bug (see 0.1's Revenge and Repent). It now also plays normally: 3●, Curse any card next to one of yours so it makes no ●, using the existing Curse machinery (`mods.alsoPlay`). The reaction is unchanged. Tests updated (cs1, qc5) and a new `tests/cs6-regret.js` plays it from hand. Not measured with bots yet; the Genius still needs updating first (see 0.6), so no balance claim is made.

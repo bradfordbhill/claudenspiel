@@ -1,6 +1,10 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-0.9', date: '4 November 2026', title: 'Claudenspiel 0.9: Burn (on trial)', notes: [
+    'Another piece of the second edition, to try: tick <b>Burn</b> on the New game page. Once a turn, discard a card from your hand for a one-time effect set by its suit: Goblet +5●, Tome draw 2, Leaf +2◇, Sceptre claim again, Sword (this turn rivals’ cards need one fewer enemy to be Overwhelmed), Bone (bury it under one of your own cards). Select a card and click <b>Burn</b>.',
+    'With the Market or Burn on, the <b>Genius</b> now plans its market picks and burns instead of following a rule of thumb.'
+  ] },
   { v: 'cs-0.8', date: '4 November 2026', title: 'Claudenspiel 0.8: a sharper Genius', notes: [
     'The <b>Genius bot</b> is stronger: it now plays out each imagined turn the way the tactician plays, and judges where that leaves it the tactician’s way. Measured on the same deals, it wins 60% of 2-player games where a tactician in its seat wins 50%.',
     'It still plays fair: it sees only what you would see.'

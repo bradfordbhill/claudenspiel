@@ -22,7 +22,10 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 0.2 A second claim: once a turn, pay 10● (this turn's ●, not Reserves) to claim once more.
 - ✅ 0.2 Banking: each full 6● left unspent becomes 1◇ at the end of your turn (at most 2◇).
 - ○ Upkeep: cards costing 15● or more cost 2● a turn, or they flip face down (no ◇) until paid.
-- ○ A market row: three face-up cards beside the deck; buy one into your hand for its cost minus 3.
+- ✅ 0.6 A market row (on trial): three face-up cards; each draw is one of them or the deck. 0.9: skill gap +10.9 with the Genius planning picks, level with the base game. Kept as a candidate for influence.
+- ✅ 0.9 Burn (on trial): once a turn, discard a card for its suit's one-time effect. Skill gap +7.0: no gain, since one effect per suit is just more interchangeable options.
+- ○ Per-card burns: each card gets its own one-time effect, chosen to pull against its lasting use (the real "two uses"). Waits for the card pass.
+- ▶ Influence: meeples on cards, the most influence controls a card, claims can be contested (the next second-edition pillar).
 
 ## Turn structure and pacing
 - ✅ 0.1 The last round: reaching the target starts it, everyone gets the same number of turns, the highest total wins.
