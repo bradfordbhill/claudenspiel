@@ -248,6 +248,7 @@
       grounds: function (id) { if (id === 'marsh') { for (var i = 0; i < 3; i++) tone('square', 180 + i * 40, 0.06, 0.05, i * 0.12, 0.6); noise('lowpass', 400, 0.4, 0.2); }
         else if (id === 'battlefield') { tone('sawtooth', 147, 0.7, 0.08, 0, 1.01); tone('sawtooth', 220, 0.6, 0.05, 0.08); }
         else { for (var j = 0; j < 4; j++) noise('bandpass', 300 + j * 60, 0.08, 0.3, j * 0.09); } },
+      burn: function (suit) { noise('bandpass', 900, 0.5, 0.25); noise('highpass', 2400, 0.3, 0.08, 0.1); tone('sine', (SUIT[suit] || 700) / 2, 0.4, 0.08, 0.15, 0.5); },
       claim: function () { noise('lowpass', 260, 0.16, 0.7); tone('sine', 110, 0.18, 0.4, 0, 0.7); },
       coin: function (n) { for (var i = 0; i < (n || 1); i++) { tone('triangle', 2500 + i * 180, 0.18, 0.12, i * 0.09); tone('triangle', 3300 + i * 140, 0.12, 0.08, i * 0.09 + 0.03); } },
       ruin: function (over) { noise('highpass', 1600, 0.12, 0.6); noise('lowpass', 500, 0.35, 0.4, 0.05); if (over) for (var i = 0; i < 6; i++) noise('lowpass', 160, 0.08, 0.35, i * 0.05); },
@@ -296,6 +297,7 @@
       if ((act.t === 'play' || act.t === 'sbPlace') && act.k && E.top(b, act.k)) { var lu = E.top(b, act.k), ld = E.rawDef(b, lu); ev.push({ t: 'land', k: act.k, suit: ld.suit, grounds: ld.type === 'Grounds' ? ld.id : null }); }
       if (act.t === 'claim') ev.push({ t: 'claim', k: act.k, p: a.cur });
       if (act.t === 'buyClaim') ev.push({ t: 'buy' });
+      if (act.t === 'burn' && b.turn && b.turn.burned) ev.push({ t: 'burn', suit: b.turn.burned, k: act.k || null });
       var banked = b.log.slice(a.log.length).filter(function (l) { return / banks \d◇ from unspent/.test(l); });
       if (banked.length) ev.push({ t: 'bank', p: a.cur, n: +(/banks (\d)/.exec(banked[0]) || [0, 1])[1] });
       if (b.lastRound && !a.lastRound) ev.push({ t: 'lastround' });
@@ -370,6 +372,7 @@
         if (e.t === 'land') { if (e.grounds) SFX.play('grounds', e.grounds); else SFX.play('play', e.suit); }
         else if (e.t === 'claim') SFX.play('claim');
         else if (e.t === 'buy') SFX.play('coin', 2);
+        else if (e.t === 'burn') SFX.play('burn', e.suit);
         else if (e.t === 'bank') SFX.play('coin', e.n);
         else if (e.t === 'crumble') SFX.play('ruin', e.over);
         else if (e.t === 'cursed') SFX.play('curse');
@@ -382,6 +385,7 @@
         if (e.t === 'land' && !calm) land(e.k);
         if (e.t === 'claim' && !calm) { var rcl = cellRect(e.k), st = cur() && cur().state; if (rcl) puff(rcl, (st && st.players[e.p] && st.players[e.p].color) || '#888', 80); }
         if (e.t === 'buy') popup('Second claim', 'ap', center(), 0);
+        if (e.t === 'burn') popup('🔥 ' + BURN_TEXT[e.suit](), 'ap', cellRect(e.k) || center(), 0);
         if (e.t === 'bank') { var jr = rectOf('[data-fx="jar"]'), pr = rectOf('[data-fx="pile-' + e.p + '"]'); if (jr) popup('+' + e.n + '◇ banked', 'vp', jr, 0); if (jr && pr && !calm) { pr.p = e.p; fly('vp', jr, pr, e.n * 3, 200); } }
         if (e.t === 'lastround') banner('🔔 The last round');
         if (e.t === 'cursed') { var rc = cellRect(e.k); if (rc) { popup('Cursed!', 'curse', rc, i * 100); if (!calm) flare(rc, i * 100); } }
@@ -743,6 +747,14 @@
   }
 
   /* ---------------- inspector ---------------- */
+  // Burn (second edition, on trial): what a card of each suit gives when burned, and the button for the selected card.
+  var BURN_TEXT = { Goblet: function () { return '+' + E.BURN.Goblet + '●'; }, Tome: function () { return 'draw ' + E.BURN.Tome; }, Leaf: function () { return '+' + E.BURN.Leaf + '◇'; }, Sceptre: function () { return 'claim again'; }, Sword: function () { return 'rivals’ cards need one fewer enemy this turn'; }, Bone: function () { return 'bury it under your own card'; } };
+  function burnBtn(ctx) {
+    var st = ctx.state, u = ctx.ui.hand; if (!st.opts.burn || !u || !myTurn(ctx) || !st.turn || !st.turn.started || st.turn.burned) return '';
+    var d = E.rawDef(st, u); if (d.type === 'Foundation') return '';
+    var why = d.suit === 'Bone' ? (E.kingdom(st, st.cur).length ? null : 'You have no card to bury it under.') : E.burnBlock(st, st.cur, u);
+    return ' <button class="btn sm burn" data-act="burn"' + (why ? ' disabled title="' + esc(why) + '"' : ' title="Once a turn: discard this card for a one-time effect set by its suit"') + '>Burn: ' + esc(BURN_TEXT[d.suit] ? BURN_TEXT[d.suit]() : '') + '</button>';
+  }
   // Right-hand panel: the selected hand card, or the selected board card with its details and buttons.
   function inspector(ctx) {
     var st = ctx.state, ui = ctx.ui, h = '';
@@ -954,7 +966,7 @@
 
   /* ----- new game ----- */
   // New game page options, kept for the next game.
-  var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 52, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true, market: 0 };
+  var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 52, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true, market: 0, burn: false };
   (function () { var s = lsGet('cs.setup'); if (s && s.players && s.players.length) for (var k in s) setup[k] = s[k]; })();   // the last game's setup
   function archetypes() { return sortLib(app.lib.filter(function (c) { return c.type === 'Foundation' && c.archetype; })); }
   function ensureSetup() {
@@ -995,6 +1007,7 @@
       '<label>Last round</label><label><input type="checkbox" data-set="lastRound"' + (setup.lastRound !== false ? ' checked' : '') + '> Reaching the target starts the last round: everyone gets the same number of turns, then the highest total wins</label>' +
       '<label>Banking</label><label><input type="checkbox" data-set="banking"' + (setup.banking !== false ? ' checked' : '') + '> At the end of your turn, every 6● you didn’t spend becomes 1◇ (at most 2◇)</label>' +
       '<label>Second claim</label><label><input type="checkbox" data-set="buyClaim"' + (setup.buyClaim !== false ? ' checked' : '') + '> Once a turn, after claiming, pay 10● to claim once more</label>' +
+      '<label>Burn</label><label><input type="checkbox" data-set="burn"' + (setup.burn ? ' checked' : '') + '> Second edition, on trial: once a turn, discard a card for a one-time effect set by its suit</label>' +
       '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
       '</div></fieldset>';
     var dup = {}, bad = false; for (var j = 0; j < setup.n; j++) { if (dup[setup.players[j].arch]) bad = true; dup[setup.players[j].arch] = 1; }
@@ -1036,11 +1049,12 @@
     if (pd && pd.kind === 'cell') return '<div class="prompt"><b>' + esc(st.players[pd.player].name) + ':</b> ' + esc(pd.prompt) + ' ' + verb() + ' an orange-outlined ' + (pd.empty ? 'space' : 'card') + '.' + (pd.optional ? ' <button class="btn sm" data-act="skip">Skip</button>' : '') + (st.res && !ctx.online ? ' <button class="btn sm" data-act="cancelEffect" title="Referee: stop resolving this effect">Cancel effect</button>' : '') + '</div>';
     if (ui.autoEnding) return '<div class="prompt"><b>Out of ●.</b> Nothing left to play, claim or use, so your turn ends in a moment. <button class="btn sm" data-act="holdTurn">Wait, I’m not done</button></div>';
     if (ui.endAsked) { var lt = leftToDo(ctx); if (lt) return '<div class="prompt">You can still ' + lt.text + ' (' + E.funds(st.players[st.cur]) + '● left). End your turn anyway? <button class="btn sm def" data-act="endTurn">End turn</button><button class="btn sm" data-act="keepPlaying">Keep playing</button><button class="linkbtn small" data-act="noEndAsk">Don’t ask again</button></div>'; }
+    if (ui.mode === 'burnBone') return '<div class="prompt">' + verb() + ' a card of your Kingdom to bury ' + esc(E.rawDef(st, ui.burnUid).name) + ' under. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
     if (ui.mode === 'reclaim') return '<div class="prompt">' + verb() + ' one of your claimed cards to take its meeple back. This ends your turn. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
     if (ui.mode === 'move') return '<div class="prompt">Referee move: click an empty space for the card from ' + esc(ui.moveFrom) + '. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
     if (ui.swap) return '<div class="prompt">Choose 2 cards to discard, then draw 1. <button class="btn sm def" data-act="doSwap"' + (ui.swap.length === 2 ? '' : ' disabled') + '>Discard 2, draw 1</button><button class="btn sm" data-act="cancelSwap">Cancel</button></div>';
-    if (ui.hand && !E.needsPlacement(E.rawDef(st, ui.hand))) { var ic = +E.rawDef(st, ui.hand).cost || 0, iok = ic <= E.funds(st.players[st.cur]), iwhy = E.playBlock(st, st.cur, ui.hand); return '<div class="prompt">' + esc(E.rawDef(st, ui.hand).name) + ' is played straight from your hand. <button class="btn sm def" data-act="cast"' + (iok && !iwhy ? '' : ' disabled') + '>' + (iwhy ? esc(iwhy) : iok ? 'Play it (' + ic + '●)' : 'Not enough AP (' + ic + '●)') + '</button> <button class="btn sm" data-act="deselect">Cancel</button></div>'; }
-    if (ui.hand) { var LC = E.legalCells(st, ui.hand), canPay = Object.keys(LC).some(function (x) { return LC[x] <= E.funds(st.players[st.cur]); }); return '<div class="prompt">' + (canPay ? verb() + ' a green space to play ' + esc(E.rawDef(st, ui.hand).name) + '.' : 'Not enough AP to play ' + esc(E.rawDef(st, ui.hand).name) + ' anywhere (you have ' + st.players[st.cur].ap + '●).') + ' <button class="btn sm" data-act="deselect">Cancel</button></div>'; }
+    if (ui.hand && !E.needsPlacement(E.rawDef(st, ui.hand))) { var ic = +E.rawDef(st, ui.hand).cost || 0, iok = ic <= E.funds(st.players[st.cur]), iwhy = E.playBlock(st, st.cur, ui.hand); return '<div class="prompt">' + esc(E.rawDef(st, ui.hand).name) + ' is played straight from your hand. <button class="btn sm def" data-act="cast"' + (iok && !iwhy ? '' : ' disabled') + '>' + (iwhy ? esc(iwhy) : iok ? 'Play it (' + ic + '●)' : 'Not enough AP (' + ic + '●)') + '</button>' + burnBtn(ctx) + ' <button class="btn sm" data-act="deselect">Cancel</button></div>'; }
+    if (ui.hand) { var LC = E.legalCells(st, ui.hand), canPay = Object.keys(LC).some(function (x) { return LC[x] <= E.funds(st.players[st.cur]); }); return '<div class="prompt">' + (canPay ? verb() + ' a green space to play ' + esc(E.rawDef(st, ui.hand).name) + '.' : 'Not enough AP to play ' + esc(E.rawDef(st, ui.hand).name) + ' anywhere (you have ' + st.players[st.cur].ap + '●).') + burnBtn(ctx) + ' <button class="btn sm" data-act="deselect">Cancel</button></div>'; }
     var co = st.turn.started && !pd && !st.res ? E.claimOptions(st, st.cur) : [];
     if (co.length) return '<div class="prompt">Claim available: ' + (verb() === 'Tap' ? 'drag your meeple onto an orange-outlined card, or tap the card' : 'your cursor is a meeple. Click an orange-outlined card') + ' to claim it (' + st.players[st.cur].meeples + ' meeples left), or keep playing.</div>';
     return hintBar(ctx);
@@ -2109,6 +2123,7 @@
     if (ui.mode === 'move') { if (!E.top(st, k)) { ui.mode = null; dispatch(ctx, { t: 'sbMove', from: ui.moveFrom, to: k }); ui.sel = k; } else { ui.sel = k; render(); } return; }
     if (ctx.kind === 'game') {
       if (ui.mode === 'reclaim') { ui.mode = null; if (!dispatch(ctx, { t: 'reclaim', k: k })) ui.mode = 'reclaim'; return; }
+      if (ui.mode === 'burnBone') { var bu = ui.burnUid; ui.mode = null; ui.burnUid = null; ui.sel = k; if (!dispatch(ctx, { t: 'burn', uid: bu, k: k })) { ui.mode = 'burnBone'; ui.burnUid = bu; } return; }
       if (myTurn(ctx) && !ui.hand && !pd && !st.res && !ui.swap && st.turn && st.turn.started && E.claimOptions(st, st.cur).indexOf(k) >= 0) { ui.sel = k; dispatch(ctx, { t: 'claim', k: k }); return; }
       if (ui.hand && !pd && myTurn(ctx)) { var L = E.legalCells(st, ui.hand); if (k in L) { var h = ui.hand; ui.sel = k; dispatch(ctx, { t: 'play', uid: h, k: k }); return; } }
       ui.sel = E.top(st, k) ? k : null; ui.hand = null; if (ui.sel && isMobile()) app.sheet = 'card'; render(); return;
@@ -2134,7 +2149,7 @@
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0 });
+        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }
@@ -2154,6 +2169,7 @@
       case 'resume': { var sv = lsGet('cs.game'); if (sv) { app.game = newCtx(sv, 'game'); app.page = 'game'; render(); } return; }
       case 'startTurn': dispatch(ctx, { t: 'startTurn' }); return;
       case 'buyClaim': dispatch(ctx, { t: 'buyClaim' }); return;
+      case 'burn': { var bh = ctx.ui.hand; if (!bh) return; if (E.rawDef(ctx.state, bh).suit === 'Bone') { ctx.ui.mode = 'burnBone'; ctx.ui.burnUid = bh; ctx.ui.hand = null; render(); return; } ctx.ui.hand = null; dispatch(ctx, { t: 'burn', uid: bh }); return; }
       case 'reclaimMode': ctx.ui.mode = 'reclaim'; render(); return;
       case 'cancelMode': ctx.ui.mode = null; render(); return;
       case 'endTurn':   // with cards you could still play or a card you could claim, ask once first

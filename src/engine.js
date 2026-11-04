@@ -354,6 +354,14 @@ var KEngine = (function () {
   }
   // n = enemy-suit neighbours; th = how many it takes to Overwhelm (3 by default,
   // 8 for Foundations, which also count diagonals), adjusted by burials and Curses.
+  // Burn (opts.burn): what each suit gives when a card is burned from hand.
+  var BURN = { Goblet: 5, Tome: 2, Leaf: 2 };
+  function burnBlock(st, p, uid, k) {
+    var s = rawDef(st, uid).suit, pl = st.players[p];
+    if (s === 'Sceptre') { if (!st.turn.claimed) return 'Burn a Sceptre after your claim, to claim again.'; if (pl.meeples <= 0) return 'You have no meeples left.'; }
+    if (s === 'Bone') { if (k == null || kingdom(st, p).indexOf(k) < 0) return 'Choose a card of your Kingdom to bury it under.'; }
+    return null;
+  }
   function overwhelmCount(st, k) {
     var u = top(st, k); if (!u) return null;
     // Grounds are never Overwhelmed and never count as an enemy; their owShift moves the number for cards next to them.
@@ -364,6 +372,7 @@ var KEngine = (function () {
     var th = d.overwhelm != null && d.overwhelm !== '' ? +d.overwhelm : (fd ? 8 : 3), bonus = st.opts.burySuitOW ? onSuitBuried(st, k) : 0;
     n4(k).forEach(function (x) { var t = top(st, x); if (isGrounds(st, t) && active(st, x)) bonus += +((def(st, t).mods || {}).owShift || 0); });
     var minus = curseFx(st, k, 'owMinus') + curseFx(st, k, 'intoxicate');
+    if (st.turn && st.turn.burned === 'Sword' && st.cards[u].claimants.length && st.cards[u].claimants.indexOf(st.cur) < 0) minus++;
     return { n: n, th: Math.max(1, th + bonus - minus), bonus: bonus, minus: minus };
   }
   // Overwhelm every card at or past its threshold. Repeats, since one Overwhelm can set off another.
@@ -1118,7 +1127,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -1332,6 +1341,27 @@ var KEngine = (function () {
         bp.ap -= CLAIM_PRICE; st.turn.claimed = false; st.turn.boughtClaim = true; log(st, bp.name + ' pays ' + CLAIM_PRICE + '● for a second claim.'); return st;
       }
 
+      // Burn (second-edition rule, on trial, opts.burn): once a turn, discard a card from hand for a one-time effect set by its
+      // suit, so every card has two uses: build it, or burn it. Bone is buried under a card of your Kingdom (a.k) instead.
+      case 'burn': {
+        if (!st.opts.burn) return err(st, 'Burning cards is switched off for this game.');
+        if (st.pending || st.res) return err(st, 'Finish the current effect first.');
+        if (!st.turn.started) return err(st, 'Start your turn first.');
+        if (st.turn.burned) return err(st, 'You can burn only one card a turn.');
+        var bpl = st.players[p], bu = a.uid; if (bpl.hand.indexOf(bu) < 0) return err(st, 'That card is not in your hand.');
+        if (isFoundation(st, bu)) return err(st, 'You cannot burn your Foundation.');
+        var bs = rawDef(st, bu).suit, bn = rawDef(st, bu).name, why2 = burnBlock(st, p, bu, a.k); if (why2) return err(st, why2);
+        removeFromHand(st, p, bu); st.turn.burned = bs;
+        if (bs === 'Bone') { st.board[a.k].splice(1, 0, bu); log(st, bpl.name + ' burns ' + bn + ': buried under ' + rawDef(st, top(st, a.k)).name + '.'); onBuried(st, bu, a.k); afterBoardChange(st, p); return st; }
+        st.discard.push(bu);
+        if (bs === 'Goblet') { bpl.ap = (bpl.ap || 0) + BURN.Goblet; log(st, bpl.name + ' burns ' + bn + ' for ' + BURN.Goblet + '●.'); }
+        if (bs === 'Tome') { var bg = draw(st, p, BURN.Tome); log(st, bpl.name + ' burns ' + bn + ' and draws ' + bg + '.'); }
+        if (bs === 'Leaf') { bpl.tokens = (bpl.tokens || 0) + BURN.Leaf; log(st, bpl.name + ' burns ' + bn + ' for ' + BURN.Leaf + '◇.'); }
+        if (bs === 'Sceptre') { st.turn.claimed = false; log(st, bpl.name + ' burns ' + bn + ' to claim again.'); }
+        if (bs === 'Sword') { log(st, bpl.name + ' burns ' + bn + ': this turn, rivals’ cards need one fewer enemy to be Overwhelmed.'); afterBoardChange(st, p); }
+        return st;
+      }
+
       // Discard 2 cards, draw 1.
       case 'swap': {
         if (st.pending || st.res) return err(st, 'Finish the current effect first.');
@@ -1475,7 +1505,7 @@ var KEngine = (function () {
   return {
     // Public API, used by ui.js, the tests and the tools.
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
-    legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
+    burnBlock: burnBlock, BURN: BURN, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
     archInfo: archInfo, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };

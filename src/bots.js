@@ -171,7 +171,7 @@ var KBots = (function () {
   // 'quick' (the Genius's model of its opponents) looks at fewer spaces; 'gsim' (the Genius thinking) at more, and it
   // plays anything that helps, since ● left at the end of a turn is lost anyway.
   function mainPhase(st,p,strat,stats){ const pl=()=>st.players[p], gs=strat==='gsim', cells=strat==='quick'?8:gs?16:14;
-    st=marketDraws(st,p);
+    st=marketDraws(st,p); st=burnCard(st,p,strat,stats);
     if(!pl().foundationPlaced){ const s=placeFoundation(st,p,strat); if(s) st=s; }
     if(strat!=='greedy'&&strat!=='quick') st=useAbilities(st,p,strat,stats);
     for(let it=0; it<6; it++){ let best=null,bv=gs?0.05:0.5; const cash=E.funds(pl());
@@ -183,7 +183,7 @@ var KBots = (function () {
       if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; } }
     if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; }
     if(strat!=='greedy'&&strat!=='quick') st=useAbilities(st,p,strat,stats); else st=useAbilities(st,p,'greedy',stats);
-    st=buyClaim(st,p,strat,stats);
+    st=burnCard(st,p,strat,stats); st=buyClaim(st,p,strat,stats);
     return swapDead(st,p,stats); }
   // Claudenspiel: what laying a Grounds card does, which the ◇-and-● scoring can't see: Marsh shelters the bot's own cards
   // that are close to Overwhelm, Battlefield exposes rivals' cards, Crossroads opens cheap spaces next to its own.
@@ -194,6 +194,19 @@ var KBots = (function () {
   function marketDraws(st,p){ let g=0; while(st.opts.market&&st.turn&&st.turn.toDraw>0&&g++<6){ const pr=profile(st,p), ks=suitsFor(st,p,pr);
       let best=null,bv=MARKET_BAR; (st.market||[]).forEach(u=>{ const v=keepValue(st,p,u,pr,ks)+(E.playBlock(st,p,u)?-9:0); if(v>bv){bv=v;best=u;} });
       const s=ap(st,{t:'draw',from:best||'deck'}); if(!s) break; st=s; } return st; }
+  // Burn (opts.burn): try burning each card in hand (a Bone under each card of the Kingdom, a Sceptre followed by its best
+  // claim) and keep the best, if it beats what the card is worth kept. ● and cards in hand count by rough exchange rates
+  // (6● bank for 1◇; a card in hand is worth about 0.6◇ of pace), since the score alone can't see them.
+  let BURN_KEEP=+(typeof process!=='undefined'&&process.env&&process.env.CS_BURNKEEP!=null?process.env.CS_BURNKEEP:0.5);
+  function burnCard(st,p,strat,stats){ if(!st.opts.burn||!st.turn||!st.turn.started||st.turn.burned||st.pending||st.res) return st;
+    const pr=profile(st,p), ks=suitsFor(st,p,pr), pl=st.players[p]; let best=null,bv=0.3;
+    const worth=(s)=>evalState(st,s,p,strat)+(strat==='gsim'?0:0.15*((s.players[p].ap||0)-(pl.ap||0))+0.6*(s.players[p].hand.length-pl.hand.length+1));
+    for(const u of pl.hand){ const d=E.rawDef(st,u); if(d.type==='Foundation') continue; const kv=BURN_KEEP*keepValue(st,p,u,pr,ks);
+      const tries=d.suit==='Bone'?E.kingdom(st,p).slice(0,8).map(k=>({t:'burn',uid:u,k})):[{t:'burn',uid:u}];
+      for(const a of tries){ let s=ap(st,a); if(!s) continue; if(s.pending) s=resolve(s,p,strat); if(!s||s.pending) continue;
+        if(d.suit==='Sceptre'){ const c=bestClaim(s,p,strat); if(!c) continue; s=c; }
+        const v=worth(s)-kv; if(v>bv){bv=v;best={s,d};} } }
+    if(!best) return st; stats.burned=stats.burned||{}; stats.burned[best.d.suit]=(stats.burned[best.d.suit]||0)+1; return best.s; }
   // Claudenspiel: pay for a second claim when the best claim is worth more than the ● would bank (10● ≈ 1.7◇).
   function buyClaim(st,p,strat,stats){ if(!st.opts.buyClaim||!st.turn.claimed||st.turn.boughtClaim) return st;
     const s=ap(st,{t:'buyClaim'}); if(!s) return st; const c=bestClaim(s,p,strat); if(!c) return st;
