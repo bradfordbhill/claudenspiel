@@ -565,6 +565,14 @@ h1.logo.small { width: 300px; }
 @keyframes cs-flicker { 0% { transform: translateX(0) scaleY(1); } 33% { transform: translateX(1px) scaleY(.8); } 66% { transform: translateX(-1px) scaleY(1.15); } }
 :root:not([data-motion="off"]) .candle i { animation: cs-flicker .45s steps(3) infinite; }
 @media (prefers-reduced-motion: reduce) { .gchev.hot, .candle i { animation: none !important; } }
+/* The market row (second-edition rule) */
+.market { padding: 4px 8px; margin: 2px 0; }
+.market .mhead { display: flex; gap: 10px; align-items: baseline; }
+.market .mrow { display: flex; gap: 6px; align-items: center; overflow-x: auto; padding: 4px 0; }
+.market .mcard { position: relative; flex: 0 0 auto; }
+.market .mdeck { display: grid; gap: 4px; justify-items: center; padding: 0 8px; }
+.market .mcard { width: 112px; height: 154px; overflow: hidden; }
+.market .mcard > :first-child { transform: scale(.75); transform-origin: top left; width: 133%; }
 </style></head><body><div id="app"></div><script>
 /* Kartenspiel — starter data. Card definitions are plain JSON so they can live in a db later. */
 var KData = (function () {
@@ -4174,6 +4182,17 @@ var KEngine = (function () {
     var u = st.deck.shift(); st.players[p].hand.push(u); return u;
   }
   function draw(st, p, n) { var got = 0; for (var i = 0; i < n; i++) if (drawOne(st, p)) got++; return got; }
+  // The market (the second edition's first pillar, opts.market = how many face-up cards): fill it up from the deck.
+  function refillMarket(st) { st.market = st.market || []; while (st.market.length < st.opts.market) {
+      if (!st.deck.length && st.discard.length) { st.deck = shuffle(st.discard, st); st.discard = []; log(st, 'Discard pile shuffled into the deck.'); }
+      if (!st.deck.length) break; st.market.push(st.deck.shift()); } }
+  // Take one of this turn's draws: a market card (its uid) or the top of the deck ('deck').
+  function takeDraw(st, p, from) {
+    var pl = st.players[p];
+    if (from === 'deck' || from == null) { var u = drawOne(st, p); st.turn.toDraw--; log(st, pl.name + ' draws a card from the deck.'); return u; }
+    var i = (st.market || []).indexOf(from); if (i < 0) return null;
+    st.market.splice(i, 1); pl.hand.push(from); st.turn.toDraw--; log(st, pl.name + ' takes ' + rawDef(st, from).name + ' from the market.'); refillMarket(st); return from;
+  }
   // Wipe a card's in-play state and put it on the discard pile.
   function toDiscard(st, uid) { var c = st.cards[uid]; c.banked = {}; c.free = null; c.ruined = false; c.suit = null; c.claimants = []; c.tokens = 0; c.copyOf = null; st.discard.push(uid); }
   // bank ◇ tokens for player p, remembering which card they came from (for the VP overlay)
@@ -5110,9 +5129,11 @@ var KEngine = (function () {
     if (st.opts.seatStart && pl.turns === 1 && !pl.foundationPlaced) pl.ap = 3 * (p + 1);
     if (pl.debt) { log(st, pl.name + ' pays ' + Math.min(pl.debt, pl.ap) + '● owed for reactions.'); pl.ap = Math.max(0, pl.ap - pl.debt); pl.debt = 0; }
     kingdom(st, p).forEach(function (k) { st.turn.paid[top(st, k)] = 1; });
-    var got = draw(st, p, st.opts.drawPerTurn != null ? +st.opts.drawPerTurn : 1);
+    var perTurn = st.opts.drawPerTurn != null ? +st.opts.drawPerTurn : 1;
+    // With a market, the turn's draws are taken during the turn (the 'draw' action); any left are drawn blind at its end.
+    var got = 0; if (st.opts.market) st.turn.toDraw = perTurn; else got = draw(st, p, perTurn);
     st.turn.started = true;
-    log(st, pl.name + ' gains ' + pl.ap + '● and draws ' + got + '.');
+    log(st, pl.name + ' gains ' + pl.ap + '●' + (st.opts.market ? ' and has ' + st.turn.toDraw + ' draws to take.' : ' and draws ' + got + '.'));
   }
   // Pass to the next player who isn't out. Wrapping back to seat 0 starts a new round.
   function nextPlayer(st) {
@@ -5147,9 +5168,9 @@ var KEngine = (function () {
   // (see opts). A sandbox has no deck or turns.
   function newGame(defs, setup) {
     var st = {
-      v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], board: {}, cards: {}, uid: 1,
+      v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -5166,6 +5187,7 @@ var KEngine = (function () {
       defs.forEach(function (d) { if (d.type === 'Foundation') return; for (var i = 0; i < (+d.copies || 0); i++) st.deck.push(mk(d.id)); });
       shuffle(st.deck, st);
       st.players.forEach(function (pl, i) { draw(st, i, st.opts.handSize); });
+      if (st.opts.market) refillMarket(st);
       // Seat handicap (Claudenspiel): with the last round, later seats see the score to beat, so earlier seats start
       // with opts.seatTokens◇ for every seat after them.
       // seatTokens is ◇ per later seat, or a list with each seat's ◇; the default list depends on the table size.
@@ -5339,6 +5361,16 @@ var KEngine = (function () {
         startRes(st, 'ability', au, ak, steps); return st;
       }
 
+      // Take a draw (the market): a.from is a market card's uid or 'deck'.
+      case 'draw': {
+        if (!st.opts.market) return err(st, 'There is no market in this game.');
+        if (st.pending || st.res) return err(st, 'Finish the current effect first.');
+        if (!st.turn.started) return err(st, 'Start your turn first.');
+        if (!(st.turn.toDraw > 0)) return err(st, 'You have taken all your draws this turn.');
+        if (a.from !== 'deck' && (st.market || []).indexOf(a.from) < 0) return err(st, 'That card is not in the market.');
+        takeDraw(st, p, a.from); return st;
+      }
+
       // Buy a second claim (Claudenspiel): once a turn, after claiming, pay CLAIM_PRICE● to claim again.
       case 'buyClaim': {
         if (!st.opts.buyClaim) return err(st, 'Buying a claim is switched off for this game.');
@@ -5369,6 +5401,7 @@ var KEngine = (function () {
         if (!st.turn.started) return err(st, 'Start your turn first.');
         var ep = st.players[p];
         if (!ep.foundationPlaced && ep.turns >= st.opts.foundationBy && st.opts.foundationBy > 0) return err(st, 'You must place your Foundation by your turn ' + st.opts.foundationBy + '.');
+        if (st.opts.market) while (st.turn.toDraw > 0) takeDraw(st, p, 'deck');   // unused draws come blind
         // Banking (Claudenspiel): every full BANK_RATE● left unspent becomes a 1◇ token, at most BANK_MAX a turn.
         if (st.opts.banking) { var bk = Math.min(BANK_MAX, Math.floor((ep.ap || 0) / BANK_RATE)); if (bk > 0) { ep.tokens = (ep.tokens || 0) + bk; ep.ap -= bk * BANK_RATE; log(st, ep.name + ' banks ' + bk + '◇ from unspent ●.'); } }
         endOfTurnEffects(st); afterBoardChange(st, p);
@@ -5673,6 +5706,7 @@ var KBots = (function () {
   // 'quick' (the Genius's model of its opponents) looks at fewer spaces; 'gsim' (the Genius thinking) at more, and it
   // plays anything that helps, since ● left at the end of a turn is lost anyway.
   function mainPhase(st,p,strat,stats){ const pl=()=>st.players[p], gs=strat==='gsim', cells=strat==='quick'?8:gs?16:14;
+    st=marketDraws(st,p);
     if(!pl().foundationPlaced){ const s=placeFoundation(st,p,strat); if(s) st=s; }
     if(strat!=='greedy'&&strat!=='quick') st=useAbilities(st,p,strat,stats);
     for(let it=0; it<6; it++){ let best=null,bv=gs?0.05:0.5; const cash=E.funds(pl());
@@ -5690,6 +5724,11 @@ var KBots = (function () {
   // that are close to Overwhelm, Battlefield exposes rivals' cards, Crossroads opens cheap spaces next to its own.
   function groundsWorth(st0,st,p){ return GROUNDS_W*((danger(st0,p)-danger(st,p)) + 0.6*(pressure(st,p)-pressure(st0,p))); }
   let GROUNDS_W=+(typeof process!=='undefined'&&process.env&&process.env.CS_GROUNDS!=null?process.env.CS_GROUNDS:1);
+  // The market: take a face-up card worth keeping (by the archetype's keep value), else draw blind. Done first, for options.
+  let MARKET_BAR=+(typeof process!=='undefined'&&process.env&&process.env.CS_MARKETBAR!=null?process.env.CS_MARKETBAR:1.8);
+  function marketDraws(st,p){ let g=0; while(st.opts.market&&st.turn&&st.turn.toDraw>0&&g++<6){ const pr=profile(st,p), ks=suitsFor(st,p,pr);
+      let best=null,bv=MARKET_BAR; (st.market||[]).forEach(u=>{ const v=keepValue(st,p,u,pr,ks)+(E.playBlock(st,p,u)?-9:0); if(v>bv){bv=v;best=u;} });
+      const s=ap(st,{t:'draw',from:best||'deck'}); if(!s) break; st=s; } return st; }
   // Claudenspiel: pay for a second claim when the best claim is worth more than the ● would bank (10● ≈ 1.7◇).
   function buyClaim(st,p,strat,stats){ if(!st.opts.buyClaim||!st.turn.claimed||st.turn.boughtClaim) return st;
     const s=ap(st,{t:'buyClaim'}); if(!s) return st; const c=bestClaim(s,p,strat); if(!c) return st;
@@ -6055,6 +6094,10 @@ if (typeof module !== 'undefined') module.exports = KCardArt;
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-0.6', date: '4 November 2026', title: 'Claudenspiel 0.6: the market (on trial)', notes: [
+    'A first piece of the second edition, to try: tick <b>Market</b> on the New game page. Three cards lie face up; each of your turn’s draws can be one of them or the top of the deck, at any point in your turn. Draws you leave are drawn blind when you end it.',
+    'Hover a market card to read it; the race bar and the market sit together above the board.'
+  ] },
   { v: 'cs-0.5', date: '4 November 2026', title: 'Claudenspiel 0.5: a word in your ear', notes: [
     '<b>Why is this good?</b> On your turn, hover a card in your hand: the magnified card shows what it would gain you at its best space right now, claimed if you still can.',
     '<b>Palace</b> scores 2◇ per Goblet card you don’t own (was 3◇): the Hedonist was strongest, most of all at big tables.',
@@ -6880,7 +6923,15 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       '<button class="btn sm" data-act="suits" title="Which suits pressure which">Suits</button>' +
       '<label>Overlay <select data-sel="overlay">' + [['none', 'None'], ['quick', 'Quickview (● and ◇)'], ['war', 'War (Overwhelm)']].map(function (o) { return '<option value="' + o[0] + '"' + ((u.overlay || 'none') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       overlayTotal(ctx) +
-      '<span class="muted legend">Yellow: what the selected card sees (filled = counted). Blue: cards that see it.</span></div>' + raceBar(ctx);
+      '<span class="muted legend">Yellow: what the selected card sees (filled = counted). Blue: cards that see it.</span></div>' + raceBar(ctx) + marketBar(ctx);
+  }
+  // The market (second-edition rule): face-up cards anyone can take as one of their draws, and the deck.
+  function marketBar(ctx) {
+    var st = ctx.state; if (ctx.kind !== 'game' || !st.opts.market) return '';
+    var can = myTurn(ctx) && st.turn && st.turn.started && st.turn.toDraw > 0 && !st.pending && !st.res;
+    return '<div class="market raised"><div class="mhead"><b>Market</b><span class="small muted">' + (can ? 'Take ' + st.turn.toDraw + ' more: a face-up card, or the top of the deck. Any you leave are drawn blind when you end your turn.' : st.turn && st.turn.started && myTurn(ctx) ? 'All draws taken this turn.' : 'Face-up cards, open to everyone on their turn.') + '</span></div><div class="mrow">' +
+      (st.market || []).map(function (u) { var d = E.rawDef(st, u); return '<div class="hcard mcard">' + defFace(d, { tex: u }) + (can ? '<button class="cellbtn" data-take="' + u + '" data-hand="' + u + '" aria-label="Take ' + esc(d.name) + '"></button>' : '<span class="cellbtn" data-hand="' + u + '"></span>') + '</div>'; }).join('') +
+      '<div class="mdeck"><div class="small muted">Deck ' + st.deck.length + '</div>' + (can ? '<button class="btn sm" data-take="deck">Draw blind</button>' : '') + '</div></div></div>';
   }
   // Claudenspiel: the race to the target, every player on one track. A bell marks the last round once it has begun.
   function raceBar(ctx) {
@@ -7106,7 +7157,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
 
   /* ----- new game ----- */
   // New game page options, kept for the next game.
-  var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 52, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true };
+  var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 52, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true, market: 0 };
   (function () { var s = lsGet('cs.setup'); if (s && s.players && s.players.length) for (var k in s) setup[k] = s[k]; })();   // the last game's setup
   function archetypes() { return sortLib(app.lib.filter(function (c) { return c.type === 'Foundation' && c.archetype; })); }
   function ensureSetup() {
@@ -7147,6 +7198,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       '<label>Last round</label><label><input type="checkbox" data-set="lastRound"' + (setup.lastRound !== false ? ' checked' : '') + '> Reaching the target starts the last round: everyone gets the same number of turns, then the highest total wins</label>' +
       '<label>Banking</label><label><input type="checkbox" data-set="banking"' + (setup.banking !== false ? ' checked' : '') + '> At the end of your turn, every 6● you didn’t spend becomes 1◇ (at most 2◇)</label>' +
       '<label>Second claim</label><label><input type="checkbox" data-set="buyClaim"' + (setup.buyClaim !== false ? ' checked' : '') + '> Once a turn, after claiming, pay 10● to claim once more</label>' +
+      '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
       '</div></fieldset>';
     var dup = {}, bad = false; for (var j = 0; j < setup.n; j++) { if (dup[setup.players[j].arch]) bad = true; dup[setup.players[j].arch] = 1; }
     h += '<div class="row"><button class="btn def" data-act="start"' + (bad ? ' disabled' : '') + '>Start game</button>' + (bad ? '<span class="err">Two players picked the same archetype.</span>' : '') +
@@ -8233,8 +8285,9 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
   /* ---------------- events ---------------- */
   // One click handler for the whole app. Elements say what they do through data- attributes (data-act, data-cell, data-hand, ...).
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-page],[data-act],[data-cell],[data-hand],[data-pick],[data-answer],[data-answer-p],[data-row],[data-sort],[data-help]');
+    var t = e.target.closest('[data-take],[data-page],[data-act],[data-cell],[data-hand],[data-pick],[data-answer],[data-answer-p],[data-row],[data-sort],[data-help]');
     if (!t) return;
+    if (t.hasAttribute('data-take')) { var mc = cur(); if (mc) dispatch(mc, { t: 'draw', from: t.getAttribute('data-take') }); return; }   // the market
     if (t.hasAttribute('data-help')) {   // Help's table of contents
       var hid = t.getAttribute('data-help'), sc = $('#helpscroll'), tg = hid === 'top' ? null : document.getElementById('help-' + hid);
       if (!sc) return; if (tg) { tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); tg.classList.add('flash'); setTimeout(function () { tg.classList.remove('flash'); }, 900); } else sc.scrollTo({ top: 0, behavior: 'smooth' });
@@ -8284,7 +8337,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false });
+        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0 });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }

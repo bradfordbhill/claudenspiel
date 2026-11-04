@@ -1,6 +1,10 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-0.6', date: '4 November 2026', title: 'Claudenspiel 0.6: the market (on trial)', notes: [
+    'A first piece of the second edition, to try: tick <b>Market</b> on the New game page. Three cards lie face up; each of your turn’s draws can be one of them or the top of the deck, at any point in your turn. Draws you leave are drawn blind when you end it.',
+    'Hover a market card to read it; the race bar and the market sit together above the board.'
+  ] },
   { v: 'cs-0.5', date: '4 November 2026', title: 'Claudenspiel 0.5: a word in your ear', notes: [
     '<b>Why is this good?</b> On your turn, hover a card in your hand: the magnified card shows what it would gain you at its best space right now, claimed if you still can.',
     '<b>Palace</b> scores 2◇ per Goblet card you don’t own (was 3◇): the Hedonist was strongest, most of all at big tables.',

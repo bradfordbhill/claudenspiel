@@ -720,7 +720,15 @@
       '<button class="btn sm" data-act="suits" title="Which suits pressure which">Suits</button>' +
       '<label>Overlay <select data-sel="overlay">' + [['none', 'None'], ['quick', 'Quickview (● and ◇)'], ['war', 'War (Overwhelm)']].map(function (o) { return '<option value="' + o[0] + '"' + ((u.overlay || 'none') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       overlayTotal(ctx) +
-      '<span class="muted legend">Yellow: what the selected card sees (filled = counted). Blue: cards that see it.</span></div>' + raceBar(ctx);
+      '<span class="muted legend">Yellow: what the selected card sees (filled = counted). Blue: cards that see it.</span></div>' + raceBar(ctx) + marketBar(ctx);
+  }
+  // The market (second-edition rule): face-up cards anyone can take as one of their draws, and the deck.
+  function marketBar(ctx) {
+    var st = ctx.state; if (ctx.kind !== 'game' || !st.opts.market) return '';
+    var can = myTurn(ctx) && st.turn && st.turn.started && st.turn.toDraw > 0 && !st.pending && !st.res;
+    return '<div class="market raised"><div class="mhead"><b>Market</b><span class="small muted">' + (can ? 'Take ' + st.turn.toDraw + ' more: a face-up card, or the top of the deck. Any you leave are drawn blind when you end your turn.' : st.turn && st.turn.started && myTurn(ctx) ? 'All draws taken this turn.' : 'Face-up cards, open to everyone on their turn.') + '</span></div><div class="mrow">' +
+      (st.market || []).map(function (u) { var d = E.rawDef(st, u); return '<div class="hcard mcard">' + defFace(d, { tex: u }) + (can ? '<button class="cellbtn" data-take="' + u + '" data-hand="' + u + '" aria-label="Take ' + esc(d.name) + '"></button>' : '<span class="cellbtn" data-hand="' + u + '"></span>') + '</div>'; }).join('') +
+      '<div class="mdeck"><div class="small muted">Deck ' + st.deck.length + '</div>' + (can ? '<button class="btn sm" data-take="deck">Draw blind</button>' : '') + '</div></div></div>';
   }
   // Claudenspiel: the race to the target, every player on one track. A bell marks the last round once it has begun.
   function raceBar(ctx) {
@@ -946,7 +954,7 @@
 
   /* ----- new game ----- */
   // New game page options, kept for the next game.
-  var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 52, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true };
+  var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 52, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true, market: 0 };
   (function () { var s = lsGet('cs.setup'); if (s && s.players && s.players.length) for (var k in s) setup[k] = s[k]; })();   // the last game's setup
   function archetypes() { return sortLib(app.lib.filter(function (c) { return c.type === 'Foundation' && c.archetype; })); }
   function ensureSetup() {
@@ -987,6 +995,7 @@
       '<label>Last round</label><label><input type="checkbox" data-set="lastRound"' + (setup.lastRound !== false ? ' checked' : '') + '> Reaching the target starts the last round: everyone gets the same number of turns, then the highest total wins</label>' +
       '<label>Banking</label><label><input type="checkbox" data-set="banking"' + (setup.banking !== false ? ' checked' : '') + '> At the end of your turn, every 6● you didn’t spend becomes 1◇ (at most 2◇)</label>' +
       '<label>Second claim</label><label><input type="checkbox" data-set="buyClaim"' + (setup.buyClaim !== false ? ' checked' : '') + '> Once a turn, after claiming, pay 10● to claim once more</label>' +
+      '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
       '</div></fieldset>';
     var dup = {}, bad = false; for (var j = 0; j < setup.n; j++) { if (dup[setup.players[j].arch]) bad = true; dup[setup.players[j].arch] = 1; }
     h += '<div class="row"><button class="btn def" data-act="start"' + (bad ? ' disabled' : '') + '>Start game</button>' + (bad ? '<span class="err">Two players picked the same archetype.</span>' : '') +
@@ -2073,8 +2082,9 @@
   /* ---------------- events ---------------- */
   // One click handler for the whole app. Elements say what they do through data- attributes (data-act, data-cell, data-hand, ...).
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-page],[data-act],[data-cell],[data-hand],[data-pick],[data-answer],[data-answer-p],[data-row],[data-sort],[data-help]');
+    var t = e.target.closest('[data-take],[data-page],[data-act],[data-cell],[data-hand],[data-pick],[data-answer],[data-answer-p],[data-row],[data-sort],[data-help]');
     if (!t) return;
+    if (t.hasAttribute('data-take')) { var mc = cur(); if (mc) dispatch(mc, { t: 'draw', from: t.getAttribute('data-take') }); return; }   // the market
     if (t.hasAttribute('data-help')) {   // Help's table of contents
       var hid = t.getAttribute('data-help'), sc = $('#helpscroll'), tg = hid === 'top' ? null : document.getElementById('help-' + hid);
       if (!sc) return; if (tg) { tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); tg.classList.add('flash'); setTimeout(function () { tg.classList.remove('flash'); }, 900); } else sc.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2124,7 +2134,7 @@
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false });
+        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0 });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }

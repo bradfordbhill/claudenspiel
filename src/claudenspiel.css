@@ -36,3 +36,11 @@ h1.logo.small { width: 300px; }
 @keyframes cs-flicker { 0% { transform: translateX(0) scaleY(1); } 33% { transform: translateX(1px) scaleY(.8); } 66% { transform: translateX(-1px) scaleY(1.15); } }
 :root:not([data-motion="off"]) .candle i { animation: cs-flicker .45s steps(3) infinite; }
 @media (prefers-reduced-motion: reduce) { .gchev.hot, .candle i { animation: none !important; } }
+/* The market row (second-edition rule) */
+.market { padding: 4px 8px; margin: 2px 0; }
+.market .mhead { display: flex; gap: 10px; align-items: baseline; }
+.market .mrow { display: flex; gap: 6px; align-items: center; overflow-x: auto; padding: 4px 0; }
+.market .mcard { position: relative; flex: 0 0 auto; }
+.market .mdeck { display: grid; gap: 4px; justify-items: center; padding: 0 8px; }
+.market .mcard { width: 112px; height: 154px; overflow: hidden; }
+.market .mcard > :first-child { transform: scale(.75); transform-origin: top left; width: 133%; }

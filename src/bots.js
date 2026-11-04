@@ -171,6 +171,7 @@ var KBots = (function () {
   // 'quick' (the Genius's model of its opponents) looks at fewer spaces; 'gsim' (the Genius thinking) at more, and it
   // plays anything that helps, since ● left at the end of a turn is lost anyway.
   function mainPhase(st,p,strat,stats){ const pl=()=>st.players[p], gs=strat==='gsim', cells=strat==='quick'?8:gs?16:14;
+    st=marketDraws(st,p);
     if(!pl().foundationPlaced){ const s=placeFoundation(st,p,strat); if(s) st=s; }
     if(strat!=='greedy'&&strat!=='quick') st=useAbilities(st,p,strat,stats);
     for(let it=0; it<6; it++){ let best=null,bv=gs?0.05:0.5; const cash=E.funds(pl());
@@ -188,6 +189,11 @@ var KBots = (function () {
   // that are close to Overwhelm, Battlefield exposes rivals' cards, Crossroads opens cheap spaces next to its own.
   function groundsWorth(st0,st,p){ return GROUNDS_W*((danger(st0,p)-danger(st,p)) + 0.6*(pressure(st,p)-pressure(st0,p))); }
   let GROUNDS_W=+(typeof process!=='undefined'&&process.env&&process.env.CS_GROUNDS!=null?process.env.CS_GROUNDS:1);
+  // The market: take a face-up card worth keeping (by the archetype's keep value), else draw blind. Done first, for options.
+  let MARKET_BAR=+(typeof process!=='undefined'&&process.env&&process.env.CS_MARKETBAR!=null?process.env.CS_MARKETBAR:1.8);
+  function marketDraws(st,p){ let g=0; while(st.opts.market&&st.turn&&st.turn.toDraw>0&&g++<6){ const pr=profile(st,p), ks=suitsFor(st,p,pr);
+      let best=null,bv=MARKET_BAR; (st.market||[]).forEach(u=>{ const v=keepValue(st,p,u,pr,ks)+(E.playBlock(st,p,u)?-9:0); if(v>bv){bv=v;best=u;} });
+      const s=ap(st,{t:'draw',from:best||'deck'}); if(!s) break; st=s; } return st; }
   // Claudenspiel: pay for a second claim when the best claim is worth more than the ● would bank (10● ≈ 1.7◇).
   function buyClaim(st,p,strat,stats){ if(!st.opts.buyClaim||!st.turn.claimed||st.turn.boughtClaim) return st;
     const s=ap(st,{t:'buyClaim'}); if(!s) return st; const c=bestClaim(s,p,strat); if(!c) return st;

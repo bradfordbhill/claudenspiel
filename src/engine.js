@@ -130,6 +130,17 @@ var KEngine = (function () {
     var u = st.deck.shift(); st.players[p].hand.push(u); return u;
   }
   function draw(st, p, n) { var got = 0; for (var i = 0; i < n; i++) if (drawOne(st, p)) got++; return got; }
+  // The market (the second edition's first pillar, opts.market = how many face-up cards): fill it up from the deck.
+  function refillMarket(st) { st.market = st.market || []; while (st.market.length < st.opts.market) {
+      if (!st.deck.length && st.discard.length) { st.deck = shuffle(st.discard, st); st.discard = []; log(st, 'Discard pile shuffled into the deck.'); }
+      if (!st.deck.length) break; st.market.push(st.deck.shift()); } }
+  // Take one of this turn's draws: a market card (its uid) or the top of the deck ('deck').
+  function takeDraw(st, p, from) {
+    var pl = st.players[p];
+    if (from === 'deck' || from == null) { var u = drawOne(st, p); st.turn.toDraw--; log(st, pl.name + ' draws a card from the deck.'); return u; }
+    var i = (st.market || []).indexOf(from); if (i < 0) return null;
+    st.market.splice(i, 1); pl.hand.push(from); st.turn.toDraw--; log(st, pl.name + ' takes ' + rawDef(st, from).name + ' from the market.'); refillMarket(st); return from;
+  }
   // Wipe a card's in-play state and put it on the discard pile.
   function toDiscard(st, uid) { var c = st.cards[uid]; c.banked = {}; c.free = null; c.ruined = false; c.suit = null; c.claimants = []; c.tokens = 0; c.copyOf = null; st.discard.push(uid); }
   // bank ◇ tokens for player p, remembering which card they came from (for the VP overlay)
@@ -1066,9 +1077,11 @@ var KEngine = (function () {
     if (st.opts.seatStart && pl.turns === 1 && !pl.foundationPlaced) pl.ap = 3 * (p + 1);
     if (pl.debt) { log(st, pl.name + ' pays ' + Math.min(pl.debt, pl.ap) + '● owed for reactions.'); pl.ap = Math.max(0, pl.ap - pl.debt); pl.debt = 0; }
     kingdom(st, p).forEach(function (k) { st.turn.paid[top(st, k)] = 1; });
-    var got = draw(st, p, st.opts.drawPerTurn != null ? +st.opts.drawPerTurn : 1);
+    var perTurn = st.opts.drawPerTurn != null ? +st.opts.drawPerTurn : 1;
+    // With a market, the turn's draws are taken during the turn (the 'draw' action); any left are drawn blind at its end.
+    var got = 0; if (st.opts.market) st.turn.toDraw = perTurn; else got = draw(st, p, perTurn);
     st.turn.started = true;
-    log(st, pl.name + ' gains ' + pl.ap + '● and draws ' + got + '.');
+    log(st, pl.name + ' gains ' + pl.ap + '●' + (st.opts.market ? ' and has ' + st.turn.toDraw + ' draws to take.' : ' and draws ' + got + '.'));
   }
   // Pass to the next player who isn't out. Wrapping back to seat 0 starts a new round.
   function nextPlayer(st) {
@@ -1103,9 +1116,9 @@ var KEngine = (function () {
   // (see opts). A sandbox has no deck or turns.
   function newGame(defs, setup) {
     var st = {
-      v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], board: {}, cards: {}, uid: 1,
+      v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -1122,6 +1135,7 @@ var KEngine = (function () {
       defs.forEach(function (d) { if (d.type === 'Foundation') return; for (var i = 0; i < (+d.copies || 0); i++) st.deck.push(mk(d.id)); });
       shuffle(st.deck, st);
       st.players.forEach(function (pl, i) { draw(st, i, st.opts.handSize); });
+      if (st.opts.market) refillMarket(st);
       // Seat handicap (Claudenspiel): with the last round, later seats see the score to beat, so earlier seats start
       // with opts.seatTokens◇ for every seat after them.
       // seatTokens is ◇ per later seat, or a list with each seat's ◇; the default list depends on the table size.
@@ -1295,6 +1309,16 @@ var KEngine = (function () {
         startRes(st, 'ability', au, ak, steps); return st;
       }
 
+      // Take a draw (the market): a.from is a market card's uid or 'deck'.
+      case 'draw': {
+        if (!st.opts.market) return err(st, 'There is no market in this game.');
+        if (st.pending || st.res) return err(st, 'Finish the current effect first.');
+        if (!st.turn.started) return err(st, 'Start your turn first.');
+        if (!(st.turn.toDraw > 0)) return err(st, 'You have taken all your draws this turn.');
+        if (a.from !== 'deck' && (st.market || []).indexOf(a.from) < 0) return err(st, 'That card is not in the market.');
+        takeDraw(st, p, a.from); return st;
+      }
+
       // Buy a second claim (Claudenspiel): once a turn, after claiming, pay CLAIM_PRICE● to claim again.
       case 'buyClaim': {
         if (!st.opts.buyClaim) return err(st, 'Buying a claim is switched off for this game.');
@@ -1325,6 +1349,7 @@ var KEngine = (function () {
         if (!st.turn.started) return err(st, 'Start your turn first.');
         var ep = st.players[p];
         if (!ep.foundationPlaced && ep.turns >= st.opts.foundationBy && st.opts.foundationBy > 0) return err(st, 'You must place your Foundation by your turn ' + st.opts.foundationBy + '.');
+        if (st.opts.market) while (st.turn.toDraw > 0) takeDraw(st, p, 'deck');   // unused draws come blind
         // Banking (Claudenspiel): every full BANK_RATE● left unspent becomes a 1◇ token, at most BANK_MAX a turn.
         if (st.opts.banking) { var bk = Math.min(BANK_MAX, Math.floor((ep.ap || 0) / BANK_RATE)); if (bk > 0) { ep.tokens = (ep.tokens || 0) + bk; ep.ap -= bk * BANK_RATE; log(st, ep.name + ' banks ' + bk + '◇ from unspent ●.'); } }
         endOfTurnEffects(st); afterBoardChange(st, p);
