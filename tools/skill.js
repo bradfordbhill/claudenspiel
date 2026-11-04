@@ -4,7 +4,7 @@
 // Usage: node tools/skill.js players firstDeal lastDeal out.json   (A, B pick the styles; OPTS='{"market":3}' sets rules;
 // SECS caps the run; the Genius runs without a time limit, so results don't depend on how busy the machine is)
 const D = require('../src/data.js'), E = require('../src/engine.js'), B = require('../src/bots.js'), fs = require('fs');
-B.GENIUS.budget = 1e9; if (process.env.RACE) Object.assign(B.RACE, JSON.parse(process.env.RACE)); if (process.env.GWORLDS) B.GENIUS.worlds = +process.env.GWORLDS; if (process.env.GLINES) B.GENIUS.lines = +process.env.GLINES;
+B.GENIUS.budget = 1e9; if (process.env.RACE) Object.assign(B.RACE, JSON.parse(process.env.RACE)); if (process.env.GWORLDS) B.GENIUS.worlds = +process.env.GWORLDS; if (process.env.GLINES) B.GENIUS.lines = +process.env.GLINES; if (process.env.GENIUS) Object.assign(B.GENIUS, JSON.parse(process.env.GENIUS));
 const ARCH = ['Archbishop', 'Hedonist', 'Warmonger', 'Cryptkeeper', 'Gardener', 'Philosopher'];
 const [n, from, to, out] = [+process.argv[2], +process.argv[3], +process.argv[4], process.argv[5]];
 const SA = process.env.A || 'genius', SB = process.env.B || 'tactician', OPTS = JSON.parse(process.env.OPTS || '{}');

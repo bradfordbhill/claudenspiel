@@ -178,7 +178,7 @@ var KBots = (function () {
       for(const u of pl().hand){ const d=st.defs[st.cards[u].def]; if(E.playBlock(st,p,u)) continue;
         if(!E.needsPlacement(d)){ if((E.isFree(st,u)?0:+d.cost)>cash) continue; let s=resolve(ap(st,{t:'cast',uid:u}),p,strat); if(!s||s.pending) continue; const v=evalState(st,s,p,strat)+(gs?0:0.8-0.12*d.cost); if(v>bv){bv=v;best={s,u,d}} continue; }
         const L=E.legalCells(st,u); const ks=Object.keys(L).filter(k=>L[k]<=cash).slice(0,cells);
-        for(const k of ks){ let s=resolve(ap(st,{t:'play',uid:u,k}),p,strat); if(!s||s.pending) continue; const c=st.turn.claimed?s:(bestClaim(s,p,strat)||s); const v=evalState(st,c,p,strat)-(gs?0:0.12*L[k])+(d.type==='Grounds'&&!gs?groundsWorth(st,c,p):0); if(v>bv){bv=v;best={s,u,d,k}} } }
+        for(const k of ks){ let s=resolve(ap(st,{t:'play',uid:u,k}),p,strat); if(!s||s.pending) continue; const c=st.turn.claimed?s:(bestClaim(s,p,strat)||s); const v=evalState(st,c,p,strat)-(gs?0:0.12*L[k])+(d.type==='Grounds'&&(!gs||RACE.grounds)?groundsWorth(st,c,p)*(gs?RACE.grounds:1):0); if(v>bv){bv=v;best={s,u,d,k}} } }
       if(!best) break; st=best.s; stats.played[best.d.id]=(stats.played[best.d.id]||0)+1;
       if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; } }
     if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; }
@@ -214,7 +214,7 @@ var KBots = (function () {
   //   4. scores where that leaves the race (gEval) and keeps the line that does best on average.
   // It then plays that line up to the first moment it learns something new (a draw, a revealed card, a prompt for
   // someone else) and thinks again from the real game. KBots.GENIUS sets how many worlds, lines and milliseconds it uses.
-  const GENIUS={ worlds:3, lines:5, budget:1500, depth:1 };
+  const GENIUS={ worlds:3, lines:5, budget:1500, depth:1, policy:'gsim', opp:'quick', judge:'race' };
   const now=()=>Date.now();
   // A small seeded random generator, so a decision is repeatable (seeded from what the player can see).
   function rng(seed){ let a=seed>>>0||1; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
@@ -241,7 +241,7 @@ var KBots = (function () {
   // (target − ◇) / pace more turns; counting seats in turn order, the player due to get there first is most likely to
   // win: chance ∝ e^(−0.24 × seat-turns). A player's ◇ is adjusted for what the score doesn't show yet: cards held
   // toward its archetype's goal, cards at risk of Overwhelm, War pressure (Warcamp) and Reserves.
-  const RACE={ base:6, perCard:0.8, cap:3, perInc:0, lambda:0.24, goalW:0.5, dangerW:1, afford:0.5 };
+  const RACE={ base:6, perCard:0.8, cap:3, perInc:0, lambda:0.24, goalW:0.5, dangerW:1, afford:0.5, bank:0, grounds:0 };
   function gEval(st,p){
     if(st.winner!=null) return st.winner===p?100:0;
     if(st.players[p].out) return 0;
@@ -249,7 +249,9 @@ var KBots = (function () {
     const soon=Math.min(1,Math.max(0.25,(T-lead)/14));
     let Z=0, mine=0;
     st.players.forEach((pl,q)=>{ if(pl.out) return; const g=profile(st,q);
-      const s=sc[q].total + soon*RACE.goalW*goal(st,q) - RACE.dangerW*danger(st,q) + (g&&g.war?0.5*soon*pressure(st,q):0) + 0.15*(pl.reserve||0);
+      // Banking: the player whose turn it is will bank its unspent ● (RACE.bank: whether the Genius counts that).
+      const banked=RACE.bank&&q===st.cur&&st.opts.banking&&st.turn&&st.turn.started ? Math.min(E.BANK_MAX,Math.floor((pl.ap||0)/E.BANK_RATE)) : 0;
+      const s=sc[q].total + banked + soon*RACE.goalW*goal(st,q) - RACE.dangerW*danger(st,q) + (g&&g.war?0.5*soon*pressure(st,q):0) + 0.15*(pl.reserve||0);
       // Cards it can play and pay for next turn (its ● per turn plus Reserves): with none, it stalls.
       const cash=E.income(st,q)+(pl.reserve||0), cards=pl.hand.filter(u=>!E.playBlock(st,q,u)&&(+E.rawDef(st,u).cost||0)<=cash).length;
       const pace=(RACE.base*(cards||!RACE.afford?1:RACE.afford)+RACE.perCard*Math.min(cards,RACE.cap)+RACE.perInc*Math.min(E.income(st,q),30))*(pl.meeples>0?1:0.6);
@@ -257,26 +259,31 @@ var KBots = (function () {
     return Z?100*mine/Z:0; }
   // Finish p's turn in an imagined world (if it is still p's turn), then let everyone else take theirs; score the
   // position when p's next turn comes round, or the win or loss if the game ends first.
-  function rollout(s,p){ const strats=s.players.map((_,i)=>i===p?'gsim':'quick'), stats=newStats(); let g=0;
-    if(s.pending) s=resolve(s,p,'gsim',strats);
+  // How the Genius judges a position: 'race' (gEval, its fitted win chance) or 'diff' (the tactician's measure: own ◇ and
+  // ● per turn against the strongest rival's). GENIUS.policy plays out its own lines, GENIUS.opp imagines its rivals.
+  function diffEval(st,p){ if(st.winner!=null) return st.winner===p?1000:-1000; const sc=E.scores(st), v=q=>sc[q].total+E.income(st,q)+goal(st,q);
+    let mx=-1e9; st.players.forEach((q,i)=>{ if(i!==p&&!q.out) mx=Math.max(mx,v(i)); }); return v(p)-(mx>-1e9?mx:0); }
+  function judge(st,p){ return GENIUS.judge==='diff'?diffEval(st,p):gEval(st,p); }
+  function rollout(s,p){ const pol=GENIUS.policy, strats=s.players.map((_,i)=>i===p?pol:GENIUS.opp), stats=newStats(); let g=0;
+    if(s.pending) s=resolve(s,p,pol,strats);
     if(s&&s.winner==null&&s.cur===p){ if(!(s.turn&&s.turn.started)) s=ap(s,{t:'startTurn'})||s;
-      s=mainPhase(s,p,'gsim',stats); let e=ap(s,{t:'endTurn'}); if(e&&e.pending) e=resolve(e,p,'gsim',strats); if(e) s=e; }
-    const others=()=>{ while(s&&s.winner==null&&s.cur!==p&&g++<40){ if(s.pending){ s=resolve(s,s.cur,'quick',strats); continue; } if(s.reveal){ s=ap(s,{t:'closeReveal'})||s; continue; } s=turn(s,stats,strats); } };
+      s=mainPhase(s,p,pol,stats); let e=ap(s,{t:'endTurn'}); if(e&&e.pending) e=resolve(e,p,pol,strats); if(e) s=e; }
+    const others=()=>{ while(s&&s.winner==null&&s.cur!==p&&g++<40){ if(s.pending){ s=resolve(s,s.cur,GENIUS.opp,strats); continue; } if(s.reveal){ s=ap(s,{t:'closeReveal'})||s; continue; } s=turn(s,stats,strats); } };
     others();
     // Deeper: its own next turns too (played quickly), each followed by everyone else's.
     for(let d=2;d<=GENIUS.depth&&s&&s.winner==null&&s.cur===p;d++){ const q=strats.slice(); q[p]='quick'; s=turn(s,stats,q); if(s&&s.pending) s=resolve(s,s.cur,'quick',strats); others(); }
-    return s?gEval(s,p):0; }
+    return s?judge(s,p):0; }
   // Replay a line of actions in another world, as far as it still applies there.
   function replay(s,acts){ for(const a of acts){ const n=ap(s,a); if(!n) break; s=n; } return s; }
   // Opening moves from w (p's turn under way, nothing pending), best first, one state each.
-  function openings(w,p){ const out=[], add=(s,key)=>{ if(s&&!s.pending) out.push({s,key,v:gEval(s,p)}); }, pl=w.players[p];
+  function openings(w,p){ const out=[], add=(s,key)=>{ if(s&&!s.pending) out.push({s,key,v:judge(s,p)}); }, pl=w.players[p], pol=GENIUS.policy;
     add(w,'line');
-    if(!pl.foundationPlaced){ const u=pl.foundationUid, L=E.legalCells(w,u); Object.keys(L).slice(0,24).forEach(k=>add(resolve(ap(w,{t:'play',uid:u,k}),p,'gsim'),'F'+k)); }
+    if(!pl.foundationPlaced){ const u=pl.foundationUid, L=E.legalCells(w,u); Object.keys(L).slice(0,24).forEach(k=>add(resolve(ap(w,{t:'play',uid:u,k}),p,pol),'F'+k)); }
     else { const cash=E.funds(pl);
       pl.hand.forEach(u=>{ const d=E.rawDef(w,u); if(E.playBlock(w,p,u)) return;
-        if(!E.needsPlacement(d)){ if((E.isFree(w,u)?0:+d.cost)<=cash) add(resolve(ap(w,{t:'cast',uid:u}),p,'gsim'),u); return; }
-        const L=E.legalCells(w,u); Object.keys(L).filter(k=>L[k]<=cash).slice(0,24).forEach(k=>{ const s=resolve(ap(w,{t:'play',uid:u,k}),p,'gsim'); if(!s||s.pending) return; add(s.turn.claimed?s:(bestClaim(s,p,'gsim')||s),u); }); });
-      E.keys(w).forEach(k=>{ if(E.abilityReady(w,k)) add(resolve(ap(w,{t:'ability',k}),p,'gsim'),'A'+k); });
+        if(!E.needsPlacement(d)){ if((E.isFree(w,u)?0:+d.cost)<=cash) add(resolve(ap(w,{t:'cast',uid:u}),p,pol),u); return; }
+        const L=E.legalCells(w,u); Object.keys(L).filter(k=>L[k]<=cash).slice(0,24).forEach(k=>{ const s=resolve(ap(w,{t:'play',uid:u,k}),p,pol); if(!s||s.pending) return; add(s.turn.claimed?s:(bestClaim(s,p,pol)||s),u); }); });
+      E.keys(w).forEach(k=>{ if(E.abilityReady(w,k)) add(resolve(ap(w,{t:'ability',k}),p,pol),'A'+k); });
       E.claimOptions(w,p).forEach(k=>add(ap(w,{t:'claim',k}),'C'+k));
       const bw=ap(w,{t:'buyClaim'}); if(bw) E.claimOptions(bw,p).forEach(k=>add(ap(bw,{t:'claim',k}),'B'+k)); }
     out.sort((a,b)=>b.v-a.v); const seen={}, keep=[];
@@ -298,7 +305,7 @@ var KBots = (function () {
       if(pl.meeples===0&&pl.foundationPlaced) E.kingdom(w0,p).map(k=>({k,c:w0.cards[E.top(w0,k)]})).filter(o=>!o.c.fixed&&!o.c.ascended)
         .map(o=>({k:o.k,w:E.cardValue(w0,o.k,p)+2*E.cardIncome(w0,o.k)})).sort((a,b)=>a.w-b.w).slice(0,2).forEach(o=>lines.push([{t:'reclaim',k:o.k}]));
       if(lines.length===1) return lines[0]; }
-    else { const stats=newStats(); lines=openings(w0,p).map(o=>{ let s=mainPhase(o.s,p,'gsim',stats), e=ap(s,{t:'endTurn'}); if(e&&e.pending) e=resolve(e,p,'gsim'); return (e||s)._botLog||[]; }); }
+    else { const stats=newStats(); lines=openings(w0,p).map(o=>{ let s=mainPhase(o.s,p,GENIUS.policy,stats), e=ap(s,{t:'endTurn'}); if(e&&e.pending) e=resolve(e,p,GENIUS.policy); return (e||s)._botLog||[]; }); }
     const tot=lines.map(()=>0); let done=0;
     for(let i=0;i<W.length;i++){ if(i>0&&now()-t0>GENIUS.budget) break;
       lines.forEach((acts,j)=>{ tot[j]+=rollout(replay(W[i],acts),p); }); done++; }
