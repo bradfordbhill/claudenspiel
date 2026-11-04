@@ -5077,6 +5077,7 @@ var KEngine = (function () {
   // end of your turn and you win. Claudenspiel's default: reaching it starts the last round, so everyone gets the same
   // number of turns; when the round is over the highest total wins, and a tie goes to whoever reached it first.
   function finishTurn(st, p) {
+    if (st.opts.seasons) { nextPlayer(st); return; }   // seasons: no race, the Reckonings decide
     var sc = scores(st), me = sc[p].total, pl = st.players[p];
     if (me >= st.opts.target) {
       if (!st.opts.lastRound) { st.winner = p; log(st, pl.name + ' ends their turn with ' + me + '◇ and wins!'); return; }
@@ -5105,7 +5106,7 @@ var KEngine = (function () {
     // per-turn tokens (Acorn)
     kingdom(st, p).forEach(function (k) { var u = top(st, k), d = def(st, u); if (d.perTurn && d.perTurn.token && d.perTurn.when !== 'everyTurnEnd' && d.perTurn.when !== 'ownerTurnEnd' && active(st, k)) st.cards[u].tokens += +d.perTurn.token; });
     (pl.aside || []).splice(0).forEach(function (u) { pl.hand.push(u); st.cards[u].free = pl.turns; log(st, pl.name + ' takes back the card set aside: it is free to play this turn.'); });
-    pl.ap = income(st, p);
+    pl.ap = st.opts.flatIncome ? +st.opts.flatIncome : income(st, p);   // flatIncome: an experiment, every player the same ● a turn
     if (st.opts.seatStart && pl.turns === 1 && !pl.foundationPlaced) pl.ap = 3 * (p + 1);
     if (pl.debt) { log(st, pl.name + ' pays ' + Math.min(pl.debt, pl.ap) + '● owed for reactions.'); pl.ap = Math.max(0, pl.ap - pl.debt); pl.debt = 0; }
     kingdom(st, p).forEach(function (k) { st.turn.paid[top(st, k)] = 1; });
@@ -5116,8 +5117,30 @@ var KEngine = (function () {
   // Pass to the next player who isn't out. Wrapping back to seat 0 starts a new round.
   function nextPlayer(st) {
     var n = st.players.length, i = st.cur;
-    for (var t = 0; t < n; t++) { i = (i + 1) % n; if (i === 0) st.round++; if (!st.players[i].out) break; }
+    for (var t = 0; t < n; t++) { i = (i + 1) % n; if (i === 0) { st.round++; if (st.opts.audits && (st.round - 1) % st.opts.audits === 0) audit(st); if (st.opts.seasons && (st.round - 1) % st.opts.seasonLength === 0) { reckon(st); if (st.winner != null) return; } } if (!st.players[i].out) break; }
     st.cur = i; st.players[i].turns++; beginTurn(st);
+  }
+  // A Reckoning (the second edition's first pillar, opts.seasons): at the end of each season every player banks what
+  // their Kingdom is worth now. After the last season, the highest banked total wins (a tie goes to the better board).
+  function reckon(st) {
+    var sc = scores(st), n = Math.round((st.round - 1) / st.opts.seasonLength);
+    st.players.forEach(function (pl, p) { if (pl.out) return; pl.tokens = (pl.tokens || 0) + sc[p].cards; });
+    log(st, 'Reckoning ' + n + ' of ' + st.opts.seasons + ': ' + st.players.map(function (pl, p) { return pl.name + ' banks ' + sc[p].cards + '◇'; }).join(', ') + '.');
+    // seasonRelease: after banking, every meeple goes home (Foundations stay); the board is fought over again next season.
+    if (st.opts.seasonRelease && n < st.opts.seasons) { keys(st).forEach(function (k) { var u = top(st, k); if (u && !st.cards[u].fixed && st.cards[u].claimants.length) returnMeeples(st, u); }); log(st, 'Every meeple goes home: the land is open again.'); }
+    if (n >= st.opts.seasons) {
+      var best = null; st.players.forEach(function (pl, p) { if (pl.out) return; var key = [pl.tokens, sc[p].cards]; if (!best || key[0] > best.k[0] || (key[0] === best.k[0] && key[1] > best.k[1])) best = { p: p, k: key }; });
+      st.winner = best.p; log(st, 'The last Reckoning is done. ' + st.players[best.p].name + ' wins with ' + st.players[best.p].tokens + '◇ banked!');
+    }
+  }
+  // An audit (an experiment, opts.audits = every how many rounds): for each suit, whoever owns the most cards of it
+  // (no ties) banks opts.auditPrize◇.
+  function audit(st) {
+    var prize = +st.opts.auditPrize || 4, got = [];
+    SUITS.forEach(function (su) { var c = st.players.map(function (pl, p) { return pl.out ? -1 : kingdom(st, p).filter(function (k) { return hasSuit(st, top(st, k), su); }).length; });
+      var mx = Math.max.apply(null, c); if (mx <= 0 || c.filter(function (v) { return v === mx; }).length > 1) return;
+      var w = c.indexOf(mx); st.players[w].tokens = (st.players[w].tokens || 0) + prize; got.push(st.players[w].name + ' (' + su + ')'); });
+    log(st, 'Audit after round ' + (st.round - 1) + ': ' + (got.length ? got.join(', ') + ' each bank ' + prize + '◇.' : 'no majorities.'));
   }
 
   // Fresh game state. `defs` is the card library; `setup` holds the players and rule options
@@ -5126,7 +5149,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });

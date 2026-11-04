@@ -10,3 +10,4 @@ Big, risky ideas that could change what Claudenspiel is. Each needs a prototype 
 - **A board that is a place.** Instead of an endless grid, a fixed map of the prairie, river and walled city, with terrain that matters: the river blocks placement, hills see further, the city is worth double.
 - **Real-time variant.** No turns: everyone plays at once with a ● trickle and cooldowns. Chaotic, quick, a party mode.
 - **Physical edition.** Print-and-play PDF generated from the card data, with the Dithry art, so the game can be played at a table.
+- **The second edition** ([FOUNDATIONS.md](../FOUNDATIONS.md)): seasons and Reckonings, influence instead of ownership, cards as the only currency with two uses each, an open market, archetype powers instead of bans. Built one pillar at a time and judged first on skill expression.

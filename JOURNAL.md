@@ -2,6 +2,20 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 4 November 2026 · Foundations
+
+Stopped tuning and questioned every base assumption, in [FOUNDATIONS.md](FOUNDATIONS.md). `tools/anatomy.js` records every turn of bot self-play. The diagnosis: parallel solitaire with steady accrual. Every turn adds about 9◇, the best fifth of turns carries only 35% of the points, claims are automatic (exactly one a turn), ● is in surplus, conflict touches 16–19% of turns, and the greedy, tactician and raider bots win about equally. There are many options but few decisions. Thirteen assumptions questioned, eight marked for change, and a second edition planned around five pillars (seasons and Reckonings, influence, cards as currency with two uses each, a market, archetype powers instead of bans).
+
+Four experiments, all switches in the engine and off by default:
+- *Flat ● for everyone:* pace unchanged, balance collapses. ● is a balance lever, not a decision.
+- *Audits* (suit majorities pay every two rounds): closer 3-player finishes, the early lead holds.
+- *Seasons and Reckonings:* turns matter more, but holdings compound; the early leader wins more (76%).
+- *Reckonings with every meeple sent home:* no better (75%), balance broken.
+
+The lesson: with equally skilled bots, "the early leader wins" mostly measures how long luck lasts, so it can't be the target. The primary measure for the second edition is skill expression, the Genius's paired win rate over a tactician. Next: measure 0.5's, then prototype the market and two-use cards. No default rule changed today.
+
+*A test fix along the way:* the no-peeking test failed once (2 of 14 positions changed). The cause was the Genius's time budget, not hidden cards: a busy machine weighs fewer imagined deals and can answer differently. The test now gives it unlimited time; it then passes 14 of 14 repeatedly, and still catches the tactician (4 of 14). In play, a slow device can make the Genius choose differently, never unfairly.
+
 ## 4 November 2026 · 0.5, a word in your ear
 
 **Four players, measured properly first** (280 games): Hedonist 1.25, Archbishop 1.12, Warmonger 1.12, Philosopher 0.90, Gardener 0.81, Cryptkeeper 0.79; seats even (0.94–1.06). The Hedonist reading matched every earlier 4-player run (1.16–1.33), and it was slightly high at 2 players too. The cause is the mechanism 0.4 used to help the Cathedral: Palace paid 3◇ for every Goblet card someone else owns, and a bigger table puts more of them on the board.

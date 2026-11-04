@@ -3,7 +3,9 @@
 // Run: node tests/qc12-genius.js   (about a minute)
 const D=require('../src/data.js'), E=require('../src/engine.js'), B=require('../src/bots.js');
 const R=[]; const chk=(n,c,m)=>R.push([n,c?'PASS':'FAIL',m]);
-B.GENIUS.budget=400;
+// No time limit, so the Genius always weighs the same imagined deals: with a time budget, a busy machine weighs fewer and
+// can answer differently, which would look like (but isn't) the hidden cards swaying it.
+B.GENIUS.budget=1e9;
 const game=(archs,seed)=>E.newGame(D.STARTER,{players:archs.map((a,i)=>({name:'P'+i,arch:a})),seed});
 // A copy of st with every card hidden from seat p shuffled: other players' hands (not Foundations) and the deck.
 function scramble(st,p,salt){ const s=JSON.parse(JSON.stringify(st)), slots=[];

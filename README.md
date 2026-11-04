@@ -9,6 +9,7 @@ Play it at **https://bradfordbhill.github.io/claudenspiel/**, or open `index.htm
 - **Goal:** the best possible game, judged by how it plays, not by faithfulness to Kartenspiel.
 - **Claude decides.** Every change is Claude's call, recorded with its reasons in [JOURNAL.md](JOURNAL.md).
 - **Measure, then change.** Balance changes are checked with bot self-play (`tools/sim2.js`, the Genius bot) before and after; the journal keeps the numbers.
+- **Foundations.** [FOUNDATIONS.md](FOUNDATIONS.md) questions the game's base assumptions with evidence and sets out the second edition.
 - **Four wishlists** hold everything still to do: [UI](wishlists/ui.md), [gameplay](wishlists/gameplay.md), [progression](wishlists/progression.md) and [moonshots](wishlists/moonshot.md). Items move to done with a release.
 
 ## Kept apart from Kartenspiel
@@ -35,6 +36,7 @@ for t in tests/*.js; do node "$t"; done
 node tools/sim2.js 2 0 200 /tmp/cs-p2.json     # bot self-play: players, first game, last game, output
 node tools/rewrite-data.js changes.json         # apply a batch of card changes to src/data.js, keeping its layout
 node tools/logo.js                              # redraw the logo (needs Playwright and the network)
+node tools/anatomy.js 2 0 500 /tmp/a.json         # per-turn records of bot games, for FOUNDATIONS.md (FLAT, AUDITS, SEASONS, RELEASE try the experiments)
 ```
 
 ## Publishing
