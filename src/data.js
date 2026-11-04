@@ -415,7 +415,7 @@ var KData = (function () {
     "cost": 0,
     "copies": 1,
     "income": 8,
-    "text": "4◇ per Goblet card in your Kingdom, 3◇ per Goblet card not in it. You cannot play Sceptre cards.",
+    "text": "4◇ per Goblet card in your Kingdom, 2◇ per Goblet card not in it. You cannot play Sceptre cards.",
     "place": [
      "N",
      "E",
@@ -425,8 +425,8 @@ var KData = (function () {
     "overwhelm": null,
     "score": {
      "kind": "perSuitSplit",
-     "m": 3,
      "n": 4,
+     "m": 2,
      "suit": "Goblet"
     },
     "sees": {

@@ -1,6 +1,11 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-0.5', date: '4 November 2026', title: 'Claudenspiel 0.5: a word in your ear', notes: [
+    '<b>Why is this good?</b> On your turn, hover a card in your hand: the magnified card shows what it would gain you at its best space right now, claimed if you still can.',
+    '<b>Palace</b> scores 2◇ per Goblet card you don’t own (was 3◇): the Hedonist was strongest, most of all at big tables.',
+    'More motion: ◇ counters tick up, banked ● fly into your pile, chevrons beat like a heart around a card one enemy from Overwhelm, and the Genius thinks by candlelight.'
+  ] },
   { v: 'cs-0.4', date: '3 November 2026', title: 'Claudenspiel 0.4: sound, motion and a fairer table', notes: [
     '<b>Sound</b> (tick <b>Sound</b> above the board, or press M): every card lands with its own suit’s knock, claims press a wax seal, Ruins crack, the city bell rings for the last round, and more. Off until you turn it on.',
     '<b>Animations</b>: cards drop into place, meeples land in a puff of dust, the last round unrolls a banner. Choose <b>Motion</b>: full, calm or off.',

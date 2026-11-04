@@ -14,6 +14,10 @@ chk('Orchard', E.cardValue(st,'0,0',0)===3*3+2, 'a region of Orchard, Burrow and
 st=game(['Archbishop','Hedonist']); st=put(st,'cathedral','0,0',0); st=put(st,'sanctuary','1,0',0); st=put(st,'communion','0,1',1); st=put(st,'tithing-hall','4,4');
 chk('Cathedral', E.cardValue(st,'0,0',0)===6*2+2, 'own Cathedral and Sanctuary (6◇ each) + 1◇ for each of 2 Sceptre cards it doesn’t own = 14 ('+E.cardValue(st,'0,0',0)+')');
 
+// Palace (0.5): 4◇ per Goblet card owned, 2◇ per Goblet card on the board owned by someone else (or nobody).
+st=game(['Hedonist','Archbishop']); st=put(st,'palace','0,0',0); st=put(st,'fairgrounds','1,0',0); st=put(st,'ballroom','0,1',1); st=put(st,'vineyard','4,4');
+chk('Palace', E.cardValue(st,'0,0',0)===4*2+2*2, 'own Palace and Fairgrounds (4◇ each) + 2◇ for each of 2 Goblet cards it doesn’t own = 12 ('+E.cardValue(st,'0,0',0)+')');
+
 // The seat handicap by table size.
 const tok=n=>E.newGame(D.STARTER,{players:['Gardener','Hedonist','Philosopher','Warmonger','Archbishop'].slice(0,n).map(a=>({name:a,arch:a})),seed:1}).players.map(p=>p.tokens).join(',');
 chk('Seats', tok(2)==='0,0'&&tok(3)==='6,4,0'&&tok(4)==='9,6,3,0', 'starting ◇: 2 players 0,0 · 3 players 6,4,0 · 4 players 9,6,3,0');

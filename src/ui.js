@@ -297,7 +297,7 @@
       if (act.t === 'claim') ev.push({ t: 'claim', k: act.k, p: a.cur });
       if (act.t === 'buyClaim') ev.push({ t: 'buy' });
       var banked = b.log.slice(a.log.length).filter(function (l) { return / banks \d◇ from unspent/.test(l); });
-      if (banked.length) ev.push({ t: 'bank', n: +(/banks (\d)/.exec(banked[0]) || [0, 1])[1] });
+      if (banked.length) ev.push({ t: 'bank', p: a.cur, n: +(/banks (\d)/.exec(banked[0]) || [0, 1])[1] });
       if (b.lastRound && !a.lastRound) ev.push({ t: 'lastround' });
       if (b.winner != null && a.winner == null) ev.push({ t: 'end', winner: b.winner, arch: b.players[b.winner].arch, humanWon: !b.players[b.winner].bot, anyHuman: b.players.some(function (q) { return !q.bot; }) });
       return ev;
@@ -357,6 +357,10 @@
           { duration: 420, delay: delay || 0, easing: 'steps(5)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); } }
     // A card arriving: it drops in from two pixels up and settles in steps, like a sprite.
     function land(k) { var el = document.querySelector('.cell [data-cell="' + k + '"]'); var card = el && el.closest('.cell'); if (card && card.animate) card.animate([{ transform: 'translateY(-6px)' }, { transform: 'translateY(1px)', offset: .7 }, { transform: 'translateY(0)' }], { duration: 260, easing: 'steps(4)' }); }
+    // A player's ◇ counter counts up to its new value, a step at a time.
+    function tick(p, n) { var el = document.querySelectorAll('.plist .pcard .bignum')[p]; if (!el || !el.firstChild || el.firstChild.nodeType !== 3 || calm) return;
+      var to = +el.firstChild.nodeValue, v = to - n, node = el.firstChild; if (!(n > 0) || isNaN(to)) return; node.nodeValue = v;
+      var iv = setInterval(function () { v++; node.nodeValue = v; if (v >= to) clearInterval(iv); }, Math.max(30, Math.min(90, 600 / n))); }
     function banner(text) { var b = rectOf('.boardwrap'); if (!b) return; var d = piece('banner', esc(text), b.left + b.width / 2, b.top + 24);
       d.animate([{ transform: 'translate(-50%,-18px) scaleY(.1)', opacity: 0 }, { transform: 'translate(-50%,0) scaleY(1)', opacity: 1, offset: .2 }, { transform: 'translate(-50%,0) scaleY(1)', opacity: 1, offset: .85 }, { transform: 'translate(-50%,-6px)', opacity: 0 }], { duration: 2600, easing: 'steps(12)', fill: 'both' }).onfinish = function () { d.remove(); }; }
     function run(ev) {
@@ -378,11 +382,12 @@
         if (e.t === 'land' && !calm) land(e.k);
         if (e.t === 'claim' && !calm) { var rcl = cellRect(e.k), st = cur() && cur().state; if (rcl) puff(rcl, (st && st.players[e.p] && st.players[e.p].color) || '#888', 80); }
         if (e.t === 'buy') popup('Second claim', 'ap', center(), 0);
+        if (e.t === 'bank') { var jr = rectOf('[data-fx="jar"]'), pr = rectOf('[data-fx="pile-' + e.p + '"]'); if (jr) popup('+' + e.n + '◇ banked', 'vp', jr, 0); if (jr && pr && !calm) { pr.p = e.p; fly('vp', jr, pr, e.n * 3, 200); } }
         if (e.t === 'lastround') banner('🔔 The last round');
         if (e.t === 'cursed') { var rc = cellRect(e.k); if (rc) { popup('Cursed!', 'curse', rc, i * 100); if (!calm) flare(rc, i * 100); } }
         if (e.t === 'note') { var rn = cellRect(e.k); if (rn) popup(e.text, e.cls, rn, i * 100); }
         if (e.t === 'crumble') { if (!calm) crumble(e, i); else { var r0 = cellRect(e.k); if (r0) popup(e.over ? 'Overwhelmed!' : 'Ruined', 'ruin', r0); } }
-        if (e.t === 'vp') { var from = cellRect(e.k) || center(), to = rectOf('[data-fx="pile-' + e.p + '"]'); popup('+' + e.n + '◇', 'vp', from, nV * 150); if (to && !calm) { to.p = e.p; fly('vp', from, to, e.n, 250 + nV * 150); } nV++; }
+        if (e.t === 'vp') { tick(e.p, e.n); var from = cellRect(e.k) || center(), to = rectOf('[data-fx="pile-' + e.p + '"]'); popup('+' + e.n + '◇', 'vp', from, nV * 150); if (to && !calm) { to.p = e.p; fly('vp', from, to, e.n, 250 + nV * 150); } nV++; }
         if (e.t === 'ap') { var f2 = cellRect(e.k) || center(), t2 = rectOf('[data-fx="jar"]'); popup('+' + e.n + '●', 'ap', f2, nA * 120); if (t2 && !calm) fly('ap', f2, t2, e.n, 200 + nA * 120); nA++; }
       });
     }
@@ -847,7 +852,7 @@
     var st = ctx.state, sc = E.scores(st), h = '<div class="plist">';
     st.players.forEach(function (pl, i) {
       var isCur = ctx.kind === 'game' && i === st.cur;
-      h += '<div class="pcard' + (isCur ? ' cur' : '') + (pl.out ? ' out' : '') + '"><div class="pname"><span class="swatch" style="background:' + pl.color + '"></span> <b>' + esc(pl.name) + (i === fixedSeat(ctx) ? ' (you)' : '') + '</b> <span class="small">' + esc(pl.arch) + (pl.out ? ' (out)' : '') + (ctx.online && !isConnected(pl.name) ? ' · offline' : '') + (pl.bot ? ' · ' + esc(BOT_NAMES[pl.bot] || pl.bot) : '') + (ctx.thinking === i ? ' · <i>thinking…</i>' : '') + '</span>' + (isCur ? '<span class="turnmark">◀ turn</span>' : '') + '</div>' +
+      h += '<div class="pcard' + (isCur ? ' cur' : '') + (pl.out ? ' out' : '') + '"><div class="pname"><span class="swatch" style="background:' + pl.color + '"></span> <b>' + esc(pl.name) + (i === fixedSeat(ctx) ? ' (you)' : '') + '</b> <span class="small">' + esc(pl.arch) + (pl.out ? ' (out)' : '') + (ctx.online && !isConnected(pl.name) ? ' · offline' : '') + (pl.bot ? ' · ' + esc(BOT_NAMES[pl.bot] || pl.bot) : '') + (ctx.thinking === i ? ' · <span class="candle" aria-hidden="true"><i></i></span><i>thinking…</i>' : '') + '</span>' + (isCur ? '<span class="turnmark">◀ turn</span>' : '') + '</div>' +
         '<div class="pbody"><span data-fx="pile-' + i + '">' + jewelPile(sc[i].total) + '</span><div class="pstats"><div class="bignum" title="Victory points: cards ' + sc[i].cards + ' + tokens ' + sc[i].tokens + '">' + sc[i].total + '<span class="unit">◇</span></div>' +
         '<div class="small">♟ ' + pl.meeples + ' meeples' + (ctx.kind === 'game' ? ' · ' + pl.hand.length + ' in hand' : '') + (pl.reserve > 0 ? ' · ' + pl.reserve + '● Reserves' : '') + '</div></div></div></div>';
     });
@@ -877,6 +882,7 @@
   var rendering = false, rerender = false;
   // Redraw the whole app from `app`. A render requested during a render runs once the current one finishes.
   function render() {
+    document.documentElement.setAttribute('data-motion', prefs.motion || 'full');
     if (rendering) { rerender = true; return; }
     rendering = true;
     try { renderNow(); } finally { rendering = false; }
@@ -2356,6 +2362,20 @@
   var wasMobile = isMobile();
   window.addEventListener('resize', function () { if (isMobile() !== wasMobile) { wasMobile = isMobile(); render(); return; } var c = cur(); if (c && c.ui.fit) applyZoom(c); });
 
+  // Claudenspiel's "why is this good?": on your turn, what a hand card would gain you if you played it at its best space now
+  // (and claimed it, if you still can). Tried in KBots.determinize's fair view, so it never uses cards you can't see.
+  function whyGood(ctx, uid) {
+    var st = ctx.state, p = st.cur; if (!myTurn(ctx) || !st.turn || !st.turn.started || st.pending || st.res || st.winner != null) return '';
+    var d = E.rawDef(st, uid); if (!E.needsPlacement(d) || E.playBlock(st, p, uid)) return '';
+    var L = E.legalCells(st, uid), cash = E.funds(st.players[p]), ks = Object.keys(L).filter(function (k) { return L[k] <= cash; }).slice(0, 24);
+    if (!ks.length) return 'Can’t be placed for the ● you have.';
+    var w = KBots.determinize(st, p, Math.random), base = E.scores(w)[p].total, inc0 = E.income(w, p), best = null;
+    ks.forEach(function (k) { var s1 = E.apply(w, { t: 'play', uid: uid, k: k }); if (s1.error) return; s1 = KBots.resolve(s1, p, 'greedy') || s1;
+      var tries = [s1]; if (!s1.turn.claimed) E.claimOptions(s1, p).forEach(function (ck) { var s2 = E.apply(s1, { t: 'claim', k: ck }); if (!s2.error) tries.push(s2); });
+      tries.forEach(function (s2) { var g = E.scores(s2)[p].total - base, gi = E.income(s2, p) - inc0, v = g + gi * 0.5; if (!best || v > best.v) best = { v: v, g: g, gi: gi, k: k, c: s2.turn.claimed && !st.turn.claimed }; }); });
+    if (!best) return '';
+    return 'Best now: <b>' + (best.g >= 0 ? '+' : '') + best.g + '◇</b>' + (best.gi ? ', ' + (best.gi > 0 ? '+' : '') + best.gi + '● a turn' : '') + ' at ' + esc(best.k) + (best.c ? ', claimed' : '') + ' (' + L[best.k] + '●)';
+  }
   /* ---------------- hover magnifier ---------------- */
   var hov = document.createElement('div'); hov.className = 'hovercard'; hov.setAttribute('aria-hidden', 'true'); document.body.appendChild(hov);
   var hovKey = null;
@@ -2380,7 +2400,8 @@
     else if (t.hasAttribute('data-row')) { var lc = libById(t.getAttribute('data-row')); return lc ? 'r:' + lc.id + '|' + defFace(lc, { big: true }) : null; }
     if (!id) return null;
     var dd = (stt && stt.defs[id]) || libById(id); if (!dd) return null;
-    return 'h:' + id + '|' + defFace(Object.assign({}, dd, { art: artOf(id) }), { big: true });
+    var why = t.hasAttribute('data-hand') && ctx.kind === 'game' ? whyGood(ctx, t.getAttribute('data-hand')) : '';
+    return 'h:' + id + ':' + (stt ? stt.log.length : 0) + '|' + defFace(Object.assign({}, dd, { art: artOf(id) }), { big: true }) + (why ? '<div class="hovinfo why">' + why + '</div>' : '');
   }
   document.addEventListener('mousemove', function (e) {
     if (lastPointer !== 'mouse') return;

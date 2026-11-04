@@ -13,7 +13,8 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 0.4 Orchard +1◇ per Leaf card in the largest region (Gardener 0.88 → 0.96).
 - ✅ 0.4 Cathedral +1◇ per Sceptre card on the board it doesn't own (the Archbishop was weak at 3–4 players).
 - ▶ Measure 4-player games properly; strengths differ by table size.
-- ▶ Warmonger is low in 2-player games (0.75–0.80).
+- ✅ 0.5 Palace 2◇ per Goblet card it doesn't own (the Hedonist was strongest, most at 4 players); it also lifted the 2-player Warmonger to 0.99.
+- ○ Warcamp 5◇/10◇ was tried: it overshoots at 4 players (more Ruins at bigger tables). Any War buff must not grow with table size.
 - ○ Death Ray: 2◇ for 12● is the worst printed value; give it 4◇ or make it cheaper.
 - ○ Re-run the Genius-only balance study after every balance release.
 

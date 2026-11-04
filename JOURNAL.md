@@ -2,6 +2,22 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 4 November 2026 · 0.5, a word in your ear
+
+**Four players, measured properly first** (280 games): Hedonist 1.25, Archbishop 1.12, Warmonger 1.12, Philosopher 0.90, Gardener 0.81, Cryptkeeper 0.79; seats even (0.94–1.06). The Hedonist reading matched every earlier 4-player run (1.16–1.33), and it was slightly high at 2 players too. The cause is the mechanism 0.4 used to help the Cathedral: Palace paid 3◇ for every Goblet card someone else owns, and a bigger table puts more of them on the board.
+
+**Changes, and why.**
+- *Palace 2◇ per Goblet card not in your Kingdom* (was 3◇). On the same deals: 2 players spread 0.34 → **0.16** (Hedonist 1.11 → 0.95), and the Warmonger's low 2-player numbers (0.80) went with it, to 0.99, with no change to Warcamp. The Hedonist had been the Warmonger's predator.
+- *Warcamp 5◇/10◇ tried and dropped.* Tested with the Palace change, it fixed 2 players but sent the Warmonger to 1.50 at 4 players: more players means more Ruins (2.31 a game at 4), so any per-Ruin payout grows with the table, the same trap as Palace.
+- *"Why is this good?"*: hovering a hand card on your turn shows its best gain now (◇, ● a turn, the space, and whether it is claimed). It is worked out in the Genius's fair view (KBots.determinize), so cards that draw or reveal can't leak hidden cards into the hint.
+- *Animations*: ◇ counters tick up; banked ● fly into the ◇ pile; chevrons around a card one enemy from Overwhelm beat like a heart; the Genius gets a flickering candle while it thinks. All follow the Motion setting (a data-motion attribute on the page) and the system's reduced motion.
+
+**Measured with Palace at 2◇**: 2 players (455 games) Archbishop 0.99 · Cryptkeeper 0.95 · Gardener 1.00 · Hedonist 0.95 · Philosopher 1.11 · Warmonger 0.99. 4 players (143 games) spread 0.45, with Archbishop 0.76 and Warmonger 1.21, too few games to act on.
+
+**Open questions.**
+- 4 players needs 500+ games before any 4-player-only change; run it overnight-style next time.
+- Hints for cards played from hand (Actions, Blessings) are still missing.
+
 ## 3 November 2026 · 0.4, sound, motion and a fairer table
 
 **Changes, and why.**

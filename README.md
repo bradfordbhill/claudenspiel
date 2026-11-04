@@ -49,3 +49,4 @@ node tools/logo.js                              # redraw the logo (needs Playwri
 | 0.2 | Grounds (Marsh, Battlefield, Crossroads); banking; buying a second claim; a seat handicap for 3+ players; the race bar; Obelisk 6◇; Fountain reworked. Seats even at every table size |
 | 0.3 | The Book of Deeds (19 deeds); target 52◇; Mausoleum 4◇ for cards buried under it; its own icon; a safety term for the bots, measured and left off |
 | 0.4 | Sound and animations (with Sound and Motion settings); Cathedral +1◇ per Sceptre card it doesn't own; Orchard +1◇ per Leaf card in the region; seat handicap by table size; bots play Grounds on purpose; Mausoleum back to 3◇ |
+| 0.5 | "Why is this good?" hover hints; Palace 2◇ per Goblet it doesn't own; ticking counters, flying ●, heartbeat chevrons and the Genius's candle. 2-player spread 0.16 |

@@ -27,3 +27,12 @@ h1.logo.small { width: 300px; }
 /* Claudenspiel animations: pixel dust and the last-round banner */
 .fx.px { width: 4px; height: 4px; border-radius: 0; }
 .fx.banner { padding: 6px 18px; background: var(--title1); color: #f6efd8; border: 2px solid #f0a86a; font-family: 'Jacquard 24', serif; font-size: 26px; white-space: nowrap; transform-origin: top center; image-rendering: pixelated; }
+/* Chevrons pointing at a card one enemy away from Overwhelm beat like a heart. */
+@keyframes cs-beat { 0%, 60%, 100% { transform: scale(1); } 20% { transform: scale(1.35); } 40% { transform: scale(1.1); } }
+:root[data-motion="full"] .gchev.hot { animation: cs-beat 1.2s steps(5) infinite; }
+/* The Genius's candle: a two-pixel flame that flickers while it thinks. */
+.candle { display: inline-block; position: relative; width: 4px; height: 9px; margin: 0 3px 0 1px; background: #f6efd8; box-shadow: 0 0 0 1px #16110c; vertical-align: -1px; }
+.candle i { position: absolute; left: 0; top: -6px; width: 4px; height: 5px; background: #f0a86a; box-shadow: 0 -1px 0 0 #ffe9a8 inset; }
+@keyframes cs-flicker { 0% { transform: translateX(0) scaleY(1); } 33% { transform: translateX(1px) scaleY(.8); } 66% { transform: translateX(-1px) scaleY(1.15); } }
+:root:not([data-motion="off"]) .candle i { animation: cs-flicker .45s steps(3) infinite; }
+@media (prefers-reduced-motion: reduce) { .gchev.hot, .candle i { animation: none !important; } }

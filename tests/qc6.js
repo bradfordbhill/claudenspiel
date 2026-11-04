@@ -14,7 +14,7 @@ game('Cryptkeeper'); A({t:'startTurn'}); A({t:'play',uid:st.players[0].foundatio
 chk('Mausoleum', E.cardValue(st,'0,0',0)===3, 'a card buried under the Mausoleum: 3◇ ('+E.cardValue(st,'0,0',0)+')');
 A({t:'sbPlace',id:'sanctuary',k:'1,0'}); A({t:'sbClaim',k:'1,0',owner:0}); A({t:'sbBury',id:'eureka',k:'1,0'});
 chk('Mausoleum', E.cardValue(st,'0,0',0)===6, 'plus 3◇ for one buried elsewhere in the Kingdom ('+E.cardValue(st,'0,0',0)+')');
-game('Hedonist'); A({t:'startTurn'}); A({t:'play',uid:st.players[0].foundationUid,k:'0,0'}); A({t:'sbPlace',id:'fairgrounds',k:'5,5'}); chk('Palace', E.cardValue(st,'0,0',0)===4+3, '4 own + 3 for an outside Goblet ('+E.cardValue(st,'0,0',0)+')');
+game('Hedonist'); A({t:'startTurn'}); A({t:'play',uid:st.players[0].foundationUid,k:'0,0'}); A({t:'sbPlace',id:'fairgrounds',k:'5,5'}); chk('Palace', E.cardValue(st,'0,0',0)===4+2, '4 own + 2 for an outside Goblet (Claudenspiel) ('+E.cardValue(st,'0,0',0)+')');
 A({t:'sbPlace',id:'obelisk',k:'1,0'}); A({t:'sbClaim',k:'1,0',owner:0}); chk('Obelisk', E.cardIncome(st,'1,0')===6, '6● per turn');
 // warcamp reserves
 game('Warmonger','Philosopher'); A({t:'startTurn'}); st.players[0].ap=99; A({t:'play',uid:st.players[0].foundationUid,k:'0,0'}); A({t:'sbPlace',id:'eureka',k:'1,1'}); A({t:'sbPlace',id:'sanctuary',k:'2,1'});
