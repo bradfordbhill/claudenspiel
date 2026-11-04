@@ -95,7 +95,7 @@ Seasons and Reckonings were prototyped (`seasons: 3`, `seasonLength: 2`, three s
 - *Watched, not targeted:* the early-leader rate.
 
 **Next steps, in order.**
-1. Measure 0.5's skill expression (Genius vs tactician, paired, 2 and 3 players). This is the number to beat.
+1. Measure 0.5's skill expression (Genius vs tactician, paired, 2 and 3 players). This is the number to beat. *Done in 0.6, with a surprise: the Genius no longer beats a tactician under Claudenspiel's rules (−5 points over 140 deals), so first the Genius has to learn what the tactician knows (see the journal).*
 2. Prototype the pillars that add decisions rather than restructure scoring, since scoring changes alone did not help: **the market** (draws become choices) and **two-use cards** (each card becomes a choice). Measure each on skill expression.
 3. Return to Reckonings only once claims are contestable (influence), since a Reckoning that reads an uncontested board just compounds.
 

@@ -2,6 +2,23 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 4 November 2026 · 0.6, the market on trial, and a broken yardstick
+
+**The market** (the second edition's first pillar) is in, as an optional rule: three face-up cards, and each of a turn's draws is a market card or the top of the deck, taken at any point in the turn. Bots take a market card when its keep value clears a bar, otherwise draw blind.
+
+**Skill expression, measured** (`tools/skill.js`: the same deal played twice, seat X played once by the Genius and once by a tactician, every other seat a tactician; the Genius at a fixed, cheaper setting of 1 world and 3 lines so runs are deterministic and affordable):
+
+| 2 players | Genius wins | Tactician wins | Gap |
+|---|---|---|---|
+| 0.5 rules (140 deals) | 51.4% | 56.4% | −5.0 |
+| With the market (90 deals) | 50.0% | 43.3% | +6.7 |
+| Race model refit: hand worth nothing (143) | 45.5% | 56.6% | −11.2 (p≈0.03) |
+| Race model refit: hand worth 0.3 (137) | 51.8% | 56.2% | −4.4 |
+
+**The yardstick is broken.** Under Claudenspiel's rules the Genius is no longer stronger than a tactician, so its gap over one can't yet measure how much a rule rewards skill. Refitting its race model to Claudenspiel's own games did not help (pace here is a steady ~9.3◇ a turn and hand size no longer correlates with it, but removing the hand term made the Genius clearly worse). The likelier cause: since 0.2 the tactician gained habits the Genius's own planning only partly has (buying the second claim, laying Grounds for their effect, drawing from the market). The market's +6.7 is within chance.
+
+**Next:** give the Genius's planning the same knowledge (Grounds, the bought claim, market choices inside its imagined turns), confirm it beats a tactician clearly again (target: 60%+ paired), and only then judge the market and the other pillars by skill expression. The market stays optional until then.
+
 ## 4 November 2026 · Foundations
 
 Stopped tuning and questioned every base assumption, in [FOUNDATIONS.md](FOUNDATIONS.md). `tools/anatomy.js` records every turn of bot self-play. The diagnosis: parallel solitaire with steady accrual. Every turn adds about 9◇, the best fifth of turns carries only 35% of the points, claims are automatic (exactly one a turn), ● is in surplus, conflict touches 16–19% of turns, and the greedy, tactician and raider bots win about equally. There are many options but few decisions. Thirteen assumptions questioned, eight marked for change, and a second edition planned around five pillars (seasons and Reckonings, influence, cards as currency with two uses each, a market, archetype powers instead of bans).
