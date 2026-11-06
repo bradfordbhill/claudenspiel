@@ -4076,7 +4076,7 @@ var KEngine = (function () {
   var DIRS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
   var DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
   var SUITS = ['Sceptre', 'Goblet', 'Sword', 'Bone', 'Leaf', 'Tome'];
-  var BANK_RATE = 6, BANK_MAX = 2, CLAIM_PRICE = 10;
+  var BANK_RATE = 6, BANK_MAX = 2, CLAIM_PRICE = 10, CONTEST_PRICE = 8;
   // Each seat's starting ◇ (the seat handicap) by table size: 2 players are already even.
   var SEAT_TOKENS = { 2: [0, 0], 3: [6, 4, 0], 4: [9, 6, 3, 0], 5: [12, 9, 6, 3, 0] };   // Claudenspiel's economy: banking and the bought claim
 
@@ -5185,7 +5185,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -5399,6 +5399,28 @@ var KEngine = (function () {
         bp.ap -= CLAIM_PRICE; st.turn.claimed = false; st.turn.boughtClaim = true; log(st, bp.name + ' pays ' + CLAIM_PRICE + '● for a second claim.'); return st;
       }
 
+      // Contest (influence, on trial, opts.contest): once a turn, pay CONTEST_PRICE● of this turn's ● to take a rival's claimed card
+      // next to the card you just placed. Their meeple goes home; yours takes its place. It does not use your claim.
+      case 'contest': {
+        if (!st.opts.contest) return err(st, 'Contesting is switched off for this game.');
+        if (st.pending || st.res) return err(st, 'Finish the current effect first.');
+        if (!st.turn.started) return err(st, 'Start your turn first.');
+        if (st.turn.contested) return err(st, 'You can contest only one card a turn.');
+        var tk = a.k, tu2 = top(st, tk); if (!tu2) return err(st, 'No card there.');
+        if (!st.turn.lastKey || n4(st.turn.lastKey).indexOf(tk) < 0) return err(st, 'Contest a claimed card next to the one you just placed.');
+        var tcc = st.cards[tu2], tp = st.players[p];
+        if (tcc.ruined || unclaimable(st, tu2) || isCovered(st, tk)) return err(st, 'That card cannot be contested.');
+        if (!tcc.claimants.length || tcc.claimants.indexOf(p) >= 0) return err(st, 'Contest a card a rival owns.');
+        if (tcc.fixed || tcc.ascended) return err(st, 'That card’s claim cannot be taken.');
+        if (tcc.claimants.length > 1) return err(st, 'A shared card cannot be contested.');
+        if ((tp.ap || 0) < CONTEST_PRICE) return err(st, 'Contesting costs ' + CONTEST_PRICE + '● of this turn’s ●.');
+        if (tp.meeples <= 0) return err(st, 'You have no meeples left.');
+        var loser = tcc.claimants[0]; tp.ap -= CONTEST_PRICE; st.turn.contested = true;
+        returnMeeples(st, tu2); tcc.claimants = [p]; tp.meeples--;
+        log(st, tp.name + ' pays ' + CONTEST_PRICE + '● and contests ' + rawDef(st, tu2).name + ': ' + st.players[loser].name + '’s meeple goes home.');
+        afterBoardChange(st, p); return st;
+      }
+
       // Burn (second-edition rule, on trial, opts.burn): once a turn, discard a card from hand for a one-time effect set by its
       // suit, so every card has two uses: build it, or burn it. Bone is buried under a card of your Kingdom (a.k) instead.
       case 'burn': {
@@ -5549,6 +5571,13 @@ var KEngine = (function () {
     return st;
   }
 
+  function contestOptions(st, p) {
+    if (!st.opts.contest || !st.turn || !st.turn.started || st.turn.contested || !st.turn.lastKey || st.players[p].meeples <= 0 || (st.players[p].ap || 0) < CONTEST_PRICE) return [];
+    return n4(st.turn.lastKey).filter(function (k) {
+      var u = top(st, k); if (!u) return false; var c = st.cards[u];
+      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended;
+    });
+  }
   function claimOptions(st, p) {
     if (!st.turn || !st.turn.lastKey || st.turn.claimed) return [];
     return [st.turn.lastKey].concat(n4(st.turn.lastKey)).filter(function (k) {
@@ -5565,7 +5594,7 @@ var KEngine = (function () {
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
     burnBlock: burnBlock, BURN: BURN, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
-    archInfo: archInfo, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
+    archInfo: archInfo, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };
 })();
 if (typeof module !== 'undefined') module.exports = KEngine;
@@ -5754,7 +5783,7 @@ var KBots = (function () {
       if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; } }
     if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; }
     if(strat!=='greedy'&&strat!=='quick') st=useAbilities(st,p,strat,stats); else st=useAbilities(st,p,'greedy',stats);
-    st=burnCard(st,p,strat,stats); st=buyClaim(st,p,strat,stats);
+    st=burnCard(st,p,strat,stats); st=buyClaim(st,p,strat,stats); st=contestCard(st,p,strat,stats);
     return swapDead(st,p,stats); }
   // Claudenspiel: what laying a Grounds card does, which the ◇-and-● scoring can't see: Marsh shelters the bot's own cards
   // that are close to Overwhelm, Battlefield exposes rivals' cards, Crossroads opens cheap spaces next to its own.
@@ -5778,6 +5807,10 @@ var KBots = (function () {
         if(d.suit==='Sceptre'){ const c=bestClaim(s,p,strat); if(!c) continue; s=c; }
         const v=worth(s)-kv; if(v>bv){bv=v;best={s,d};} } }
     if(!best) return st; stats.burned=stats.burned||{}; stats.burned[best.d.suit]=(stats.burned[best.d.suit]||0)+1; return best.s; }
+  // Contest (opts.contest): take a rival's card when the swing beats what the ● would bank (8● ≈ 1.3◇).
+  function contestCard(st,p,strat,stats){ let best=null,bv=strat==='gsim'?1:1.3;
+    E.contestOptions(st,p).forEach(k=>{ const s=ap(st,{t:'contest',k}); if(!s) return; const v=evalState(st,s,p,strat); if(v>bv){bv=v;best=s;} });
+    if(!best) return st; stats.contested=(stats.contested||0)+1; return best; }
   // Claudenspiel: pay for a second claim when the best claim is worth more than the ● would bank (10● ≈ 1.7◇).
   function buyClaim(st,p,strat,stats){ if(!st.opts.buyClaim||!st.turn.claimed||st.turn.boughtClaim) return st;
     const s=ap(st,{t:'buyClaim'}); if(!s) return st; const c=bestClaim(s,p,strat); if(!c) return st;
@@ -7283,6 +7316,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       '<label>Last round</label><label><input type="checkbox" data-set="lastRound"' + (setup.lastRound !== false ? ' checked' : '') + '> Reaching the target starts the last round: everyone gets the same number of turns, then the highest total wins</label>' +
       '<label>Banking</label><label><input type="checkbox" data-set="banking"' + (setup.banking !== false ? ' checked' : '') + '> At the end of your turn, every 6● you didn’t spend becomes 1◇ (at most 2◇)</label>' +
       '<label>Second claim</label><label><input type="checkbox" data-set="buyClaim"' + (setup.buyClaim !== false ? ' checked' : '') + '> Once a turn, after claiming, pay 10● to claim once more</label>' +
+      '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (setup.contest ? ' checked' : '') + '> Second edition, on trial: once a turn, pay 8● to take a rival’s card next to the one you just placed</label>' +
       '<label>Burn</label><label><input type="checkbox" data-set="burn"' + (setup.burn ? ' checked' : '') + '> Second edition, on trial: once a turn, discard a card for a one-time effect set by its suit</label>' +
       '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
       '</div></fieldset>';
@@ -7301,7 +7335,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
     var h = '<div class="page"><div class="gamegrid">';
     h += '<div class="left"><div class="pane raised" style="flex:0 0 auto">' + playersPanel(ctx) + '</div>';
     h += '<div class="pane raised col" style="flex:0 0 auto"><div class="apbox"><span data-fx="jar">' + apJar(st.turn.started ? pl.ap : 0) + '</span><div><div class="bignum">' + (st.turn.started ? pl.ap : '—') + '<span class="unit">●</span></div><div class="small">' + (st.turn.started ? (myTurn(ctx) ? 'Aktion points left' : esc(pl.name) + '’s ● left') : 'Turn not started') + '</div>' + (pl.debt > 0 ? '<div class="reserve" title="Owed for reactions; taken from your next turn">− ' + pl.debt + '● owed next turn</div>' : '') + (pl.reserve > 0 ? '<div class="reserve" title="Reserves are spent like ● after your ● runs out, and stay between turns">+ ' + pl.reserve + '● Reserves</div>' : '') +
-      (st.turn.started ? (function () { var co = E.claimOptions(st, st.cur).length; return '<div class="claimstate' + (co ? ' avail' : '') + '">' + (st.turn.claimed ? 'Claim used' : co ? meepleChip(ctx) + ' Claim available' : 'Claim: nothing to claim yet') + '</div>' + (st.opts.buyClaim && st.turn.claimed && !st.turn.boughtClaim && myTurn(ctx) && (st.players[st.cur].ap || 0) >= E.CLAIM_PRICE && st.players[st.cur].meeples > 0 ? '<button class="btn sm" data-act="buyClaim" title="Claudenspiel: once a turn, pay ' + E.CLAIM_PRICE + '● to claim once more">Buy a claim (' + E.CLAIM_PRICE + '●)</button>' : ''); })() : '') + '</div></div>' +
+      (st.turn.started ? (function () { var co = E.claimOptions(st, st.cur).length; return '<div class="claimstate' + (co ? ' avail' : '') + '">' + (st.turn.claimed ? 'Claim used' : co ? meepleChip(ctx) + ' Claim available' : 'Claim: nothing to claim yet') + '</div>' + (st.opts.buyClaim && st.turn.claimed && !st.turn.boughtClaim && myTurn(ctx) && (st.players[st.cur].ap || 0) >= E.CLAIM_PRICE && st.players[st.cur].meeples > 0 ? '<button class="btn sm" data-act="buyClaim" title="Claudenspiel: once a turn, pay ' + E.CLAIM_PRICE + '● to claim once more">Buy a claim (' + E.CLAIM_PRICE + '●)</button>' : '') + (myTurn(ctx) && !st.pending && !st.res && E.contestOptions(st, st.cur).length ? '<button class="btn sm" data-act="contest" title="Contest: pay ' + E.CONTEST_PRICE + '● to take a rival’s card next to the one you just placed">Contest (' + E.CONTEST_PRICE + '●)</button>' : ''); })() : '') + '</div></div>' +
       '<div class="row"><button class="btn def big" data-act="endTurn"' + (myTurn(ctx) && st.turn.started && !st.pending && !st.res && st.winner == null ? '' : ' disabled') + '>End turn</button>' +
       (ctx.online ? '' : '<button class="btn big" data-act="undo"' + (ctx.hist.length ? '' : ' disabled') + ' title="Undo the last action">Undo</button>') + '</div>' +
       (ctx.online ? '' : '<details class="small" data-keep="ref"' + (app.open.ref ? ' open' : '') + '><summary>Referee</summary><div class="col" style="margin-top:4px"><div class="row">● <button class="btn sm" data-act="apAdj" data-d="-1">−</button><button class="btn sm" data-act="apAdj" data-d="1">+</button> ◇ tokens <button class="btn sm" data-act="tokAdj" data-d="-1">−</button><button class="btn sm" data-act="tokAdj" data-d="1">+</button></div>' +
@@ -7325,6 +7359,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
     if (pd && pd.kind === 'cell') return '<div class="prompt"><b>' + esc(st.players[pd.player].name) + ':</b> ' + esc(pd.prompt) + ' ' + verb() + ' an orange-outlined ' + (pd.empty ? 'space' : 'card') + '.' + (pd.optional ? ' <button class="btn sm" data-act="skip">Skip</button>' : '') + (st.res && !ctx.online ? ' <button class="btn sm" data-act="cancelEffect" title="Referee: stop resolving this effect">Cancel effect</button>' : '') + '</div>';
     if (ui.autoEnding) return '<div class="prompt"><b>Out of ●.</b> Nothing left to play, claim or use, so your turn ends in a moment. <button class="btn sm" data-act="holdTurn">Wait, I’m not done</button></div>';
     if (ui.endAsked) { var lt = leftToDo(ctx); if (lt) return '<div class="prompt">You can still ' + lt.text + ' (' + E.funds(st.players[st.cur]) + '● left). End your turn anyway? <button class="btn sm def" data-act="endTurn">End turn</button><button class="btn sm" data-act="keepPlaying">Keep playing</button><button class="linkbtn small" data-act="noEndAsk">Don’t ask again</button></div>'; }
+    if (ui.mode === 'contest') return '<div class="prompt">' + verb() + ' a rival’s card next to the one you just placed, to take it for ' + E.CONTEST_PRICE + '●. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
     if (ui.mode === 'burnBone') return '<div class="prompt">' + verb() + ' a card of your Kingdom to bury ' + esc(E.rawDef(st, ui.burnUid).name) + ' under. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
     if (ui.mode === 'reclaim') return '<div class="prompt">' + verb() + ' one of your claimed cards to take its meeple back. This ends your turn. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
     if (ui.mode === 'move') return '<div class="prompt">Referee move: click an empty space for the card from ' + esc(ui.moveFrom) + '. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
@@ -8399,6 +8434,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
     if (ui.mode === 'move') { if (!E.top(st, k)) { ui.mode = null; dispatch(ctx, { t: 'sbMove', from: ui.moveFrom, to: k }); ui.sel = k; } else { ui.sel = k; render(); } return; }
     if (ctx.kind === 'game') {
       if (ui.mode === 'reclaim') { ui.mode = null; if (!dispatch(ctx, { t: 'reclaim', k: k })) ui.mode = 'reclaim'; return; }
+      if (ui.mode === 'contest') { ui.mode = null; ui.sel = k; if (!dispatch(ctx, { t: 'contest', k: k })) ui.mode = 'contest'; return; }
       if (ui.mode === 'burnBone') { var bu = ui.burnUid; ui.mode = null; ui.burnUid = null; ui.sel = k; if (!dispatch(ctx, { t: 'burn', uid: bu, k: k })) { ui.mode = 'burnBone'; ui.burnUid = bu; } return; }
       if (myTurn(ctx) && !ui.hand && !pd && !st.res && !ui.swap && st.turn && st.turn.started && E.claimOptions(st, st.cur).indexOf(k) >= 0) { ui.sel = k; dispatch(ctx, { t: 'claim', k: k }); return; }
       if (ui.hand && !pd && myTurn(ctx)) { var L = E.legalCells(st, ui.hand); if (k in L) { var h = ui.hand; ui.sel = k; dispatch(ctx, { t: 'play', uid: h, k: k }); return; } }
@@ -8425,7 +8461,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn });
+        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: !!setup.contest });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }
@@ -8445,6 +8481,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       case 'resume': { var sv = lsGet('cs.game'); if (sv) { app.game = newCtx(sv, 'game'); app.page = 'game'; render(); } return; }
       case 'startTurn': dispatch(ctx, { t: 'startTurn' }); return;
       case 'buyClaim': dispatch(ctx, { t: 'buyClaim' }); return;
+      case 'contest': ctx.ui.mode = 'contest'; ctx.ui.hand = null; render(); return;
       case 'burn': { var bh = ctx.ui.hand; if (!bh) return; if (E.rawDef(ctx.state, bh).suit === 'Bone') { ctx.ui.mode = 'burnBone'; ctx.ui.burnUid = bh; ctx.ui.hand = null; render(); return; } ctx.ui.hand = null; dispatch(ctx, { t: 'burn', uid: bh }); return; }
       case 'reclaimMode': ctx.ui.mode = 'reclaim'; render(); return;
       case 'cancelMode': ctx.ui.mode = null; render(); return;

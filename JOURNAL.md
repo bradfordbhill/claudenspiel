@@ -2,6 +2,23 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 6 November 2026 · 1.0-pre, contest: influence's first shape, and the first pillar to move the number
+
+**Contest** (`contest: true`, a New game option; `tests/cs8-contest.js`): once a turn, pay 8● of this turn's ● (never Reserves) to take a rival's card next to the one you just placed. Their meeple goes home, yours takes its place, and it doesn't use your claim. Foundations, Ascended cards and shared cards can't be taken. It is the simplest form of "claims can be contested": ownership is no longer settled the moment someone claims. Bots contest when the swing beats what 8● would bank (about 1 contest per 2-player game, 13 turns). The Genius sees contests as plain moves in its imagined turns.
+
+**Skill expression** (paired, 2 players, Genius vs tactician, deals 0–263 with a time cap; 164 paired deals):
+
+| Rules | Genius | Tactician | Gap |
+|---|---|---|---|
+| Base (0.8) | 60.2% | 50.2% | +10.0 |
+| Market, planning picks | 63.7% | 52.7% | +10.9 |
+| Burn | 62.7% | 55.7% | +7.0 |
+| **Contest** | **73.2%** | **48.8%** | **+24.4 (z≈6)** |
+
+**What it says.** Contest more than doubles the gap and clears the 65% bar by eight points. The reason is the one FOUNDATIONS predicted: it changes what decisions are *about*. A card on the board is now a standing question for both players (take it, protect it, or build so nothing worth taking sits beside your last card), and lookahead pays. Adding options did not help before; adding interaction did.
+
+**Caveats, honestly.** The gap is large partly because the tactician contests by a simple rule and the Genius searches; a human-vs-bot gap may differ. Archetype balance with contest on is **not yet measured** (Warmonger and Cryptkeeper likely gain), and neither are game length or the leader's win rate. So it stays optional. Next: the balance run with contest on, then combine with the market and decide the defaults for 1.0; then Reckonings, now that claims can change hands.
+
 ## 4 November 2026 · 0.9, two pillars judged by the mended yardstick
 
 **Burn** (the second edition's "two uses per card", first shape): once a turn, discard a card from hand for a one-time effect set by its suit (Goblet +5●, Tome draw 2, Leaf +2◇, Sceptre claim again, Sword rivals' cards need one fewer enemy this turn, Bone buried under your own card). An optional rule (`burn: true`), with bots, interface and `tests/cs7-burn.js`.

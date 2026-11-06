@@ -183,7 +183,7 @@ var KBots = (function () {
       if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; } }
     if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; }
     if(strat!=='greedy'&&strat!=='quick') st=useAbilities(st,p,strat,stats); else st=useAbilities(st,p,'greedy',stats);
-    st=burnCard(st,p,strat,stats); st=buyClaim(st,p,strat,stats);
+    st=burnCard(st,p,strat,stats); st=buyClaim(st,p,strat,stats); st=contestCard(st,p,strat,stats);
     return swapDead(st,p,stats); }
   // Claudenspiel: what laying a Grounds card does, which the ◇-and-● scoring can't see: Marsh shelters the bot's own cards
   // that are close to Overwhelm, Battlefield exposes rivals' cards, Crossroads opens cheap spaces next to its own.
@@ -207,6 +207,10 @@ var KBots = (function () {
         if(d.suit==='Sceptre'){ const c=bestClaim(s,p,strat); if(!c) continue; s=c; }
         const v=worth(s)-kv; if(v>bv){bv=v;best={s,d};} } }
     if(!best) return st; stats.burned=stats.burned||{}; stats.burned[best.d.suit]=(stats.burned[best.d.suit]||0)+1; return best.s; }
+  // Contest (opts.contest): take a rival's card when the swing beats what the ● would bank (8● ≈ 1.3◇).
+  function contestCard(st,p,strat,stats){ let best=null,bv=strat==='gsim'?1:1.3;
+    E.contestOptions(st,p).forEach(k=>{ const s=ap(st,{t:'contest',k}); if(!s) return; const v=evalState(st,s,p,strat); if(v>bv){bv=v;best=s;} });
+    if(!best) return st; stats.contested=(stats.contested||0)+1; return best; }
   // Claudenspiel: pay for a second claim when the best claim is worth more than the ● would bank (10● ≈ 1.7◇).
   function buyClaim(st,p,strat,stats){ if(!st.opts.buyClaim||!st.turn.claimed||st.turn.boughtClaim) return st;
     const s=ap(st,{t:'buyClaim'}); if(!s) return st; const c=bestClaim(s,p,strat); if(!c) return st;

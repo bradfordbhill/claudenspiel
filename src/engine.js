@@ -18,7 +18,7 @@ var KEngine = (function () {
   var DIRS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
   var DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
   var SUITS = ['Sceptre', 'Goblet', 'Sword', 'Bone', 'Leaf', 'Tome'];
-  var BANK_RATE = 6, BANK_MAX = 2, CLAIM_PRICE = 10;
+  var BANK_RATE = 6, BANK_MAX = 2, CLAIM_PRICE = 10, CONTEST_PRICE = 8;
   // Each seat's starting ◇ (the seat handicap) by table size: 2 players are already even.
   var SEAT_TOKENS = { 2: [0, 0], 3: [6, 4, 0], 4: [9, 6, 3, 0], 5: [12, 9, 6, 3, 0] };   // Claudenspiel's economy: banking and the bought claim
 
@@ -1127,7 +1127,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -1341,6 +1341,28 @@ var KEngine = (function () {
         bp.ap -= CLAIM_PRICE; st.turn.claimed = false; st.turn.boughtClaim = true; log(st, bp.name + ' pays ' + CLAIM_PRICE + '● for a second claim.'); return st;
       }
 
+      // Contest (influence, on trial, opts.contest): once a turn, pay CONTEST_PRICE● of this turn's ● to take a rival's claimed card
+      // next to the card you just placed. Their meeple goes home; yours takes its place. It does not use your claim.
+      case 'contest': {
+        if (!st.opts.contest) return err(st, 'Contesting is switched off for this game.');
+        if (st.pending || st.res) return err(st, 'Finish the current effect first.');
+        if (!st.turn.started) return err(st, 'Start your turn first.');
+        if (st.turn.contested) return err(st, 'You can contest only one card a turn.');
+        var tk = a.k, tu2 = top(st, tk); if (!tu2) return err(st, 'No card there.');
+        if (!st.turn.lastKey || n4(st.turn.lastKey).indexOf(tk) < 0) return err(st, 'Contest a claimed card next to the one you just placed.');
+        var tcc = st.cards[tu2], tp = st.players[p];
+        if (tcc.ruined || unclaimable(st, tu2) || isCovered(st, tk)) return err(st, 'That card cannot be contested.');
+        if (!tcc.claimants.length || tcc.claimants.indexOf(p) >= 0) return err(st, 'Contest a card a rival owns.');
+        if (tcc.fixed || tcc.ascended) return err(st, 'That card’s claim cannot be taken.');
+        if (tcc.claimants.length > 1) return err(st, 'A shared card cannot be contested.');
+        if ((tp.ap || 0) < CONTEST_PRICE) return err(st, 'Contesting costs ' + CONTEST_PRICE + '● of this turn’s ●.');
+        if (tp.meeples <= 0) return err(st, 'You have no meeples left.');
+        var loser = tcc.claimants[0]; tp.ap -= CONTEST_PRICE; st.turn.contested = true;
+        returnMeeples(st, tu2); tcc.claimants = [p]; tp.meeples--;
+        log(st, tp.name + ' pays ' + CONTEST_PRICE + '● and contests ' + rawDef(st, tu2).name + ': ' + st.players[loser].name + '’s meeple goes home.');
+        afterBoardChange(st, p); return st;
+      }
+
       // Burn (second-edition rule, on trial, opts.burn): once a turn, discard a card from hand for a one-time effect set by its
       // suit, so every card has two uses: build it, or burn it. Bone is buried under a card of your Kingdom (a.k) instead.
       case 'burn': {
@@ -1491,6 +1513,13 @@ var KEngine = (function () {
     return st;
   }
 
+  function contestOptions(st, p) {
+    if (!st.opts.contest || !st.turn || !st.turn.started || st.turn.contested || !st.turn.lastKey || st.players[p].meeples <= 0 || (st.players[p].ap || 0) < CONTEST_PRICE) return [];
+    return n4(st.turn.lastKey).filter(function (k) {
+      var u = top(st, k); if (!u) return false; var c = st.cards[u];
+      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended;
+    });
+  }
   function claimOptions(st, p) {
     if (!st.turn || !st.turn.lastKey || st.turn.claimed) return [];
     return [st.turn.lastKey].concat(n4(st.turn.lastKey)).filter(function (k) {
@@ -1507,7 +1536,7 @@ var KEngine = (function () {
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
     burnBlock: burnBlock, BURN: BURN, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
-    archInfo: archInfo, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
+    archInfo: archInfo, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };
 })();
 if (typeof module !== 'undefined') module.exports = KEngine;
