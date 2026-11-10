@@ -1,4 +1,5 @@
 // Bot self-play for balance analysis. The bots themselves live in src/bots.js (greedy, tactician, raider, warlord).
+// OPTS='{"contest":true}' sets rules for every game.
 // Usage: node tools/sim2.js <players> <first game> <last game> <output.json> [lineup]
 //   lineup (optional) fixes styles instead of rotating them, e.g. "Warmonger=warlord,*=greedy".
 //   An archetype named in it plays in every game.
@@ -10,7 +11,7 @@ function game(n,g,stats,lineup){
   if(lineup) { const must=Object.keys(lineup).filter(a=>a!=='*'); combos=combos.filter(c=>must.every(a=>c.includes(a))); }
   const c=combos[g%combos.length], rot=Math.floor(g/combos.length)%n; const archs=c.slice(rot).concat(c.slice(0,rot));
   const strats=archs.map((a,i)=>lineup ? (lineup[a]||lineup['*']||'greedy') : STRATS[(g+i*(n===3?1:2)+Math.floor(g/combos.length))%3]);
-  let st=E.newGame(D.STARTER,{players:archs.map((a,i)=>({name:'P'+i,arch:a})),seed:5000+g+n*1000,seatTokens:process.env.SEATTOK!=null?JSON.parse(process.env.SEATTOK):undefined,target:process.env.TARGET?+process.env.TARGET:undefined}); let guard=0;
+  let st=E.newGame(D.STARTER,{players:archs.map((a,i)=>({name:'P'+i,arch:a})),seed:5000+g+n*1000,seatTokens:process.env.SEATTOK!=null?JSON.parse(process.env.SEATTOK):undefined,target:process.env.TARGET?+process.env.TARGET:undefined,...JSON.parse(process.env.OPTS||'{}')}); let guard=0;
   while(st.winner==null && st.round<=30 && guard++<400){ if(st.pending) { st=B.resolve(st,st.cur,strats[st.cur],strats); if(!st) break; continue; } const s=B.turn(st,stats,strats); if(!s) break; st=s; }
   return {st,archs,strats}; }
 // Command line: play games [from, to) (stopping after ~255 s) and save results for analyze2.js.

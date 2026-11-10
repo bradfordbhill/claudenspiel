@@ -2,6 +2,20 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 10 November 2026 · 1.0-pre, contest balance: a first, noisy look
+
+`tools/sim2.js` now takes `OPTS='{"contest":true}'` so any rule can be switched on for archetype self-play. Mixed greedy, tactician and raider bots, about 200 s of games per row, so these are small samples (noise is roughly ±0.2 per archetype):
+
+| Rules | Games | Median rounds | Archbishop | Hedonist | Warmonger | Cryptkeeper | Gardener | Philosopher |
+|---|---|---|---|---|---|---|---|---|
+| 2p base | 94 | 6 | 1.24 | 0.90 | 0.71 | 0.84 | 1.10 | 1.20 |
+| 2p contest | 100 | 6 | 1.03 | 1.03 | 1.03 | 0.67 | 1.19 | 1.06 |
+| 3p contest | 52 | 5 | 1.50 | 0.58 | 1.85 | 0.48 | 0.72 | 0.75 |
+
+Seats stay even (2p: 53 / 47 wins). **What it says:** contest does not shorten the 2-player game (6 rounds), and it lifts the Warmonger from 0.71 to 1.03 as predicted, since taking a rival's card is a war move. Cryptkeeper is the one archetype that looks worse (0.67, then 0.48 at 3 players). Its Curses fight over the same adjacent cards that contest now trades. The 3-player row is far too small to trust (52 games), but its Warmonger 1.85 is the number to watch.
+
+**Next:** a few hundred games per table size with Genius bots before deciding contest's defaults; a Cryptkeeper card pass if the 0.5–0.7 holds; then Reckonings.
+
 ## 6 November 2026 · 1.0-pre, contest: influence's first shape, and the first pillar to move the number
 
 **Contest** (`contest: true`, a New game option; `tests/cs8-contest.js`): once a turn, pay 8● of this turn's ● (never Reserves) to take a rival's card next to the one you just placed. Their meeple goes home, yours takes its place, and it doesn't use your claim. Foundations, Ascended cards and shared cards can't be taken. It is the simplest form of "claims can be contested": ownership is no longer settled the moment someone claims. Bots contest when the swing beats what 8● would bank (about 1 contest per 2-player game, 13 turns). The Genius sees contests as plain moves in its imagined turns.
