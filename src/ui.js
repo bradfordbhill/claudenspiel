@@ -258,7 +258,13 @@
       win: function (arch) { var sad = arch === 'Archbishop' || arch === 'Cryptkeeper'; var notes = sad ? [196, 233, 294, 392] : arch === 'Warmonger' ? [196, 196, 262, 392] : [262, 330, 392, 523];
         notes.forEach(function (f, i) { tone('triangle', f, i === 3 ? 0.9 : 0.22, 0.14, i * 0.18); tone('square', f, i === 3 ? 0.9 : 0.2, 0.03, i * 0.18); }); },
       lose: function () { tone('sawtooth', 98, 1.6, 0.06); noise('lowpass', 300, 1.5, 0.15); },
-      turn: function () { tone('sine', 1320, 0.5, 0.08); tone('sine', 1980, 0.4, 0.04, 0.01); }
+      turn: function () { tone('sine', 1320, 0.5, 0.08); tone('sine', 1980, 0.4, 0.04, 0.01); tone('sine', 1320, 0.6, 0.05, 0.22); },
+      // Contest: two blades meet, ring off-key, and a meeple clatters home.
+      clash: function () { [0, 0.16].forEach(function (t, i) { noise('highpass', 5200, 0.06, 0.5, t); tone('triangle', 1870 + i * 210, 0.55, 0.09, t, 0.98); tone('sine', 2950 + i * 330, 0.4, 0.05, t + 0.005); tone('sine', 4410, 0.2, 0.03, t + 0.01); });
+        for (var i = 0; i < 3; i++) noise('bandpass', 900 - i * 120, 0.05, 0.25, 0.45 + i * 0.07); },
+      // Burying: a spade into earth for Bone cards and anything under a Foundation; otherwise a heavy book closing.
+      bury: function (earth) { if (earth) { noise('lowpass', 700, 0.08, 0.5); noise('bandpass', 260, 0.25, 0.45, 0.04); noise('lowpass', 180, 0.3, 0.3, 0.32); }
+        else { noise('lowpass', 1200, 0.03, 0.5); tone('sine', 90, 0.16, 0.35, 0, 0.6); noise('highpass', 3000, 0.08, 0.06, 0.02); } }
     };
     return { play: function (name) { if (!prefs.sound || !ctx()) return; try { S[name].apply(null, [].slice.call(arguments, 1)); } catch (e) {} } };
   })();
@@ -300,7 +306,13 @@
       if (act.t === 'burn' && b.turn && b.turn.burned) ev.push({ t: 'burn', suit: b.turn.burned, k: act.k || null });
       var banked = b.log.slice(a.log.length).filter(function (l) { return / banks \d◇ from unspent/.test(l); });
       if (banked.length) ev.push({ t: 'bank', p: a.cur, n: +(/banks (\d)/.exec(banked[0]) || [0, 1])[1] });
+      if (act.t === 'contest' && b.turn && b.turn.contested && !(a.turn && a.turn.contested)) { var cu = E.top(b, act.k), was = a.cards[cu] && a.cards[cu].claimants[0]; ev.push({ t: 'contest', k: act.k, p: a.cur, loser: was }); }
+      // A card slid under another one (Actions after they resolve, Embalm, Funeral Pyre, burns): the top card stays the same, the stack grows.
+      Object.keys(b.board).forEach(function (k) { var sb = b.board[k], sa = a.board[k]; if (!sa || sb.length <= sa.length || sb[0] !== sa[0]) return;
+        var nu = sb.filter(function (u) { return sa.indexOf(u) < 0; })[0]; if (nu == null) return; var nd = E.rawDef(b, nu), td = E.rawDef(b, sb[0]);
+        ev.push({ t: 'bury', k: k, earth: nd.suit === 'Bone' || td.type === 'Foundation' }); });
       if (b.lastRound && !a.lastRound) ev.push({ t: 'lastround' });
+      if (a.cur !== b.cur && b.winner == null && !b.players[b.cur].bot && a.players[a.cur].bot) ev.push({ t: 'yourturn' });
       if (b.winner != null && a.winner == null) ev.push({ t: 'end', winner: b.winner, arch: b.players[b.winner].arch, humanWon: !b.players[b.winner].bot, anyHuman: b.players.some(function (q) { return !q.bot; }) });
       return ev;
     }
@@ -357,6 +369,14 @@
     function puff(r, col, delay) { for (var q = 0; q < 6; q++) { var d = piece('dust px', '', r.left + r.width * (0.2 + q * 0.12), r.top + r.height * 0.85); d.style.background = col;
         d.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(' + ((q - 2.5) * 6) + 'px,-' + (6 + (q % 3) * 4) + 'px)', opacity: 0.8, offset: .5 }, { transform: 'translate(' + ((q - 2.5) * 10) + 'px,-2px)', opacity: 0 }],
           { duration: 420, delay: delay || 0, easing: 'steps(5)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); } }
+    // Contest: the ousted meeple is knocked off the card, tumbles in an arc and fades.
+    function ousted(r, col) { var m = piece('meeple', '', r.left + r.width / 2 - 6, r.top + r.height * 0.55); m.style.background = col; var dir = Math.random() < 0.5 ? -1 : 1;
+      m.animate([{ transform: 'translate(0,0) rotate(0)', opacity: 1 }, { transform: 'translate(' + dir * 22 + 'px,-30px) rotate(' + dir * 120 + 'deg)', opacity: 1, offset: .35 }, { transform: 'translate(' + dir * 46 + 'px,26px) rotate(' + dir * 300 + 'deg)', opacity: 0 }],
+        { duration: 800, easing: 'steps(10)', fill: 'both' }).onfinish = function () { m.remove(); }; }
+    // Burying: clods of earth (or a few loose pages) settle at the card's foot.
+    function sink(r, earth) { for (var q = 0; q < 7; q++) { var d = piece('dust px', '', r.left + r.width * (0.15 + q * 0.11), r.top + r.height - 4); d.style.background = earth ? (q % 2 ? '#5a4632' : '#3b2d20') : (q % 2 ? '#efe6cf' : '#cbbf9e');
+        d.animate([{ transform: 'translate(0,-' + (14 + (q % 3) * 6) + 'px)', opacity: 0 }, { transform: 'translate(0,-' + (8 + (q % 3) * 3) + 'px)', opacity: 1, offset: .3 }, { transform: 'translate(' + ((q - 3) * 2) + 'px,2px)', opacity: 0 }],
+          { duration: 600, delay: q * 40, easing: 'steps(6)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); } }
     // A card arriving: it drops in from two pixels up and settles in steps, like a sprite.
     function land(k) { var el = document.querySelector('.cell [data-cell="' + k + '"]'); var card = el && el.closest('.cell'); if (card && card.animate) card.animate([{ transform: 'translateY(-6px)' }, { transform: 'translateY(1px)', offset: .7 }, { transform: 'translateY(0)' }], { duration: 260, easing: 'steps(4)' }); }
     // A player's ◇ counter counts up to its new value, a step at a time.
@@ -377,6 +397,9 @@
         else if (e.t === 'crumble') SFX.play('ruin', e.over);
         else if (e.t === 'cursed') SFX.play('curse');
         else if (e.t === 'lastround') SFX.play('bell');
+        else if (e.t === 'contest') SFX.play('clash');
+        else if (e.t === 'bury') SFX.play('bury', e.earth);
+        else if (e.t === 'yourturn') SFX.play('turn');
         else if (e.t === 'end') { if (!e.anyHuman || e.humanWon) SFX.play('win', e.arch); else SFX.play('lose'); }
       });
       if (prefs.motion === 'off') return;
@@ -388,6 +411,9 @@
         if (e.t === 'burn') popup('🔥 ' + BURN_TEXT[e.suit](), 'ap', cellRect(e.k) || center(), 0);
         if (e.t === 'bank') { var jr = rectOf('[data-fx="jar"]'), pr = rectOf('[data-fx="pile-' + e.p + '"]'); if (jr) popup('+' + e.n + '◇ banked', 'vp', jr, 0); if (jr && pr && !calm) { pr.p = e.p; fly('vp', jr, pr, e.n * 3, 200); } }
         if (e.t === 'lastround') banner('🔔 The last round');
+        if (e.t === 'contest') { var rk = cellRect(e.k), cst = cur() && cur().state; if (rk) { popup('⚔ Contested!', 'contest', rk, 0);
+            if (!calm && cst) { var lc = (cst.players[e.loser] && cst.players[e.loser].color) || '#888'; ousted(rk, lc); puff(rk, cst.players[e.p].color || '#888', 350); } } }
+        if (e.t === 'bury' && !calm) { var rb = cellRect(e.k); if (rb) sink(rb, e.earth); }
         if (e.t === 'cursed') { var rc = cellRect(e.k); if (rc) { popup('Cursed!', 'curse', rc, i * 100); if (!calm) flare(rc, i * 100); } }
         if (e.t === 'note') { var rn = cellRect(e.k); if (rn) popup(e.text, e.cls, rn, i * 100); }
         if (e.t === 'crumble') { if (!calm) crumble(e, i); else { var r0 = cellRect(e.k); if (r0) popup(e.over ? 'Overwhelmed!' : 'Ruined', 'ruin', r0); } }
@@ -1007,7 +1033,7 @@
       '<label>Last round</label><label><input type="checkbox" data-set="lastRound"' + (setup.lastRound !== false ? ' checked' : '') + '> Reaching the target starts the last round: everyone gets the same number of turns, then the highest total wins</label>' +
       '<label>Banking</label><label><input type="checkbox" data-set="banking"' + (setup.banking !== false ? ' checked' : '') + '> At the end of your turn, every 6● you didn’t spend becomes 1◇ (at most 2◇)</label>' +
       '<label>Second claim</label><label><input type="checkbox" data-set="buyClaim"' + (setup.buyClaim !== false ? ' checked' : '') + '> Once a turn, after claiming, pay 10● to claim once more</label>' +
-      '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (setup.contest ? ' checked' : '') + '> Second edition, on trial: once a turn, pay 8● to take a rival’s card next to the one you just placed</label>' +
+      '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (setup.contest ? ' checked' : '') + '> Second edition, on trial: once a turn, pay 8● to take a rival’s card next to the one you just placed. A Cryptkeeper’s buried cards don’t go with it: they move under the Mausoleum</label>' +
       '<label>Burn</label><label><input type="checkbox" data-set="burn"' + (setup.burn ? ' checked' : '') + '> Second edition, on trial: once a turn, discard a card for a one-time effect set by its suit</label>' +
       '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
       '</div></fieldset>';

@@ -42,7 +42,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ○ **Deeds:** a wax seal stamps onto the toast when a deed is earned, then the scroll rolls itself up into the Deeds tab.
 - ○ **Victory:** the winner's Kingdom cards light up one by one in order of value, then a pixel banner with their crest unfurls over the board. Defeat is quieter: the board dims and the wind picks up.
 - ○ **Ambient board:** the night prairie's grass ripples in slow dithered waves, the river glints, and a lantern now and then moves along the city wall. Rain on the board in the last round.
-- ○ **Hover:** hand cards lift two pixels when hovered; legal spaces breathe gently (one shade lighter and back) instead of a static highlight.
+- ✅ 1.0-pre **Hover:** hand cards lift two pixels when hovered; legal spaces breathe gently (one shade lighter and back) instead of a static highlight.
 
 ## Sound effects
 - ○ **Shuffle and deal:** a soft parchment riffle when the deck is shuffled; one short card slide per card dealt.
@@ -54,10 +54,11 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ○ **Overwhelm:** a low drum roll that cuts off as the card is crushed; a deeper version when a Foundation falls.
 - ○ **One away from Overwhelm:** a faint heartbeat under the music while the danger lasts, only for your own cards.
 - ✅ 0.4 **Curse:** a whispered breath and a minor-key pluck on a lute.
-- ○ **Burying:** a spade into earth for Bone and Mausoleum burials; a book closing for everything else.
+- ✅ 1.0-pre **Burying:** a spade into earth for Bone and Foundation burials; a book closing for everything else.
 - ✅ 0.4 **Grounds:** Marsh: frogs and water; Battlefield: a distant horn; Crossroads: cart wheels on gravel.
 - ○ **Ability used:** a short bell for Sceptre and Tome abilities, a forge hammer for Sword, a goblet clink for Goblet.
-- ○ **Your turn:** a small hand bell, only when a human is up after bots have played.
+- ✅ 1.0-pre **Your turn:** a small hand bell, only when a human is up after bots have played.
+- ✅ 1.0-pre **Contest:** two blades meet off-key; the ousted meeple tumbles off the card in its owner's colour and the taker's meeple lands in a puff.
 - ✅ 0.4 **Last round:** the city's great bell tolls once, far away.
 - ✅ 0.4 **Deed earned:** a quill scratch and a wax seal.
 - ✅ 0.4 **Victory:** a short brass fanfare in a mode that fits the winner's archetype (bright for the Hedonist, solemn for the Archbishop, martial for the Warmonger). Defeat: a single low string note and the wind.

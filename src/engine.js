@@ -1127,7 +1127,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, graveFollows: setup.graveFollows !== false,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -1360,6 +1360,13 @@ var KEngine = (function () {
         var loser = tcc.claimants[0]; tp.ap -= CONTEST_PRICE; st.turn.contested = true;
         returnMeeples(st, tu2); tcc.claimants = [p]; tp.meeples--;
         log(st, tp.name + ' pays ' + CONTEST_PRICE + '● and contests ' + rawDef(st, tu2).name + ': ' + st.players[loser].name + '’s meeple goes home.');
+        // The dead follow their keeper: a Cryptkeeper's buried cards don't change hands with the card above them.
+        // They move under the Cryptkeeper's Foundation (where the Mausoleum scores them higher).
+        var lp = st.players[loser], lfk = lp.foundationUid ? cellOf(st, lp.foundationUid) : null;
+        if (st.opts.graveFollows && lp.arch === 'Cryptkeeper' && lfk && lfk !== tk && st.board[tk].length > 1) {
+          var dead = st.board[tk].splice(1); dead.forEach(function (u) { st.board[lfk].splice(1, 0, u); });   // "permanent" burial bonuses stay on the card they were given to
+          log(st, 'The dead follow their keeper: ' + dead.length + ' buried card' + (dead.length === 1 ? '' : 's') + ' move' + (dead.length === 1 ? 's' : '') + ' under ' + lp.name + '’s ' + rawDef(st, lp.foundationUid).name + '.');
+        }
         afterBoardChange(st, p); return st;
       }
 

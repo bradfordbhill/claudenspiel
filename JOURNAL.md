@@ -2,6 +2,34 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 11 November 2026 · 1.0-pre, contest measured properly, and the dead follow their keeper
+
+**Contest balance, with enough games** (mixed greedy, tactician and raider bots, contest on, 976 games). The 10 November first look (52 three-player games, Warmonger 1.85, Cryptkeeper 0.48) did not hold:
+
+| Contest on | Games | Median rounds | Archbishop | Hedonist | Warmonger | Cryptkeeper | Gardener | Philosopher | Spread | Seats |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2 players | 635 | 6 | 0.95 | 1.04 | 0.95 | 0.92 | 1.07 | 1.07 | **0.15** | 0.92 · 1.08 |
+| 3 players | 341 | 5 | 1.08 | 0.94 | 1.19 | 0.83 | 1.02 | 0.93 | 0.36 | 0.99 · 1.04 · 0.97 |
+
+At 2 players contest is as balanced as anything Claudenspiel has measured. At 3 players the direction of the first look holds (the Warmonger gains, the Cryptkeeper loses), only much smaller.
+
+**The dead follow their keeper** (`graveFollows`, on whenever contest is): when a Cryptkeeper's card is contested, the cards buried under it don't change hands; they move under the Cryptkeeper's Foundation. Why this fix: the Cryptkeeper's points sit *under* its cards (Mausoleum: 3◇ a buried card in the Kingdom), so a contest took more from it than from anyone, and the taker got a crypt it can't use. The rule fixes exactly that loss and nothing else, and it reads as the archetype's fantasy. "Permanent" burial bonuses (Flowers' +3●) stay on the card they were given to, so nothing is counted twice.
+
+Paired, the same deals with and without it:
+
+| Same deals | Cryptkeeper without | with | Others |
+|---|---|---|---|
+| 2 players (319) | 0.81 | 0.83 | within 0.03 |
+| 3 players (341) | 0.83 | **0.91** | within 0.03; spread 0.36 → 0.27 |
+
+Small, as a targeted rule should be, and it moves nothing else. (Deals 0–318 alone read Hedonist 1.23 at 2 players against 1.04 over all 635: a reminder of how noisy 300 games are.)
+
+**4 players with contest** (117 games, too few): Hedonist 1.54, Cryptkeeper 0.67, seats 0.79 · 0.85 · 1.20 · 1.16. The Hedonist has read high at 4 players in every run since 0.4; Palace's per-Goblet scoring grows with the table. Needs 500+ games before a change.
+
+**Feel.** Contest had no sound or motion: now two blades clash, the old meeple tumbles off in its owner's colour, and the new one lands in a puff. Burials thud into earth (Bone, or under a Foundation) or close like a book; a hand bell rings when a human is up after bots; hand cards lift on hover and legal spaces breathe (full Motion only). A browser bot game with contest on played 90 tones and 55 noise bursts, animated both contests, and logged no errors. Patch notes now include contest, which had none.
+
+**Next:** contest's skill gap with the keeper rule (expect no change), then decide its default for 1.0 (2 players looks ready); 500+ four-player games; then Reckonings on a contestable board.
+
 ## 10 November 2026 · 1.0-pre, contest balance: a first, noisy look
 
 `tools/sim2.js` now takes `OPTS='{"contest":true}'` so any rule can be switched on for archetype self-play. Mixed greedy, tactician and raider bots, about 200 s of games per row, so these are small samples (noise is roughly ±0.2 per archetype):

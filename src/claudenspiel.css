@@ -44,3 +44,12 @@ h1.logo.small { width: 300px; }
 .market .mdeck { display: grid; gap: 4px; justify-items: center; padding: 0 8px; }
 .market .mcard { width: 112px; height: 154px; overflow: hidden; }
 .market .mcard > :first-child { transform: scale(.75); transform-origin: top left; width: 133%; }
+
+/* Contest: the popup, and the ousted meeple (a little pixel figure: head and shoulders). */
+.fx.pop.contest { background: #2b2b2b; color: #f3d27a; border-color: #f3d27a; }
+.fx.meeple { width: 12px; height: 14px; border: 2px solid #000; clip-path: polygon(30% 0, 70% 0, 70% 35%, 100% 45%, 100% 100%, 0 100%, 0 45%, 30% 35%); image-rendering: pixelated; }
+/* Hover: hand cards lift two pixels; legal spaces breathe one shade lighter and back (full motion only). */
+:root[data-motion="full"] .hand .card { transition: transform .12s steps(2); }
+:root[data-motion="full"] .hand .hcard:not(.sel) .card:hover { transform: translateY(-2px); }
+@keyframes cs-breathe { 0%, 100% { background-color: var(--legal); } 50% { background-color: rgba(60, 200, 60, .42); } }
+:root[data-motion="full"] .cell.legal:not(.poor) { animation: cs-breathe 2.4s steps(6) infinite; }

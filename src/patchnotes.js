@@ -1,6 +1,12 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-contest', date: '11 November 2026', title: 'Contest (on trial), with a clash of blades', notes: [
+    'Another piece of the second edition, to try: tick <b>Contest</b> on the New game page. Once a turn, pay 8● of this turn’s ● to take a rival’s card next to the one you just placed: their meeple goes home and yours takes its place. Foundations, Ascended cards and shared cards can’t be taken.',
+    '<b>The dead follow their keeper:</b> when a Cryptkeeper’s card is contested, the cards buried under it don’t change hands. They move under the Cryptkeeper’s Mausoleum.',
+    'New sounds and motion: a contest rings two blades together and knocks the old meeple tumbling off the card; burials thud into earth (Bone cards, and anything under a Foundation) or close like a heavy book; a hand bell rings when it’s your turn again after the bots have played.',
+    'Hand cards lift a little when you hover them, and the spaces you can play into breathe gently (full Motion only).'
+  ] },
   { v: 'cs-0.9', date: '4 November 2026', title: 'Claudenspiel 0.9: Burn (on trial)', notes: [
     'Another piece of the second edition, to try: tick <b>Burn</b> on the New game page. Once a turn, discard a card from your hand for a one-time effect set by its suit: Goblet +5●, Tome draw 2, Leaf +2◇, Sceptre claim again, Sword (this turn rivals’ cards need one fewer enemy to be Overwhelmed), Bone (bury it under one of your own cards). Select a card and click <b>Burn</b>.',
     'With the Market or Burn on, the <b>Genius</b> now plans its market picks and burns instead of following a rule of thumb.'

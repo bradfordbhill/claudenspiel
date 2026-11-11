@@ -54,6 +54,7 @@ node tools/anatomy.js 2 0 500 /tmp/a.json         # per-turn records of bot game
 | 1.0-pre | Contest (pay 8● to take a rival's adjacent card), an optional rule: skill gap +10 → +24.4 (Genius 73% against a tactician) |
 | 0.9 | Burn on trial (once a turn, discard a card for a suit effect); the Genius plans market picks and burns. Market: skill gap +10.9 (level with the base game); Burn: +7.0 (no gain) |
 | 0.8 | A sharper Genius: plans like a tactician, judges like one, looks ahead like a Genius (+10 points over a tactician, paired) |
+| 1.0-pre | Contest, on trial (a New game option; Genius gap +24.4). With it, a Cryptkeeper's buried cards follow it home. Sounds and motion for contests, burials and your turn; hover lift and breathing legal spaces |
 | 0.7 | You'll Regret That plays from hand (no dead cards) |
 | 0.6 | The market, on trial (a New game option); paired skill-expression tool; the finding that the Genius needs updating before it can judge rules |
 | 0.5 | "Why is this good?" hover hints; Palace 2◇ per Goblet it doesn't own; ticking counters, flying ●, heartbeat chevrons and the Genius's candle. 2-player spread 0.16 |
