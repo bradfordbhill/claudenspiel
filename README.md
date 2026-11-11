@@ -20,6 +20,10 @@ Play it at **https://bradfordbhill.github.io/claudenspiel/**, or open `index.htm
 - The fork started from Kartenspiel as of 3 November 2026 (commit 1b43db7), and grew in a `claudenspiel/` folder there until it moved to this repository with its history. Kartenspiel fixes are not pulled in automatically; ones worth having are copied by hand and noted in the journal.
 - Help links to Kartenspiel's published Dithry (the pixel-art tool) for drawing card art; Claudenspiel has no copy of its own yet.
 
+## Prototypes
+
+[prototypes/](prototypes/) holds two other games Claude sketched under this name (a shared-Realm duel and a House deckbuilder), moved here from Kartenspiel branches. They are kept for their ideas.
+
 ## Build and test
 
 ```

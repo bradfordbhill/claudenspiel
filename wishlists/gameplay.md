@@ -16,7 +16,7 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 1.0-pre With contest: a Cryptkeeper's buried cards move under its Foundation instead of changing hands (3-player Cryptkeeper 0.83 → 0.91 on the same deals).
 - ✅ 0.5 Palace 2◇ per Goblet card it doesn't own (the Hedonist was strongest, most at 4 players); it also lifted the 2-player Warmonger to 0.99.
 - ○ Warcamp 5◇/10◇ was tried: it overshoots at 4 players (more Ruins at bigger tables). Any War buff must not grow with table size.
-- ○ Death Ray: 2◇ for 12● is the worst printed value; give it 4◇ or make it cheaper.
+- ✅ 1.0-pre Death Ray 9● and 3◇ (was 2◇ for 12●, the worst printed value).
 - ○ Re-run the Genius-only balance study after every balance release.
 
 ## Economy (● barely matters today: one claim a turn is the real limit, and about half of all ● goes unspent)

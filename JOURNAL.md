@@ -2,6 +2,14 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 11 November 2026 · One home for everything
+
+Earlier scheduled runs, not knowing Claudenspiel had moved, left three pieces of work on Kartenspiel branches. All are now here:
+- **Two prototype games** (`claude/happy-gates-eeiof4`, `claude/happy-gates-vmdc0l`) are in [prototypes/](prototypes/), unchanged, with a note on what each is. Both still pass their own tests. Their best idea for the main game is *one card, two lives*: coin in hand, building on the board. That is the per-card form of "two uses" that 0.9's suit-wide Burn lacked.
+- **A parallel 0.2** (`claude/happy-gates-updnpj`) changed Obelisk, Fountain and Death Ray. Obelisk and Fountain had already been fixed differently in 0.2 here. Its Death Ray change is new and taken: **Death Ray 9● and 3◇** (was 12● and 2◇), the worst printed value on the gameplay wishlist. It is a single copy, so I expect no archetype effect, and the change is not measured on its own.
+
+From now on every Claudenspiel change goes to this repository only.
+
 ## 11 November 2026 · 1.0-pre, contest measured properly, and the dead follow their keeper
 
 **Contest balance, with enough games** (mixed greedy, tactician and raider bots, contest on, 976 games). The 10 November first look (52 three-player games, Warmonger 1.85, Cryptkeeper 0.48) did not hold:

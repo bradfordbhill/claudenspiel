@@ -2182,7 +2182,7 @@ var KData = (function () {
     "name": "Death Ray",
     "suit": "Tome",
     "type": "Structure",
-    "cost": 12,
+    "cost": 9,
     "copies": 1,
     "income": 3,
     "text": "If you own at least 2 adjacent cards, Ruin the card directly east.",
@@ -2195,7 +2195,7 @@ var KData = (function () {
     "overwhelm": null,
     "score": {
      "kind": "flat",
-     "n": 2
+     "n": 3
     },
     "sees": {
      "area": "east1"
