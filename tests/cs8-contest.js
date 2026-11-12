@@ -31,4 +31,7 @@ function keeper(o){ let st=E.newGame(D.STARTER,Object.assign({players:[{name:'A'
   chk('Keeper', st.board['0,0'].length===1&&st.board['-1,0'].includes(b1)&&st.board['-1,0'].includes(b2), 'a contested Cryptkeeper card’s buried cards move under the Mausoleum');
   chk('Keeper score', E.scores(st)[1].total>=before-E.cardValue({...st},'0,0',1)-1, 'the Cryptkeeper keeps its dead'); }
 { let {st}=keeper({graveFollows:false}); st=must(st,{t:'contest',k:'0,0'}); chk('Keeper off', st.board['0,0'].length===3, 'with the rule off the buried cards stay put'); }
+// Hallowed ground (on trial): a card with a card buried under it can't be contested.
+{ let {st}=keeper({hallowed:true}); chk('Hallowed', !E.contestOptions(st,0).includes('0,0') && !!E.apply(st,{t:'contest',k:'0,0'}).error, 'a card with buried cards under it can’t be contested'); }
+{ let {st,k}=setup({hallowed:true}); chk('Hallowed bare', E.contestOptions(st,0).includes(k), 'a card with nothing buried under it still can'); }
 const f=R.filter(r=>r[1]==='FAIL'); R.forEach(r=>{ if(r[1]==='FAIL') console.log(r.join(' · ')); }); console.log((R.length-f.length)+'/'+R.length+' pass'); process.exit(f.length?1:0);

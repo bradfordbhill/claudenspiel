@@ -1005,6 +1005,8 @@
   var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 52, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true, market: 0, burn: false };
   (function () { var s = lsGet('cs.setup'); if (s && s.players && s.players.length) for (var k in s) setup[k] = s[k]; })();   // the last game's setup
   function archetypes() { return sortLib(app.lib.filter(function (c) { return c.type === 'Foundation' && c.archetype; })); }
+  // Contest is on by default at 2–4 players, where it was measured (it moves no archetype at 4); 5 is unmeasured.
+  function contestOn() { return setup.contest != null ? !!setup.contest : (+setup.n || 2) <= 4; }
   function ensureSetup() {
     var A = archetypes().map(function (c) { return c.archetype; });
     for (var i = 0; i < 5; i++) { if (!setup.players[i]) setup.players[i] = { name: 'Player ' + (i + 1), arch: A[i] || A[0], kind: 'human' }; }
@@ -1043,7 +1045,7 @@
       '<label>Last round</label><label><input type="checkbox" data-set="lastRound"' + (setup.lastRound !== false ? ' checked' : '') + '> Reaching the target starts the last round: everyone gets the same number of turns, then the highest total wins</label>' +
       '<label>Banking</label><label><input type="checkbox" data-set="banking"' + (setup.banking !== false ? ' checked' : '') + '> At the end of your turn, every 6● you didn’t spend becomes 1◇ (at most 2◇)</label>' +
       '<label>Second claim</label><label><input type="checkbox" data-set="buyClaim"' + (setup.buyClaim !== false ? ' checked' : '') + '> Once a turn, after claiming, pay 10● to claim once more</label>' +
-      '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (setup.contest ? ' checked' : '') + '> Second edition, on trial: once a turn, pay 8● to take a rival’s card next to the one you just placed. A Cryptkeeper’s buried cards don’t go with it: they move under the Mausoleum</label>' +
+      '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (contestOn() ? ' checked' : '') + '> Once a turn, pay 8● to take a rival’s card next to the one you just placed. A Cryptkeeper’s buried cards don’t go with it: they move under the Mausoleum. On by default for 2–4 players</label>' +
       '<label>Burn</label><label><input type="checkbox" data-set="burn"' + (setup.burn ? ' checked' : '') + '> Second edition, on trial: once a turn, discard a card for a one-time effect set by its suit</label>' +
       '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
       '</div></fieldset>';
@@ -1533,6 +1535,8 @@
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
         '<li><b>A second claim:</b> once a turn, after claiming, press <b>Buy a claim</b> and pay 10● to claim once more.</li>' +
         '<li><b>Grounds:</b> terrain cards. You place them like a Structure, but nobody claims them and they never count as an enemy. <i>Marsh</i>: cards next to it need one more enemy to be Overwhelmed. <i>Battlefield</i>: one fewer. <i>Crossroads</i>: placing next to it costs 3● less.</li>' +
+        '<li><b>Contest</b> (on by default for 2–4 players): once a turn, after placing a card, pay 8● of this turn’s ● to take a rival’s card next to it. Their meeple goes home and yours takes its place; it doesn’t use your claim. Foundations, Ascended and shared cards can’t be taken, and a Cryptkeeper’s buried cards move under its Mausoleum instead of changing hands.</li>' +
+        '<li><b>The Chronicle:</b> when a game ends, it tells the story: everyone’s ◇ after every turn, where the Ruins, contests and the last round fell, and the turning points. Open it again with <b>Chronicle</b> above the board.</li>' +
         '<li>A 116-card deck with two or three copies of the staples, and reworked cards: Orchard, Observatory, Obelisk, Fountain, Revenge, Repent and Brambles.</li></ul>' +
         '<p>Every rule can be switched off on the New game page.</p>' },
       { id: 'turn', title: 'A turn', html: '<ol>' +
@@ -2255,7 +2259,7 @@
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: !!setup.contest });
+        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: contestOn() });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }

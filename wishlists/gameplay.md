@@ -12,7 +12,9 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 0.3 Mausoleum 4◇ for each card buried under it; 0.4 took it back to 3◇ (with the Grounds-playing bots it was too strong).
 - ✅ 0.4 Orchard +1◇ per Leaf card in the largest region (Gardener 0.88 → 0.96).
 - ✅ 0.4 Cathedral +1◇ per Sceptre card on the board it doesn't own (the Archbishop was weak at 3–4 players).
-- ▶ Measure 4-player games properly; strengths differ by table size. (With contest, 117 games: Hedonist 1.54, Cryptkeeper 0.67, seats 0.79 · 0.85 · 1.20 · 1.16. Needs 500+.)
+- ✅ 1.0-pre Measure 4-player games properly: 450 games with contest. Cryptkeeper 0.58 and Warmonger 1.28, the same without contest (paired), so the cause is the base game.
+- ▶ Fix the 4-player base game: Warmonger 1.3–1.4, Cryptkeeper 0.56–0.58. Check first how Ruins per game grow with the table.
+- ○ Measure 5 players with contest before turning it on there.
 - ✅ 1.0-pre With contest: a Cryptkeeper's buried cards move under its Foundation instead of changing hands (3-player Cryptkeeper 0.83 → 0.91 on the same deals).
 - ✅ 0.5 Palace 2◇ per Goblet card it doesn't own (the Hedonist was strongest, most at 4 players); it also lifted the 2-player Warmonger to 0.99.
 - ○ Warcamp 5◇/10◇ was tried: it overshoots at 4 players (more Ruins at bigger tables). Any War buff must not grow with table size.
@@ -26,7 +28,9 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 0.6 A market row (on trial): three face-up cards; each draw is one of them or the deck. 0.9: skill gap +10.9 with the Genius planning picks, level with the base game. Kept as a candidate for influence.
 - ✅ 0.9 Burn (on trial): once a turn, discard a card for its suit's one-time effect. Skill gap +7.0: no gain, since one effect per suit is just more interchangeable options.
 - ○ Per-card burns: each card gets its own one-time effect, chosen to pull against its lasting use (the real "two uses"). Waits for the card pass.
-- ▶ Influence: meeples on cards, the most influence controls a card, claims can be contested (the next second-edition pillar).
+- ✅ 1.0-pre Influence, first shape: **contest**, on by default for 2–4 players (skill gap +24.4; it moves no archetype at 4 players).
+- ○ Hallowed ground (a card with buried cards can't be contested): measured, no effect on the Cryptkeeper; left off.
+- ▶ Reckonings on a contestable board (the next second-edition step).
 
 ## Turn structure and pacing
 - ✅ 0.1 The last round: reaching the target starts it, everyone gets the same number of turns, the highest total wins.

@@ -1138,7 +1138,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, graveFollows: setup.graveFollows !== false,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -1366,6 +1366,7 @@ var KEngine = (function () {
         if (tcc.ruined || unclaimable(st, tu2) || isCovered(st, tk)) return err(st, 'That card cannot be contested.');
         if (!tcc.claimants.length || tcc.claimants.indexOf(p) >= 0) return err(st, 'Contest a card a rival owns.');
         if (tcc.fixed || tcc.ascended) return err(st, 'That card’s claim cannot be taken.');
+        if (hallowed(st, tk)) return err(st, 'Hallowed ground: a card with a card buried under it cannot be contested.');
         if (tcc.claimants.length > 1) return err(st, 'A shared card cannot be contested.');
         if ((tp.ap || 0) < CONTEST_PRICE) return err(st, 'Contesting costs ' + CONTEST_PRICE + '● of this turn’s ●.');
         if (tp.meeples <= 0) return err(st, 'You have no meeples left.');
@@ -1536,9 +1537,11 @@ var KEngine = (function () {
     if (!st.opts.contest || !st.turn || !st.turn.started || st.turn.contested || !st.turn.lastKey || st.players[p].meeples <= 0 || (st.players[p].ap || 0) < CONTEST_PRICE) return [];
     return n4(st.turn.lastKey).filter(function (k) {
       var u = top(st, k); if (!u) return false; var c = st.cards[u];
-      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended;
+      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended && !hallowed(st, k);
     });
   }
+  // Hallowed ground (opts.hallowed, on trial): a card with a card buried under it can't be contested.
+  function hallowed(st, k) { return !!st.opts.hallowed && !!st.board[k] && st.board[k].length > 1; }
   function claimOptions(st, p) {
     if (!st.turn || !st.turn.lastKey || st.turn.claimed) return [];
     return [st.turn.lastKey].concat(n4(st.turn.lastKey)).filter(function (k) {

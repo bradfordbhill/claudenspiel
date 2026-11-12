@@ -1,6 +1,11 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-chronicle', date: '12 November 2026', title: 'The Chronicle, and Contest by default', notes: [
+    'When a game ends, <b>the Chronicle</b> tells its story: everyone’s ◇ after every turn as a stepped line, marks where the Ruins, Overwhelms, contests and the last round fell, and the turning points in words. Open it again with <b>Chronicle</b> above the board.',
+    'Before it, the winner’s Kingdom lights up card by card, the most valuable last, and their banner unrolls (full Motion only).',
+    '<b>Contest</b> is now on by default for 2–4 players. Measured over more than 1,400 bot games, it keeps the archetypes as even as before and makes the better player win more often. Untick it on the New game page to play without it.'
+  ] },
   { v: 'cs-1.0-pre-contest', date: '11 November 2026', title: 'Contest (on trial), with a clash of blades', notes: [
     'Another piece of the second edition, to try: tick <b>Contest</b> on the New game page. Once a turn, pay 8● of this turn’s ● to take a rival’s card next to the one you just placed: their meeple goes home and yours takes its place. Foundations, Ascended cards and shared cards can’t be taken.',
     '<b>The dead follow their keeper:</b> when a Cryptkeeper’s card is contested, the cards buried under it don’t change hands. They move under the Cryptkeeper’s Mausoleum.',

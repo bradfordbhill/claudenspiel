@@ -2,6 +2,29 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 12 November 2026 · 1.0-pre, the Chronicle, and contest by default
+
+**The Chronicle.** Every game now keeps a chronicle in its state (`st.chron`): after each turn, every player's total and that turn's notable moments (Ruins, Overwhelms, contests, Ascensions, the start of the last round). When a game ends, the Chronicle opens: a stepped line per player drawn in whole pixels (it draws itself left to right in 16 steps), a mark on the acting player's line wherever something happened, the turning points in words (lead changes, the two biggest turns, the events; at most eight), a one-line verdict ("wins by 9◇ after 6 rounds, leading after 4 of 18 turns: a late charge") and a table of scores by round. It reopens from **Chronicle** beside Rematch. Why: FOUNDATIONS argues that most turns feel alike and the early leader usually holds on. A player can't see that during a game, but afterwards the chart shows it at a glance: where the race was decided and whether anyone could have caught up. It is also the first half of the post-game report on the UI wishlist. The Genius's "better move" at the big moments is still to come. Recording costs nothing measurable: bot self-play runs at the same speed with and without it. `tests/cs9-chronicle.js` checks it.
+
+**Victory.** Before the Chronicle opens, the winner's Kingdom lights up card by card in gold leaf, smallest first and the most valuable last, each with its ◇, and then their banner unrolls (full Motion only; with calm or reduced motion the Chronicle simply opens).
+
+**Four players with contest, measured properly** (mixed greedy, tactician and raider bots):
+
+| 4 players | Games | Archbishop | Hedonist | Warmonger | Cryptkeeper | Gardener | Philosopher | Seats |
+|---|---|---|---|---|---|---|---|---|
+| Contest (deals 5000+, 10000+) | 333 | 1.06 | 1.03 | 1.28 | **0.58** | 0.86 | 1.19 | 0.79 · 1.07 · 1.00 · 1.14 |
+| No contest, same deals 5000–5118 | 119 | 1.27 | 0.81 | 1.40 | **0.56** | 0.95 | 1.01 | 0.87 · 1.01 · 1.11 · 1.01 |
+
+Paired on the 119 shared deals, contest changes neither outlier: the Cryptkeeper wins 11 games without it and 10 with it, the Warmonger 28 and 27. **The 4-player Cryptkeeper and Warmonger problem is in the base game, not in contest.** It has shown up in every 4-player run since 0.4. Earlier runs were too small to be sure; with 450+ games now, I am. It is the next balance job.
+
+*Hallowed ground, tried and left off* (`hallowed: true`; tested in cs8): a card with a card buried under it can't be contested. I tried it to shelter the Cryptkeeper. On the same 186 deals the Cryptkeeper won 15 games without it and 14 with it, and only 17 winners changed. That fits the paired result above: contest isn't what hurts the Cryptkeeper. The switch stays in the engine, off.
+
+**Decision: contest is on by default for 2–4 players.** The evidence: skill gap +24.4 (the only pillar to clear 65%); 2-player spread 0.15; 3-player 0.27 with the keeper rule; and at 4 players it moves no archetype. Five players are unmeasured, so it stays off there until they are. The New game box follows the table size until someone ticks or unticks it. The engine default stays off, so old tests and saved games are unchanged.
+
+*Also tried:* the Genius-vs-tactician skill gap at 3 players. With the Genius at full strength this takes over two minutes a deal on this machine, so 6 deals in 15 minutes told nothing. Next time: a cheaper fixed Genius (`GWORLDS=1 GLINES=3`, as in 0.6).
+
+**Next:** fix the base game at 4 players (Warmonger 1.3–1.4, Cryptkeeper 0.56–0.58). Look at Ruins per game by table size first, since any per-Ruin payout grows with the table (see 0.5's Warcamp note). Then measure 5 players with contest, and Reckonings on a contestable board.
+
 ## 11 November 2026 · One home for everything
 
 Earlier scheduled runs, not knowing Claudenspiel had moved, left three pieces of work on Kartenspiel branches. All are now here:

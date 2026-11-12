@@ -5244,7 +5244,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, graveFollows: setup.graveFollows !== false,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -5472,6 +5472,7 @@ var KEngine = (function () {
         if (tcc.ruined || unclaimable(st, tu2) || isCovered(st, tk)) return err(st, 'That card cannot be contested.');
         if (!tcc.claimants.length || tcc.claimants.indexOf(p) >= 0) return err(st, 'Contest a card a rival owns.');
         if (tcc.fixed || tcc.ascended) return err(st, 'That card’s claim cannot be taken.');
+        if (hallowed(st, tk)) return err(st, 'Hallowed ground: a card with a card buried under it cannot be contested.');
         if (tcc.claimants.length > 1) return err(st, 'A shared card cannot be contested.');
         if ((tp.ap || 0) < CONTEST_PRICE) return err(st, 'Contesting costs ' + CONTEST_PRICE + '● of this turn’s ●.');
         if (tp.meeples <= 0) return err(st, 'You have no meeples left.');
@@ -5642,9 +5643,11 @@ var KEngine = (function () {
     if (!st.opts.contest || !st.turn || !st.turn.started || st.turn.contested || !st.turn.lastKey || st.players[p].meeples <= 0 || (st.players[p].ap || 0) < CONTEST_PRICE) return [];
     return n4(st.turn.lastKey).filter(function (k) {
       var u = top(st, k); if (!u) return false; var c = st.cards[u];
-      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended;
+      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended && !hallowed(st, k);
     });
   }
+  // Hallowed ground (opts.hallowed, on trial): a card with a card buried under it can't be contested.
+  function hallowed(st, k) { return !!st.opts.hallowed && !!st.board[k] && st.board[k].length > 1; }
   function claimOptions(st, p) {
     if (!st.turn || !st.turn.lastKey || st.turn.claimed) return [];
     return [st.turn.lastKey].concat(n4(st.turn.lastKey)).filter(function (k) {
@@ -6256,6 +6259,11 @@ if (typeof module !== 'undefined') module.exports = KCardArt;
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-chronicle', date: '12 November 2026', title: 'The Chronicle, and Contest by default', notes: [
+    'When a game ends, <b>the Chronicle</b> tells its story: everyone’s ◇ after every turn as a stepped line, marks where the Ruins, Overwhelms, contests and the last round fell, and the turning points in words. Open it again with <b>Chronicle</b> above the board.',
+    'Before it, the winner’s Kingdom lights up card by card, the most valuable last, and their banner unrolls (full Motion only).',
+    '<b>Contest</b> is now on by default for 2–4 players. Measured over more than 1,400 bot games, it keeps the archetypes as even as before and makes the better player win more often. Untick it on the New game page to play without it.'
+  ] },
   { v: 'cs-1.0-pre-contest', date: '11 November 2026', title: 'Contest (on trial), with a clash of blades', notes: [
     'Another piece of the second edition, to try: tick <b>Contest</b> on the New game page. Once a turn, pay 8● of this turn’s ● to take a rival’s card next to the one you just placed: their meeple goes home and yours takes its place. Foundations, Ascended cards and shared cards can’t be taken.',
     '<b>The dead follow their keeper:</b> when a Cryptkeeper’s card is contested, the cards buried under it don’t change hands. They move under the Cryptkeeper’s Mausoleum.',
@@ -7388,6 +7396,8 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
   var setup = { n: 2, players: [], handSize: 4, drawPerTurn: 2, meeples: 8, target: 52, enforceWeak: true, foundationBy: 3, autoEnd: true, seatStart: false, burySuitOW: true, defense: true, adjDiscount: true, noWander: true, ascension: true, lastRound: true, banking: true, buyClaim: true, market: 0, burn: false };
   (function () { var s = lsGet('cs.setup'); if (s && s.players && s.players.length) for (var k in s) setup[k] = s[k]; })();   // the last game's setup
   function archetypes() { return sortLib(app.lib.filter(function (c) { return c.type === 'Foundation' && c.archetype; })); }
+  // Contest is on by default at 2–4 players, where it was measured (it moves no archetype at 4); 5 is unmeasured.
+  function contestOn() { return setup.contest != null ? !!setup.contest : (+setup.n || 2) <= 4; }
   function ensureSetup() {
     var A = archetypes().map(function (c) { return c.archetype; });
     for (var i = 0; i < 5; i++) { if (!setup.players[i]) setup.players[i] = { name: 'Player ' + (i + 1), arch: A[i] || A[0], kind: 'human' }; }
@@ -7426,7 +7436,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       '<label>Last round</label><label><input type="checkbox" data-set="lastRound"' + (setup.lastRound !== false ? ' checked' : '') + '> Reaching the target starts the last round: everyone gets the same number of turns, then the highest total wins</label>' +
       '<label>Banking</label><label><input type="checkbox" data-set="banking"' + (setup.banking !== false ? ' checked' : '') + '> At the end of your turn, every 6● you didn’t spend becomes 1◇ (at most 2◇)</label>' +
       '<label>Second claim</label><label><input type="checkbox" data-set="buyClaim"' + (setup.buyClaim !== false ? ' checked' : '') + '> Once a turn, after claiming, pay 10● to claim once more</label>' +
-      '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (setup.contest ? ' checked' : '') + '> Second edition, on trial: once a turn, pay 8● to take a rival’s card next to the one you just placed. A Cryptkeeper’s buried cards don’t go with it: they move under the Mausoleum</label>' +
+      '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (contestOn() ? ' checked' : '') + '> Once a turn, pay 8● to take a rival’s card next to the one you just placed. A Cryptkeeper’s buried cards don’t go with it: they move under the Mausoleum. On by default for 2–4 players</label>' +
       '<label>Burn</label><label><input type="checkbox" data-set="burn"' + (setup.burn ? ' checked' : '') + '> Second edition, on trial: once a turn, discard a card for a one-time effect set by its suit</label>' +
       '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
       '</div></fieldset>';
@@ -7916,6 +7926,8 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
         '<li><b>A second claim:</b> once a turn, after claiming, press <b>Buy a claim</b> and pay 10● to claim once more.</li>' +
         '<li><b>Grounds:</b> terrain cards. You place them like a Structure, but nobody claims them and they never count as an enemy. <i>Marsh</i>: cards next to it need one more enemy to be Overwhelmed. <i>Battlefield</i>: one fewer. <i>Crossroads</i>: placing next to it costs 3● less.</li>' +
+        '<li><b>Contest</b> (on by default for 2–4 players): once a turn, after placing a card, pay 8● of this turn’s ● to take a rival’s card next to it. Their meeple goes home and yours takes its place; it doesn’t use your claim. Foundations, Ascended and shared cards can’t be taken, and a Cryptkeeper’s buried cards move under its Mausoleum instead of changing hands.</li>' +
+        '<li><b>The Chronicle:</b> when a game ends, it tells the story: everyone’s ◇ after every turn, where the Ruins, contests and the last round fell, and the turning points. Open it again with <b>Chronicle</b> above the board.</li>' +
         '<li>A 116-card deck with two or three copies of the staples, and reworked cards: Orchard, Observatory, Obelisk, Fountain, Revenge, Repent and Brambles.</li></ul>' +
         '<p>Every rule can be switched off on the New game page.</p>' },
       { id: 'turn', title: 'A turn', html: '<ol>' +
@@ -8638,7 +8650,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: !!setup.contest });
+        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: contestOn() });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }
