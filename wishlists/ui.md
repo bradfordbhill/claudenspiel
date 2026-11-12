@@ -14,7 +14,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.5 "Why is this good?" on hover in the hand: what the card would gain if played (and claimed) now, at its best space, worked out without peeking.
 - ○ The same hint for cards played from hand (Actions, Blessings).
 - ○ Turn replay: step through the last round's moves on the board, like a chess move list.
-- ○ A post-game report: each player's ◇ over time, the turning points (big claims, Ruins, Overwhelms), and the Genius's suggested better move at the two biggest moments.
+- ✅ 1.0-pre (the chart and the story) ○ (the Genius's view) **The Chronicle**, a post-game report: each player's ◇ after every turn as a stepped pixel line, marks where Ruins, Overwhelms, contests and the last round happened, and the turning points in words (lead changes, the biggest turns). Still to come: the Genius's suggested better move at the two biggest moments.
 - ○ Colour-blind mode: suit patterns (the dithered suit textures, stronger) and suit glyphs on every board card.
 
 ## Feel: ground rules
@@ -40,7 +40,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ○ **Turn handover:** the active player's card in the player list slides out a few pixels and their crest catches a glint; bot turns show a small hourglass that turns over once per move.
 - ✅ 0.5 **The Genius thinking:** a candle beside its name, with the flame flickering faster the longer it thinks.
 - ○ **Deeds:** a wax seal stamps onto the toast when a deed is earned, then the scroll rolls itself up into the Deeds tab.
-- ○ **Victory:** the winner's Kingdom cards light up one by one in order of value, then a pixel banner with their crest unfurls over the board. Defeat is quieter: the board dims and the wind picks up.
+- ✅ 1.0-pre (the light) ○ (the dimming) **Victory:** the winner's Kingdom cards light up one by one in order of value, then a pixel banner with their crest unfurls over the board. Defeat is quieter: the board dims and the wind picks up.
 - ○ **Ambient board:** the night prairie's grass ripples in slow dithered waves, the river glints, and a lantern now and then moves along the city wall. Rain on the board in the last round.
 - ✅ 1.0-pre **Hover:** hand cards lift two pixels when hovered; legal spaces breathe gently (one shade lighter and back) instead of a static highlight.
 

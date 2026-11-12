@@ -1056,17 +1056,27 @@ var KEngine = (function () {
     if (st.opts.seasons) { nextPlayer(st); return; }   // seasons: no race, the Reckonings decide
     var sc = scores(st), me = sc[p].total, pl = st.players[p];
     if (me >= st.opts.target) {
-      if (!st.opts.lastRound) { st.winner = p; log(st, pl.name + ' ends their turn with ' + me + '◇ and wins!'); return; }
+      if (!st.opts.lastRound) { chronicle(st, p); st.winner = p; log(st, pl.name + ' ends their turn with ' + me + '◇ and wins!'); return; }
       if (!st.lastRound) { st.lastRound = { by: p }; log(st, pl.name + ' ends their turn with ' + me + '◇: the last round begins. Everyone else finishes the round.'); }
     }
     if (st.lastRound) {
       var later = st.players.some(function (q, i) { return i > p && !q.out; });
       if (!later) {
         var best = -1, who = null; st.players.forEach(function (q, i) { if (q.out) return; var t = sc[i].total; if (t > best || (t === best && i === st.lastRound.by)) { best = t; who = i; } });
-        st.winner = who; log(st, 'The last round is over. ' + st.players[who].name + ' wins with ' + best + '◇!'); return;
+        chronicle(st, p); st.winner = who; log(st, 'The last round is over. ' + st.players[who].name + ' wins with ' + best + '◇!'); return;
       }
     }
     nextPlayer(st);
+  }
+
+  // The chronicle: every player's total at the end of each turn, with the turn's notable moments (Ruins, Overwhelms,
+  // contests, Ascensions, the last round), so the end of the game can show how it was won. One entry per turn.
+  var NOTABLE = / is (Ruined|Overwhelmed)| ASCENDS| contests |out of the game|the last round begins/;
+  function chronicle(st, p) {
+    if (st.opts.sandbox) return;
+    var chron = st.chron || (st.chron = []), hdr = '— ' + st.players[p].name + '’s turn', ev = [];
+    for (var i = st.log.length - 1; i >= 0 && st.log[i].indexOf(hdr) !== 0; i--) if (NOTABLE.test(st.log[i])) ev.unshift(st.log[i].replace(/ at -?\d+,-?\d+ is /, ' is ').replace(/: the last round begins.*$/, ': the last round begins.'));
+    chron.push({ r: st.round, p: p, t: scores(st).map(function (s) { return s.total; }), ev: ev.slice(0, 4) });
   }
 
   /* ---------- turn flow ---------- */
@@ -1094,6 +1104,7 @@ var KEngine = (function () {
   }
   // Pass to the next player who isn't out. Wrapping back to seat 0 starts a new round.
   function nextPlayer(st) {
+    chronicle(st, st.cur);
     var n = st.players.length, i = st.cur;
     for (var t = 0; t < n; t++) { i = (i + 1) % n; if (i === 0) { st.round++; if (st.opts.audits && (st.round - 1) % st.opts.audits === 0) audit(st); if (st.opts.seasons && (st.round - 1) % st.opts.seasonLength === 0) { reckon(st); if (st.winner != null) return; } } if (!st.players[i].out) break; }
     st.cur = i; st.players[i].turns++; beginTurn(st);
@@ -1151,6 +1162,7 @@ var KEngine = (function () {
       var stk = st.opts.seatTokens; if (stk == null) stk = SEAT_TOKENS[st.players.length] || 3;
       st.players.forEach(function (pl, i) { pl.tokens = Array.isArray(stk) ? +stk[i] || 0 : stk * (st.players.length - 1 - i); });
       st.players[0].turns = 1;
+      st.chron = [{ r: 0, p: -1, t: st.players.map(function (pl) { return pl.tokens; }), ev: [] }];
       log(st, 'New game: ' + st.players.map(function (p) { return p.name + ' (' + p.arch + ')'; }).join(', ') + '.');
       beginTurn(st);
     } else {

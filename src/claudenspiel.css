@@ -53,3 +53,42 @@ h1.logo.small { width: 300px; }
 :root[data-motion="full"] .hand .hcard:not(.sel) .card:hover { transform: translateY(-2px); }
 @keyframes cs-breathe { 0%, 100% { background-color: var(--legal); } 50% { background-color: rgba(60, 200, 60, .42); } }
 :root[data-motion="full"] .cell.legal:not(.poor) { animation: cs-breathe 2.4s steps(6) infinite; }
+/* The Chronicle: the game's story at its end, a stepped line per player drawn in whole pixels */
+.chronwrap { display: grid; gap: 8px; width: min(680px, 88vw); }
+.chronhead { margin: 0; font-size: 15px; }
+.chronplot { padding: 4px; }
+svg.chron { display: block; width: 100%; height: auto; font-size: 11px; }
+svg.chron .grid { stroke: var(--lo); stroke-opacity: .35; stroke-width: 1; }
+svg.chron .axis, svg.chron .tick { stroke: var(--lo); stroke-width: 1; }
+svg.chron .ax { fill: var(--muted, #555); }
+svg.chron .goal { stroke: #b4602a; stroke-width: 2; stroke-dasharray: 4 4; fill: #a0501e; }
+:root[data-theme="dark"] svg.chron .goal { fill: #e0905a; } svg.chron line.goal { stroke: #c0703a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) svg.chron .goal { fill: #e0905a; } svg.chron line.goal { stroke: #c0703a; } }
+svg.chron text.goal { stroke: none; }
+svg.chron .pl { fill: none; stroke-width: 2; stroke-linejoin: miter; stroke-linecap: square; }
+svg.chron .pl.win { stroke-width: 3; }
+svg.chron .pl.out { stroke-dasharray: 2 3; }
+svg.chron .mark rect:first-child { stroke: var(--field); stroke-width: 2; paint-order: stroke; }
+svg.chron .mark .pip { fill: var(--field); }
+svg.chron .mark.m-ascend .pip { fill: #ffd54a; }
+svg.chron .lab { fill: var(--text); }
+svg.chron .lab.win { font-weight: 700; }
+svg.chron .hc { fill: var(--text); fill-opacity: 0; }
+svg.chron .hc:hover { fill-opacity: .07; }
+.chronkey { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.chronkey .swatch { margin-right: 4px; }
+.chronsub { margin: 4px 0 0; font-family: 'Jacquard 24', serif; font-weight: 400; font-size: 22px; color: var(--title1); }
+.chronpts { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.chronpts li { display: grid; grid-template-columns: 1.4em 5.2em 1fr; gap: 4px; align-items: baseline; }
+.chronpts .rd { color: var(--muted, #555); font-variant-numeric: tabular-nums; }
+.chronpts .ico { text-align: center; }
+.chronpts .k-ruin .ico { color: #b02020; } .chronpts .k-gain .ico { color: #138a36; } .chronpts .k-lead .ico { color: #b4602a; }
+.chrontab td, .chrontab th { padding: 1px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+:root[data-theme="dark"] .chronsub { color: #f0a86a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chronsub { color: #f0a86a; } }
+/* the lines draw themselves left to right, in steps */
+@keyframes cs-chron { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+:root:not([data-motion="off"]) svg.chron .lines { animation: cs-chron 1.2s steps(16) both; }
+@media (prefers-reduced-motion: reduce) { svg.chron .lines { animation: none !important; } }
+/* Victory: a gold-leaf frame flashes on each of the winner's cards in turn */
+.fx.glory { border-radius: 0; box-shadow: inset 0 0 0 3px #ffd54a, inset 0 0 0 5px #b4602a, 0 0 0 2px #ffd54a; background: repeating-linear-gradient(45deg, rgba(255, 213, 74, .22) 0 2px, transparent 2px 4px); pointer-events: none; }

@@ -51,15 +51,13 @@ node tools/anatomy.js 2 0 500 /tmp/a.json         # per-turn records of bot game
 
 | Version | What changed |
 |---|---|
-| 0.1 | The fork: separate saves and look; a 116-card deck; the last round; Seat start off; Orchard 3◇ a card; Observatory +10◇ for all six suits; Revenge and Repent playable from hand; Brambles placeable. Archetype spread 0.68 → 0.16 |
-| 0.2 | Grounds (Marsh, Battlefield, Crossroads); banking; buying a second claim; a seat handicap for 3+ players; the race bar; Obelisk 6◇; Fountain reworked. Seats even at every table size |
-| 0.3 | The Book of Deeds (19 deeds); target 52◇; Mausoleum 4◇ for cards buried under it; its own icon; a safety term for the bots, measured and left off |
-| 0.4 | Sound and animations (with Sound and Motion settings); Cathedral +1◇ per Sceptre card it doesn't own; Orchard +1◇ per Leaf card in the region; seat handicap by table size; bots play Grounds on purpose; Mausoleum back to 3◇ |
-| 1.0-pre | Contest (pay 8● to take a rival's adjacent card), an optional rule: skill gap +10 → +24.4 (Genius 73% against a tactician) |
+| 1.0-pre | Contest (pay 8● to take a rival's adjacent card), an optional rule: skill gap +10 → +24.4 (Genius 73% against a tactician). With it, a Cryptkeeper's buried cards follow it home. Death Ray 9● and 3◇. The Chronicle (each game's story, drawn at its end) and a victory sequence. Sounds and motion for contests and burials; hover lift and breathing legal spaces |
 | 0.9 | Burn on trial (once a turn, discard a card for a suit effect); the Genius plans market picks and burns. Market: skill gap +10.9 (level with the base game); Burn: +7.0 (no gain) |
 | 0.8 | A sharper Genius: plans like a tactician, judges like one, looks ahead like a Genius (+10 points over a tactician, paired) |
-| 1.0-pre | Contest, on trial (a New game option; Genius gap +24.4). With it, a Cryptkeeper's buried cards follow it home. Sounds and motion for contests, burials and your turn; hover lift and breathing legal spaces |
-| 0.7 | You'll Regret That plays from hand (no dead cards) |
+| 0.7 | You'll Regret That can be played from hand (3●: a card next to one of yours makes no ●); no dead cards left |
 | 0.6 | The market, on trial (a New game option); paired skill-expression tool; the finding that the Genius needs updating before it can judge rules |
 | 0.5 | "Why is this good?" hover hints; Palace 2◇ per Goblet it doesn't own; ticking counters, flying ●, heartbeat chevrons and the Genius's candle. 2-player spread 0.16 |
-| 0.7 | You'll Regret That can be played from hand (3●: a card next to one of yours makes no ●); no dead cards left |
+| 0.4 | Sound and animations (with Sound and Motion settings); Cathedral +1◇ per Sceptre card it doesn't own; Orchard +1◇ per Leaf card in the region; seat handicap by table size; bots play Grounds on purpose; Mausoleum back to 3◇ |
+| 0.3 | The Book of Deeds (19 deeds); target 52◇; Mausoleum 4◇ for cards buried under it; its own icon; a safety term for the bots, measured and left off |
+| 0.2 | Grounds (Marsh, Battlefield, Crossroads); banking; buying a second claim; a seat handicap for 3+ players; the race bar; Obelisk 6◇; Fountain reworked. Seats even at every table size |
+| 0.1 | The fork: separate saves and look; a 116-card deck; the last round; Seat start off; Orchard 3◇ a card; Observatory +10◇ for all six suits; Revenge and Repent playable from hand; Brambles placeable. Archetype spread 0.68 → 0.16 |
