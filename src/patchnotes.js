@@ -1,6 +1,11 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-mausoleum', date: '13 November 2026', title: 'The dead are everywhere', notes: [
+    '<b>Mausoleum</b> is now also worth 1◇ for every two cards buried anywhere else on the board. The Cryptkeeper was the weakest archetype at 4 players. Bigger tables bury more cards, so the new bonus grows with the table. At 2 and 3 players it hardly changes anything.',
+    'A <b>Ruin</b> now cracks the card along a jagged line. Its colours fade to grey in three steps, and chips fall off its edges.',
+    'An <b>Overwhelm</b> sends red chevrons in from all four sides. They pulse twice, then the card is crushed flat and the chevrons scatter. A low drum roll plays underneath and cuts off at the crush. It is deeper when a Foundation falls.'
+  ] },
   { v: 'cs-1.0-pre-chronicle', date: '12 November 2026', title: 'The Chronicle, and Contest by default', notes: [
     'When a game ends, <b>the Chronicle</b> tells its story: everyone’s ◇ after every turn as a stepped line, marks where the Ruins, Overwhelms, contests and the last round fell, and the turning points in words. Open it again with <b>Chronicle</b> above the board.',
     'Before it, the winner’s Kingdom lights up card by card, the most valuable last, and their banner unrolls (full Motion only).',

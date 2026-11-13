@@ -28,8 +28,8 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.4 (the dust) **Claim:** the meeple falls from above the card, lands with a puff of four dithered dust pixels in the player's colour, and the card's border fills in clockwise.
 - ○ **Bought claim:** two coins flip from the ● counter into a small strongbox icon before the meeple appears.
 - ✅ 0.5 **Banking:** leftover ● coins slide into the ◇ pile at the end of the turn, each becoming a small gem with a single-frame glint.
-- ○ **Ruin:** the card cracks along a jagged pixel line, its colours step down to the grey Ruined palette in three frames, and a few chips fall off the edge.
-- ○ **Overwhelm:** the enemy chevrons around the card pulse inward together, then the card is crushed (squashed two pixels shorter) and greys out; the chevrons scatter.
+- ✅ 1.0-pre **Ruin:** the card cracks along a jagged pixel line, its colours step down to the grey Ruined palette in three frames, and a few chips fall off the edge.
+- ✅ 1.0-pre **Overwhelm:** the enemy chevrons around the card pulse inward together, then the card is crushed (squashed two pixels shorter) and greys out; the chevrons scatter.
 - ✅ 0.5 **One away from Overwhelm:** the chevrons beat slowly, like a heart, until the danger passes.
 - ○ **Burying:** the card slides under its host, leaving a sliver of its edge visible for a moment, like a page tucked into a book.
 - ○ **Curse:** a wisp of violet dithered smoke curls out of the cursed card and settles as a small mark in its corner.
@@ -51,7 +51,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.4 **Bought claim:** two coins dropped into a wooden box.
 - ✅ 0.4 **Banking:** coins poured into a leather purse, one clink per ◇ banked.
 - ✅ 0.4 **Ruin:** a short crack of splitting stone, then a scatter of grit.
-- ○ **Overwhelm:** a low drum roll that cuts off as the card is crushed; a deeper version when a Foundation falls.
+- ✅ 1.0-pre **Overwhelm:** a low drum roll that cuts off as the card is crushed; a deeper version when a Foundation falls.
 - ○ **One away from Overwhelm:** a faint heartbeat under the music while the danger lasts, only for your own cards.
 - ✅ 0.4 **Curse:** a whispered breath and a minor-key pluck on a lute.
 - ✅ 1.0-pre **Burying:** a spade into earth for Bone and Foundation burials; a book closing for everything else.

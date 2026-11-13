@@ -43,7 +43,7 @@ var KData = (function () {
     "cost": 0,
     "copies": 1,
     "income": 8,
-    "text": "3◇ per buried card in your Kingdom. You cannot play Leaf cards.",
+    "text": "3◇ per buried card in your Kingdom, and 1◇ for every two buried cards elsewhere on the board. You cannot play Leaf cards.",
     "place": [
      "N",
      "E",
@@ -53,7 +53,8 @@ var KData = (function () {
     "overwhelm": null,
     "score": {
      "kind": "perBuriedInKingdom",
-     "n": 3
+     "n": 3,
+     "o": 0.5
     },
     "sees": {
      "area": "kingdom"

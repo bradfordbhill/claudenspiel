@@ -621,6 +621,9 @@ svg.chron .hc:hover { fill-opacity: .07; }
 @media (prefers-reduced-motion: reduce) { svg.chron .lines { animation: none !important; } }
 /* Victory: a gold-leaf frame flashes on each of the winner's cards in turn */
 .fx.glory { border-radius: 0; box-shadow: inset 0 0 0 3px #ffd54a, inset 0 0 0 5px #b4602a, 0 0 0 2px #ffd54a; background: repeating-linear-gradient(45deg, rgba(255, 213, 74, .22) 0 2px, transparent 2px 4px); pointer-events: none; }
+.fx.crack svg { display: block; overflow: visible; }
+.fx.chip { width: 4px; height: 4px; border: 1px solid rgba(0, 0, 0, .5); }
+.fx.chev { width: 16px; height: 18px; font: 700 16px/18px monospace; text-align: center; color: #e04a3a; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
 </style></head><body><div id="app"></div><script>
 /* Kartenspiel — starter data. Card definitions are plain JSON so they can live in a db later. */
 var KData = (function () {
@@ -667,7 +670,7 @@ var KData = (function () {
     "cost": 0,
     "copies": 1,
     "income": 8,
-    "text": "3◇ per buried card in your Kingdom. You cannot play Leaf cards.",
+    "text": "3◇ per buried card in your Kingdom, and 1◇ for every two buried cards elsewhere on the board. You cannot play Leaf cards.",
     "place": [
      "N",
      "E",
@@ -677,7 +680,8 @@ var KData = (function () {
     "overwhelm": null,
     "score": {
      "kind": "perBuriedInKingdom",
-     "n": 3
+     "n": 3,
+     "o": 0.5
     },
     "sees": {
      "area": "kingdom"
@@ -4284,7 +4288,13 @@ var KEngine = (function () {
         var inK = cnt.filter(function (x) { return kd.indexOf(x) >= 0; }).length;
         return n * inK + m * (cnt.length - inK);
       // Claudenspiel: m more for each card buried under this card itself (Mausoleum).
-      case 'perBuriedInKingdom': return n * kingdom(st, p).reduce(function (a, x) { return a + st.board[x].length - 1; }, 0) + m * (st.board[k].length - 1);
+      // o more for each card buried anywhere on the board outside your Kingdom (Mausoleum: the dead are everywhere).
+      case 'perBuriedInKingdom': {
+        var kb = kingdom(st, p), o = +s.o || 0;
+        var own = kb.reduce(function (a, x) { return a + st.board[x].length - 1; }, 0);
+        var other = o ? keys(st).filter(function (x) { return kb.indexOf(x) < 0; }).reduce(function (a, x) { return a + st.board[x].length - 1; }, 0) : 0;
+        return n * own + m * (st.board[k].length - 1) + Math.floor(o * other);
+      }
       case 'perDistinctSuitInKingdom':
         // Claudenspiel: m more when all six suits are there (Observatory).
         var ss = {}; kingdom(st, p).forEach(function (x) { suitsOf(st, top(st, x)).forEach(function (q) { ss[q] = 1; }); }); var nd = Object.keys(ss).length; return n * nd + (m && nd >= SUITS.length ? m : 0);
@@ -6078,7 +6088,7 @@ var KFace = (function () {
       case 'perAdjacentSuit': return n + '◇ per adjacent ' + s.suit;
       case 'perSuitInKingdom': return n + '◇ per ' + s.suit + ' in Kingdom';
       case 'perSuitSplit': return n + '◇ per ' + s.suit + ' in Kingdom, ' + m + '◇ per other ' + s.suit;
-      case 'perBuriedInKingdom': return n + '◇ per buried card in Kingdom';
+      case 'perBuriedInKingdom': return n + '◇ per buried card in Kingdom' + (s.o ? ', ' + s.o + '◇ per buried card elsewhere' : '');
       case 'perDistinctSuitInKingdom': return n + '◇ per suit in Kingdom';
       case 'largestRegion': return n + '◇ per card in largest region';
       case 'perCardNorth': return n + '◇ per card north';
@@ -6259,6 +6269,11 @@ if (typeof module !== 'undefined') module.exports = KCardArt;
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-mausoleum', date: '13 November 2026', title: 'The dead are everywhere', notes: [
+    '<b>Mausoleum</b> is now also worth 1◇ for every two cards buried anywhere else on the board. The Cryptkeeper was the weakest archetype at 4 players. Bigger tables bury more cards, so the new bonus grows with the table. At 2 and 3 players it hardly changes anything.',
+    'A <b>Ruin</b> now cracks the card along a jagged line. Its colours fade to grey in three steps, and chips fall off its edges.',
+    'An <b>Overwhelm</b> sends red chevrons in from all four sides. They pulse twice, then the card is crushed flat and the chevrons scatter. A low drum roll plays underneath and cuts off at the crush. It is deeper when a Foundation falls.'
+  ] },
   { v: 'cs-1.0-pre-chronicle', date: '12 November 2026', title: 'The Chronicle, and Contest by default', notes: [
     'When a game ends, <b>the Chronicle</b> tells its story: everyone’s ◇ after every turn as a stepped line, marks where the Ruins, Overwhelms, contests and the last round fell, and the turning points in words. Open it again with <b>Chronicle</b> above the board.',
     'Before it, the winner’s Kingdom lights up card by card, the most valuable last, and their banner unrolls (full Motion only).',
@@ -6620,7 +6635,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
   // The context for the page on screen.
   function cur() { return app.page === 'sandbox' ? app.sandbox : app.page === 'online' ? (N.room && N.room.status !== 'lobby' ? N.ctx : null) : app.page === 'game' ? app.game : null; }
 
-  /* ---------------- effects: crumble, ◇ and ● flying to their piles ---------------- */
+  /* ---------------- effects: Ruins and Overwhelms, ◇ and ● flying to their piles ---------------- */
   // Claudenspiel's sounds, synthesized with Web Audio so the game stays one file. Off unless prefs.sound is on.
   var SFX = (function () {
     var ac = null, noiseBuf = null;
@@ -6642,7 +6657,11 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       burn: function (suit) { noise('bandpass', 900, 0.5, 0.25); noise('highpass', 2400, 0.3, 0.08, 0.1); tone('sine', (SUIT[suit] || 700) / 2, 0.4, 0.08, 0.15, 0.5); },
       claim: function () { noise('lowpass', 260, 0.16, 0.7); tone('sine', 110, 0.18, 0.4, 0, 0.7); },
       coin: function (n) { for (var i = 0; i < (n || 1); i++) { tone('triangle', 2500 + i * 180, 0.18, 0.12, i * 0.09); tone('triangle', 3300 + i * 140, 0.12, 0.08, i * 0.09 + 0.03); } },
-      ruin: function (over) { noise('highpass', 1600, 0.12, 0.6); noise('lowpass', 500, 0.35, 0.4, 0.05); if (over) for (var i = 0; i < 6; i++) noise('lowpass', 160, 0.08, 0.35, i * 0.05); },
+      // Ruin: a sharp crack and falling grit. Overwhelm: a low drum roll that cuts off as the card is crushed (deeper for a Foundation).
+      ruin: function (over, found) {
+        if (!over) { noise('highpass', 1600, 0.12, 0.6); noise('bandpass', 3200, 0.05, 0.3, 0.09); noise('lowpass', 500, 0.35, 0.4, 0.05); for (var c = 0; c < 4; c++) noise('bandpass', 1800 - c * 200, 0.03, 0.15, 0.3 + c * 0.07); return; }
+        var d = found ? 70 : 110; for (var i = 0; i < 12; i++) { noise('lowpass', d * 2, 0.07, 0.12 + i * 0.03, i * 0.045); tone('sine', d, 0.07, 0.05 + i * 0.012, i * 0.045); }
+        noise('highpass', 1400, 0.1, 0.6, 0.6); noise('lowpass', 400, 0.45, 0.5, 0.6); tone('sine', d * 0.75, 0.5, 0.3, 0.6, 0.5); },
       curse: function () { noise('highpass', 3000, 0.4, 0.08); tone('sawtooth', 220, 0.5, 0.06); tone('sawtooth', 261.6, 0.5, 0.05, 0.12); },
       bell: function () { [220, 440, 554, 660, 880].forEach(function (f, i) { tone('sine', f, 2.8 - i * 0.3, 0.12 / (i + 1)); }); },
       deed: function () { noise('highpass', 4000, 0.05, 0.12); noise('highpass', 4200, 0.05, 0.12, 0.08); S.claim(); },
@@ -6677,7 +6696,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
         if (E.isCursed(b, k) && !E.isCursed(a, k)) ev.push({ t: 'cursed', k: k });
         if ((c.dtok || 0) < (c0.dtok || 0)) ev.push({ t: 'note', k: k, text: 'Defended!', cls: 'def' });
         if ((c.dtok || 0) > (c0.dtok || 0)) ev.push({ t: 'note', k: k, text: '+1 Defense', cls: 'def' }); });
-      E.keys(b).forEach(function (k) { var u = topUid(b, k), c = b.cards[u], c0 = a.cards[u]; if (c.ruined && c0 && !c0.ruined) ev.push({ t: 'crumble', k: k, over: c.overwhelmed, suit: E.suitOf(b, u) }); });
+      E.keys(b).forEach(function (k) { var u = topUid(b, k), c = b.cards[u], c0 = a.cards[u]; if (c.ruined && c0 && !c0.ruined) ev.push({ t: 'crumble', k: k, over: c.overwhelmed, suit: E.suitOf(b, u), found: E.rawDef(b, u).type === 'Foundation' }); });
       // ◇ gains: per card for its owner, plus banked tokens attributed to cards
       var va = valuesByUid(a), vb = valuesByUid(b), given = b.players.map(function () { return 0; });
       Object.keys(vb).forEach(function (key) { var x = vb[key], y = va[key], g = x.v - (y ? y.v : 0); if (g > 0) { ev.push({ t: 'vp', k: x.k, p: x.p, n: g }); given[x.p] += g; } });
@@ -6731,19 +6750,39 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       setTimeout(function () { var t = document.querySelector(kind === 'vp' ? '[data-fx="pile-' + flyTo + '"]' : '[data-fx="jar"]'); if (t) t.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 300 }); }, (delay || 0) + 1000);
       var flyTo = to.p;
     }
-    function crumble(e, i) {
-      var r = cellRect(e.k); if (!r) return;
+    // A Ruin: a jagged crack runs down the card, its colours step down to grey in three frames, and chips fall off the edges.
+    function crack(e, i) {
+      var r = cellRect(e.k); if (!r) return; var cell = cellEl(e.k), dl = i * 120, NS = 'http://www.w3.org/2000/svg';
+      var pts = [], x = r.width * (0.35 + Math.random() * 0.3), segs = 7;
+      for (var q = 0; q <= segs; q++) { pts.push(Math.round(x) + ',' + Math.round(q * r.height / segs)); x = Math.max(6, Math.min(r.width - 6, x + (q % 2 ? 1 : -1) * (4 + Math.random() * 10))); }
+      var svg = document.createElementNS(NS, 'svg'); svg.setAttribute('width', r.width); svg.setAttribute('height', r.height); svg.setAttribute('shape-rendering', 'crispEdges');
+      [['#fff8', 3, 1], ['#1a1410', 2, 0]].forEach(function (z) { var pl = document.createElementNS(NS, 'polyline'); pl.setAttribute('points', pts.join(' ')); pl.setAttribute('fill', 'none'); pl.setAttribute('stroke', z[0]); pl.setAttribute('stroke-width', z[1]);
+        pl.setAttribute('stroke-linejoin', 'miter'); pl.setAttribute('transform', 'translate(' + z[2] + ',0)'); pl.setAttribute('pathLength', '100'); pl.setAttribute('stroke-dasharray', '100'); svg.appendChild(pl);
+        pl.animate([{ strokeDashoffset: 100 }, { strokeDashoffset: 0 }], { duration: 360, delay: dl, easing: 'steps(6)', fill: 'both' }); });
+      var o = piece('crack', '', r.left, r.top); o.appendChild(svg);
+      o.animate([{ opacity: 1 }, { opacity: 1, offset: .75 }, { opacity: 0 }], { duration: 1700, delay: dl, fill: 'both' }).onfinish = function () { o.remove(); };
+      if (cell && cell.animate) cell.animate([{ filter: 'saturate(1.2) brightness(1.1)' }, { filter: 'saturate(.55) brightness(1)' }, { filter: 'saturate(.1) brightness(.92)' }, { filter: 'none' }], { duration: 900, delay: dl + 300, easing: 'steps(3, jump-none)', fill: 'backwards' });
       var base = { Sceptre: '#fff6c2', Goblet: '#f6dcf2', Sword: '#ffdad5', Bone: '#ececec', Leaf: '#dcf2d4', Tome: '#d9e4ff' }[e.suit] || '#ddd';
-      var cols = 4, rows = 5, w = r.width / cols, h = r.height / rows;
-      for (var y = 0; y < rows; y++) for (var x = 0; x < cols; x++) {
-        var d = piece('shard', '', r.left + x * w, r.top + y * h); d.style.width = w + 1 + 'px'; d.style.height = h + 1 + 'px'; d.style.background = (x + y) % 2 ? base : '#b9b9b9';
-        var dx = (x - 1.5) * (10 + Math.random() * 18), dy = 40 + y * 12 + Math.random() * 50, rot = (Math.random() - 0.5) * 140;
-        d.animate([{ transform: 'translate(0,0) rotate(0)', opacity: 1 }, { transform: 'translate(' + (Math.random() - 0.5) * 6 + 'px,-2px)', offset: .15 }, { transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(' + rot + 'deg)', opacity: 0 }],
-          { duration: 900 + Math.random() * 300, delay: i * 120 + (y * 40), easing: 'cubic-bezier(.5,0,.8,.6)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d);
-      }
-      for (var s = 0; s < 8; s++) { var dust = piece('dust', '', r.left + Math.random() * r.width, r.top + r.height * (0.6 + Math.random() * 0.4)); dust.animate([{ transform: 'scale(.3)', opacity: .8 }, { transform: 'translate(' + (Math.random() - 0.5) * 40 + 'px,' + (-20 - Math.random() * 30) + 'px) scale(2.2)', opacity: 0 }], { duration: 1100, delay: i * 120 + 150, easing: 'ease-out', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(dust); }
-      popup(e.over ? 'Overwhelmed!' : 'Ruined', 'ruin', r, i * 120);
+      for (var c = 0; c < 9; c++) { var side = c % 3, cx = side === 0 ? r.left + 2 : side === 1 ? r.left + r.width - 6 : r.left + Math.random() * r.width, cy = side === 2 ? r.top + r.height - 4 : r.top + Math.random() * r.height;
+        var ch = piece('chip px', '', cx, cy); ch.style.background = c % 2 ? base : '#8d8478'; var dx = (side === 0 ? -1 : side === 1 ? 1 : Math.random() - 0.5) * (6 + Math.random() * 16);
+        ch.animate([{ transform: 'translate(0,0)', opacity: 0 }, { transform: 'translate(0,0)', opacity: 1, offset: .2 }, { transform: 'translate(' + dx * 0.6 + 'px,-' + (2 + Math.random() * 6) + 'px)', offset: .4 }, { transform: 'translate(' + dx + 'px,' + (30 + Math.random() * 40) + 'px)', opacity: 0 }],
+          { duration: 1000, delay: dl + 250 + c * 45, easing: 'steps(9)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(ch); }
+      popup('Ruined', 'ruin', r, dl + 650);
     }
+    // An Overwhelm: chevrons close in from all four sides and pulse twice, the card is crushed two pixels shorter and greys out, the chevrons scatter.
+    function crush(e, i) {
+      var r = cellRect(e.k); if (!r) return; var cell = cellEl(e.k), dl = i * 120, cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      [[0, -1, '▼'], [1, 0, '◀'], [0, 1, '▲'], [-1, 0, '▶']].forEach(function (v) {
+        var d = piece('chev', v[2], cx + v[0] * (r.width / 2 + 14) - 8, cy + v[1] * (r.height / 2 + 14) - 9), ix = -v[0] * 10, iy = -v[1] * 10, sx = v[0] * 34, sy = v[1] * 34;
+        d.animate([{ transform: 'translate(' + -ix + 'px,' + -iy + 'px)', opacity: 0 }, { transform: 'translate(0,0)', opacity: 1, offset: .15 }, { transform: 'translate(' + ix * .5 + 'px,' + iy * .5 + 'px)', offset: .3 }, { transform: 'translate(0,0)', offset: .4 },
+          { transform: 'translate(' + ix + 'px,' + iy + 'px)', offset: .55 }, { transform: 'translate(' + ix + 'px,' + iy + 'px)', opacity: 1, offset: .62 }, { transform: 'translate(' + sx + 'px,' + (sy + 18) + 'px) rotate(' + (v[0] - v[1]) * 90 + 'deg)', opacity: 0 }],
+          { duration: 1500, delay: dl, easing: 'steps(14)', fill: 'both' }).onfinish = function () { d.remove(); }; });
+      if (cell && cell.animate) cell.animate([{ transform: 'none', filter: 'none' }, { transform: 'none', filter: 'none', offset: .5 }, { transform: 'translateY(4px) scaleY(.9)', filter: 'saturate(.5) brightness(.85)', offset: .58 }, { transform: 'translateY(2px) scaleY(.96)', filter: 'saturate(.2) brightness(.9)', offset: .7 }, { transform: 'none', filter: 'none' }],
+        { duration: 1500, delay: dl, easing: 'steps(12)', fill: 'backwards' });
+      setTimeout(function () { for (var s = 0; s < 10; s++) { var dust = piece('dust', '', r.left + Math.random() * r.width, r.top + r.height - 6); dust.animate([{ transform: 'scale(.4)', opacity: .9 }, { transform: 'translate(' + (s % 2 ? 1 : -1) * (14 + Math.random() * 26) + 'px,' + (-4 - Math.random() * 14) + 'px) scale(2)', opacity: 0 }], { duration: 800, easing: 'ease-out', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(dust); } }, dl + 820);
+      popup(e.found ? 'Foundation falls!' : 'Overwhelmed!', 'ruin', r, dl + 800);
+    }
+    function cellEl(k) { var el = document.querySelector('.cell [data-cell="' + k + '"]'); return el && el.closest('.cell'); }
     function flare(r, delay) {
       var f = piece('flare', '', r.left - 4, r.top - 4); f.style.width = r.width + 8 + 'px'; f.style.height = r.height + 8 + 'px';
       f.animate([{ opacity: 0, boxShadow: '0 0 0 0 rgba(160,60,255,0)' }, { opacity: 1, boxShadow: '0 0 18px 10px rgba(170,70,255,.95), 0 0 40px 22px rgba(220,80,255,.55)', offset: .15 },
@@ -6794,7 +6833,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
         else if (e.t === 'buy') SFX.play('coin', 2);
         else if (e.t === 'burn') SFX.play('burn', e.suit);
         else if (e.t === 'bank') SFX.play('coin', e.n);
-        else if (e.t === 'crumble') SFX.play('ruin', e.over);
+        else if (e.t === 'crumble') SFX.play('ruin', e.over, e.found);
         else if (e.t === 'cursed') SFX.play('curse');
         else if (e.t === 'lastround') SFX.play('bell');
         else if (e.t === 'contest') SFX.play('clash');
@@ -6817,7 +6856,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
         if (e.t === 'bury' && !calm) { var rb = cellRect(e.k); if (rb) sink(rb, e.earth); }
         if (e.t === 'cursed') { var rc = cellRect(e.k); if (rc) { popup('Cursed!', 'curse', rc, i * 100); if (!calm) flare(rc, i * 100); } }
         if (e.t === 'note') { var rn = cellRect(e.k); if (rn) popup(e.text, e.cls, rn, i * 100); }
-        if (e.t === 'crumble') { if (!calm) crumble(e, i); else { var r0 = cellRect(e.k); if (r0) popup(e.over ? 'Overwhelmed!' : 'Ruined', 'ruin', r0); } }
+        if (e.t === 'crumble') { if (!calm) (e.over ? crush : crack)(e, i); else { var r0 = cellRect(e.k); if (r0) popup(e.over ? 'Overwhelmed!' : 'Ruined', 'ruin', r0); } }
         if (e.t === 'vp') { tick(e.p, e.n); var from = cellRect(e.k) || center(), to = rectOf('[data-fx="pile-' + e.p + '"]'); popup('+' + e.n + '◇', 'vp', from, nV * 150); if (to && !calm) { to.p = e.p; fly('vp', from, to, e.n, 250 + nV * 150); } nV++; }
         if (e.t === 'ap') { var f2 = cellRect(e.k) || center(), t2 = rectOf('[data-fx="jar"]'); popup('+' + e.n + '●', 'ap', f2, nA * 120); if (t2 && !calm) fly('ap', f2, t2, e.n, 200 + nA * 120); nA++; }
       });

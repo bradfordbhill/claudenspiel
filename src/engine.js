@@ -178,7 +178,13 @@ var KEngine = (function () {
         var inK = cnt.filter(function (x) { return kd.indexOf(x) >= 0; }).length;
         return n * inK + m * (cnt.length - inK);
       // Claudenspiel: m more for each card buried under this card itself (Mausoleum).
-      case 'perBuriedInKingdom': return n * kingdom(st, p).reduce(function (a, x) { return a + st.board[x].length - 1; }, 0) + m * (st.board[k].length - 1);
+      // o more for each card buried anywhere on the board outside your Kingdom (Mausoleum: the dead are everywhere).
+      case 'perBuriedInKingdom': {
+        var kb = kingdom(st, p), o = +s.o || 0;
+        var own = kb.reduce(function (a, x) { return a + st.board[x].length - 1; }, 0);
+        var other = o ? keys(st).filter(function (x) { return kb.indexOf(x) < 0; }).reduce(function (a, x) { return a + st.board[x].length - 1; }, 0) : 0;
+        return n * own + m * (st.board[k].length - 1) + Math.floor(o * other);
+      }
       case 'perDistinctSuitInKingdom':
         // Claudenspiel: m more when all six suits are there (Observatory).
         var ss = {}; kingdom(st, p).forEach(function (x) { suitsOf(st, top(st, x)).forEach(function (q) { ss[q] = 1; }); }); var nd = Object.keys(ss).length; return n * nd + (m && nd >= SUITS.length ? m : 0);

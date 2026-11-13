@@ -1,9 +1,11 @@
 // Bot self-play for balance analysis. The bots themselves live in src/bots.js (greedy, tactician, raider, warlord).
-// OPTS='{"contest":true}' sets rules for every game.
+// OPTS='{"contest":true}' sets rules for every game; SECS=1000 sets the time limit (default 255 s).
 // Usage: node tools/sim2.js <players> <first game> <last game> <output.json> [lineup]
 //   lineup (optional) fixes styles instead of rotating them, e.g. "Warmonger=warlord,*=greedy".
 //   An archetype named in it plays in every game.
 const D=require('../src/data.js'), E=require('../src/engine.js'), B=require('../src/bots.js'), fs=require('fs');
+// CARDS='{"mausoleum":{"score":{...}}}' patches card definitions for every game (for trying a change before writing it).
+if(process.env.CARDS){ const ch=JSON.parse(process.env.CARDS); D.STARTER.forEach(c=>{ if(ch[c.id]) Object.assign(c,ch[c.id]); }); }
 const ARCH=['Archbishop','Hedonist','Warmonger','Cryptkeeper','Gardener','Philosopher'], STRATS=['greedy','tactician','raider'];
 // lineup = { Archetype: style, '*': style } or null (rotate styles as before).
 function game(n,g,stats,lineup){

@@ -2,6 +2,33 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 13 November 2026 · 1.0-pre, the dead are everywhere
+
+**The 4-player Cryptkeeper, fixed.** The question from last time was why the Cryptkeeper falls behind at 4 players. Ruins per game don't explain it: they are flat from 3 to 4 players (2.1 and 2.0 a game), and the Warcamp's ◇ is flat too (14.5–17.1 a game at every size). What does change is turn count. A 4-player game lasts 5.1 rounds, against 6.2 at 2 players. The Mausoleum scores only the Cryptkeeper's own burials, so it loses a turn's worth. Palace and Cathedral don't, because they also score rivals' cards and a bigger table has more of those. Mausoleum now follows the same pattern: **3◇ per buried card in your Kingdom, and 1◇ for every two buried cards elsewhere on the board** (`score.o`, rounded down).
+
+Measured with contest on, mixed greedy, tactician and raider bots, paired on the same deals (1000-second runs, four at a time):
+
+| Table | Deals | Cryptkeeper before → after | Spread before → after | Winners changed |
+|---|---|---|---|---|
+| 4 players | 139 | **0.65 → 1.00** | **0.80 → 0.41** | 24 |
+| 3 players | 228 | 1.12 → 1.19 | 0.28 → 0.28 | 29 |
+| 2 players | 125 | 1.00 → 1.10 | 0.57 → 0.48 | 4 |
+
+*Tried first and dropped:* 1◇ for every buried card elsewhere. It overshot: Cryptkeeper 1.24 at 4 players and 1.32 at 3, about +5◇ a game.
+
+*Also tried and dropped:* Warcamp 6◇ an Overwhelm (was 8◇). The case for it went away with more games. On this run's 168-game 4-player baseline the Warmonger is at 1.10–1.14, not 1.3–1.4. With about 110 games per archetype the noise is ±0.25, and the earlier "Warmonger problem" sits inside it. With the cut, the Warmonger fell to 0.62, so it is clearly not wanted.
+
+**What's left at 4 players:** the Hedonist runs high in this sample (1.23–1.45), but the journal's 450-game run had it at 1.03. That is likely noise again. It needs 400+ games before anyone touches Palace.
+
+*Tooling:* `tools/sim2.js` takes `CARDS='{"id":{...}}'` to patch card definitions for a run, so a change can be measured before it is written into `data.js`. `tests/cs10-mausoleum.js` checks the new scoring at every step of six 4-player games.
+
+**Ruin and Overwhelm, animated.** Until now both shattered the card into the same shards. Now they look and sound different:
+- **A Ruin** draws a jagged crack down the card in six steps, with a dark line and a light edge. The card's colours step down to grey in three frames, and nine chips break off the sides and fall.
+- **An Overwhelm** sends four red chevrons in from N, E, S and W. They pulse inward twice, then the card squashes (4px down, 90% height) and greys. The chevrons scatter and dust kicks up. A falling Foundation says so: "Foundation falls!"
+- **The sound:** a Ruin is a sharp crack followed by grit. An Overwhelm is a low drum roll that builds over half a second and cuts off at the crush. It is deeper for a Foundation.
+
+**Next:** a 400+ game check of the 4-player Hedonist; 5 players with contest; Reckonings on a contestable board.
+
 ## 12 November 2026 · 1.0-pre, the Chronicle, and contest by default
 
 **The Chronicle.** Every game now keeps a chronicle in its state (`st.chron`): after each turn, every player's total and that turn's notable moments (Ruins, Overwhelms, contests, Ascensions, the start of the last round). When a game ends, the Chronicle opens: a stepped line per player drawn in whole pixels (it draws itself left to right in 16 steps), a mark on the acting player's line wherever something happened, the turning points in words (lead changes, the two biggest turns, the events; at most eight), a one-line verdict ("wins by 9◇ after 6 rounds, leading after 4 of 18 turns: a late charge") and a table of scores by round. It reopens from **Chronicle** beside Rematch. Why: FOUNDATIONS argues that most turns feel alike and the early leader usually holds on. A player can't see that during a game, but afterwards the chart shows it at a glance: where the race was decided and whether anyone could have caught up. It is also the first half of the post-game report on the UI wishlist. The Genius's "better move" at the big moments is still to come. Recording costs nothing measurable: bot self-play runs at the same speed with and without it. `tests/cs9-chronicle.js` checks it.

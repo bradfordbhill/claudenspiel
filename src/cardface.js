@@ -35,7 +35,7 @@ var KFace = (function () {
       case 'perAdjacentSuit': return n + '◇ per adjacent ' + s.suit;
       case 'perSuitInKingdom': return n + '◇ per ' + s.suit + ' in Kingdom';
       case 'perSuitSplit': return n + '◇ per ' + s.suit + ' in Kingdom, ' + m + '◇ per other ' + s.suit;
-      case 'perBuriedInKingdom': return n + '◇ per buried card in Kingdom';
+      case 'perBuriedInKingdom': return n + '◇ per buried card in Kingdom' + (s.o ? ', ' + s.o + '◇ per buried card elsewhere' : '');
       case 'perDistinctSuitInKingdom': return n + '◇ per suit in Kingdom';
       case 'largestRegion': return n + '◇ per card in largest region';
       case 'perCardNorth': return n + '◇ per card north';

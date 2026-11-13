@@ -13,7 +13,8 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 0.4 Orchard +1◇ per Leaf card in the largest region (Gardener 0.88 → 0.96).
 - ✅ 0.4 Cathedral +1◇ per Sceptre card on the board it doesn't own (the Archbishop was weak at 3–4 players).
 - ✅ 1.0-pre Measure 4-player games properly: 450 games with contest. Cryptkeeper 0.58 and Warmonger 1.28, the same without contest (paired), so the cause is the base game.
-- ▶ Fix the 4-player base game: Warmonger 1.3–1.4, Cryptkeeper 0.56–0.58. Check first how Ruins per game grow with the table.
+- ✅ 1.0-pre Fix the 4-player base game: Mausoleum also scores 1◇ for every two buried cards elsewhere (4-player Cryptkeeper 0.65 → 1.00, spread 0.80 → 0.41). Ruins per game don't grow from 3 to 4 players; the Warmonger was inside the noise (1.10–1.14 on 168 games); a Warcamp cut was tried and dropped.
+- ▶ Check the 4-player Hedonist with 400+ games (1.23–1.45 this run; 1.03 in the 450-game run).
 - ○ Measure 5 players with contest before turning it on there.
 - ✅ 1.0-pre With contest: a Cryptkeeper's buried cards move under its Foundation instead of changing hands (3-player Cryptkeeper 0.83 → 0.91 on the same deals).
 - ✅ 0.5 Palace 2◇ per Goblet card it doesn't own (the Hedonist was strongest, most at 4 players); it also lifted the 2-player Warmonger to 0.99.

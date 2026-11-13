@@ -51,7 +51,7 @@ node tools/anatomy.js 2 0 500 /tmp/a.json         # per-turn records of bot game
 
 | Version | What changed |
 |---|---|
-| 1.0-pre | Contest (pay 8● to take a rival's adjacent card), on by default for 2–4 players: skill gap +10 → +24.4 (Genius 73% against a tactician). With it, a Cryptkeeper's buried cards follow it home. Death Ray 9● and 3◇. The Chronicle (each game's story, drawn at its end) and a victory sequence. Sounds and motion for contests and burials; hover lift and breathing legal spaces |
+| 1.0-pre | Mausoleum +1◇ for every two buried cards elsewhere (4-player Cryptkeeper 0.65 → 1.00). Ruins crack and Overwhelms crush, each with its own sound. Contest (pay 8● to take a rival's adjacent card), on by default for 2–4 players: skill gap +10 → +24.4 (Genius 73% against a tactician). With it, a Cryptkeeper's buried cards follow it home. Death Ray 9● and 3◇. The Chronicle (each game's story, drawn at its end) and a victory sequence. Sounds and motion for contests and burials; hover lift and breathing legal spaces |
 | 0.9 | Burn on trial (once a turn, discard a card for a suit effect); the Genius plans market picks and burns. Market: skill gap +10.9 (level with the base game); Burn: +7.0 (no gain) |
 | 0.8 | A sharper Genius: plans like a tactician, judges like one, looks ahead like a Genius (+10 points over a tactician, paired) |
 | 0.7 | You'll Regret That can be played from hand (3●: a card next to one of yours makes no ●); no dead cards left |
