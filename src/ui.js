@@ -142,7 +142,26 @@
   function earnDeeds(st) {
     if (typeof KDeeds === 'undefined') return;
     var book = lsGet('cs.deeds') || {}, fresh = KDeeds.award(st, book); lsSet('cs.deeds', book);
+    app.mastery = { log: st.log.length, list: book.lastMastery || [], book: book };
+    (book.lastMastery || []).forEach(function (m) { if (m.to > m.from) setTimeout(function () { SFX.play('deed'); var r = KDeeds.rank(m.arch, book.mastery[m.arch]); toast('🜲 ' + m.arch + ' mastery, level ' + m.to + (r.title ? ': ' + r.title : '')); }, 1800); });
     if (fresh.length) setTimeout(function () { SFX.play('deed'); toast('📜 Deed' + (fresh.length > 1 ? 's' : '') + ' earned: ' + fresh.map(function (f) { return f.deed.name + (st.players.filter(function (q) { return !q.bot; }).length > 1 ? ' (' + f.by + ')' : ''); }).join(', ')); }, 300);
+  }
+  // Archetype mastery (src/deeds.js): ten pips, a title, and strategy notes that open as levels rise.
+  function pips(l) { var h = ''; for (var i = 1; i <= 10; i++) h += '<i class="pip' + (i <= l ? ' on' : '') + (i === 4 || i === 7 || i === 10 ? ' crown' : '') + '"></i>'; return '<span class="pips" aria-label="level ' + l + ' of 10">' + h + '</span>'; }
+  function masteryHTML(book) {
+    var m = book.mastery || {};
+    return '<h3>Mastery</h3><p class="small muted">Every finished game as an archetype earns marks: 1 for playing, 2 for winning, 2 for reaching its goal. Levels bring titles and strategy notes, never power.</p><div class="masterygrid">' + Object.keys(KDeeds.MASTERY).map(function (a) {
+      var r = KDeeds.rank(a, m[a]), pct = r.next ? Math.round(100 * (r.xp - r.prev) / (r.next - r.prev)) : 100, locked = [2, 5, 8].slice(r.notes.length);
+      return '<div class="mastery' + (r.level ? ' got' : '') + (r.level >= 10 ? ' max' : '') + '"><b>' + esc(a) + '</b><span class="mtitle">' + (r.title ? esc(r.title) : '<span class="muted">' + (r.xp ? 'No title yet' : 'Untried') + '</span>') + ' · level ' + r.level + '</span>' + pips(r.level) +
+        '<span class="mbar"><span style="width:' + pct + '%"></span></span><span class="small muted">' + (r.next ? r.xp + ' of ' + r.next + ' marks to level ' + (r.level + 1) : 'Mastered: ' + r.xp + ' marks') + '</span>' +
+        '<span class="small"><b class="mgoal">Goal</b> ' + esc(r.goal) + '</span>' + r.notes.map(function (n) { return '<span class="mnote">❧ ' + esc(n) + '</span>'; }).join('') + locked.map(function (l) { return '<span class="mnote locked">❧ A strategy note opens at level ' + l + '.</span>'; }).join('') + '</div>';
+    }).join('') + '</div>';
+  }
+  // The marks a finished game just gave, for the Chronicle.
+  function masteryGained(st) {
+    var a = app.mastery; if (!a || a.log !== st.log.length || !a.list.length) return '';
+    return '<div class="mgained">' + a.list.map(function (m) { var r = KDeeds.rank(m.arch, a.book.mastery[m.arch]);
+      return '<div><b>' + esc(m.by) + '</b> · ' + esc(m.arch) + ' mastery +' + m.got + (m.goal ? ' (goal reached)' : '') + ' ' + pips(r.level) + (m.to > m.from ? ' <b class="mup">Level ' + m.to + (r.title ? ', ' + esc(r.title) : '') + '!</b>' : '') + '</div>'; }).join('') + '</div>';
   }
   function deedsPage() {
     var book = lsGet('cs.deeds') || {}, got = book.deeds || {}, n = KDeeds.LIST.filter(function (d) { return got[d.id]; }).length;
@@ -150,7 +169,7 @@
     var items = KDeeds.LIST.map(function (d) { var g = got[d.id];
       return '<div class="deed' + (g ? ' got' : '') + '"><b>' + (g ? '📜 ' : '') + esc(d.name) + '</b><span>' + esc(d.text) + '</span>' + (g ? '<span class="small muted">' + esc(g.by) + ' as ' + esc(g.arch) + ', ' + new Date(g.at).toLocaleDateString() + '</span>' : '') +
         (d.progress ? '<span class="small muted">' + arch.map(function (a) { return (book.wins && book.wins[a] ? '✓ ' : '○ ') + a; }).join(' · ') + '</span>' : '') + '</div>'; }).join('');
-    return '<div class="page scroll"><div class="pane deeds"><h2>The Book of Deeds</h2><p>' + n + ' of ' + KDeeds.LIST.length + ' deeds earned, in ' + (book.games || 0) + ' finished game' + (book.games === 1 ? '' : 's') + '. Deeds are earned by the people at the table, not the bots, and kept in this browser.</p><div class="deedgrid">' + items + '</div></div></div>';
+    return '<div class="page scroll"><div class="pane deeds"><h2>The Book of Deeds</h2><p>' + n + ' of ' + KDeeds.LIST.length + ' deeds earned, in ' + (book.games || 0) + ' finished game' + (book.games === 1 ? '' : 's') + '. Deeds are earned by the people at the table, not the bots, and kept in this browser.</p><div class="deedgrid">' + items + '</div>' + masteryHTML(book) + '</div></div>';
   }
   function toast(m) { app.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { app.toast = null; render(); }, 4000); }
 
@@ -256,6 +275,14 @@
         if (!over) { noise('highpass', 1600, 0.12, 0.6); noise('bandpass', 3200, 0.05, 0.3, 0.09); noise('lowpass', 500, 0.35, 0.4, 0.05); for (var c = 0; c < 4; c++) noise('bandpass', 1800 - c * 200, 0.03, 0.15, 0.3 + c * 0.07); return; }
         var d = found ? 70 : 110; for (var i = 0; i < 12; i++) { noise('lowpass', d * 2, 0.07, 0.12 + i * 0.03, i * 0.045); tone('sine', d, 0.07, 0.05 + i * 0.012, i * 0.045); }
         noise('highpass', 1400, 0.1, 0.6, 0.6); noise('lowpass', 400, 0.45, 0.5, 0.6); tone('sine', d * 0.75, 0.5, 0.3, 0.6, 0.5); },
+      // An ability: a small bell for Sceptre and Tome, a forge hammer for Sword, a goblet clink, a hollow knock for Bone, a rustle for Leaf.
+      ability: function (suit) {
+        if (suit === 'Sceptre' || suit === 'Tome') { var f0 = suit === 'Sceptre' ? 1046 : 880; [1, 2.76, 5.4].forEach(function (m, i) { tone('sine', f0 * m, 1.1 - i * 0.3, 0.07 / (i + 1)); }); }
+        else if (suit === 'Sword') { [0, 0.22].forEach(function (t) { noise('bandpass', 2600, 0.04, 0.6, t); tone('square', 330, 0.06, 0.08, t, 0.7); tone('sine', 1760, 0.45, 0.05, t + 0.01); }); }
+        else if (suit === 'Goblet') { tone('sine', 2637, 0.35, 0.08); tone('sine', 3520, 0.3, 0.05, 0.004); tone('sine', 2793, 0.3, 0.06, 0.09); }
+        else if (suit === 'Bone') { tone('triangle', 220, 0.08, 0.2); tone('triangle', 196, 0.08, 0.16, 0.12); noise('lowpass', 600, 0.06, 0.2, 0.12); }
+        else { for (var i = 0; i < 5; i++) noise('bandpass', 2000 + i * 300, 0.06, 0.12, i * 0.05); }
+      },
       curse: function () { noise('highpass', 3000, 0.4, 0.08); tone('sawtooth', 220, 0.5, 0.06); tone('sawtooth', 261.6, 0.5, 0.05, 0.12); },
       bell: function () { [220, 440, 554, 660, 880].forEach(function (f, i) { tone('sine', f, 2.8 - i * 0.3, 0.12 / (i + 1)); }); },
       deed: function () { noise('highpass', 4000, 0.05, 0.12); noise('highpass', 4200, 0.05, 0.12, 0.08); S.claim(); },
@@ -308,6 +335,7 @@
       if (act.t === 'claim') ev.push({ t: 'claim', k: act.k, p: a.cur });
       if (act.t === 'buyClaim') ev.push({ t: 'buy' });
       if (act.t === 'burn' && b.turn && b.turn.burned) ev.push({ t: 'burn', suit: b.turn.burned, k: act.k || null });
+      if (act.t === 'ability' && act.k && E.top(a, act.k)) ev.push({ t: 'ability', suit: E.suitOf(a, E.top(a, act.k)) });
       var banked = b.log.slice(a.log.length).filter(function (l) { return / banks \d◇ from unspent/.test(l); });
       if (banked.length) ev.push({ t: 'bank', p: a.cur, n: +(/banks (\d)/.exec(banked[0]) || [0, 1])[1] });
       if (act.t === 'contest' && b.turn && b.turn.contested && !(a.turn && a.turn.contested)) { var cu = E.top(b, act.k), was = a.cards[cu] && a.cards[cu].claimants[0]; ev.push({ t: 'contest', k: act.k, p: a.cur, loser: was }); }
@@ -426,6 +454,7 @@
         else if (e.t === 'claim') SFX.play('claim');
         else if (e.t === 'buy') SFX.play('coin', 2);
         else if (e.t === 'burn') SFX.play('burn', e.suit);
+        else if (e.t === 'ability') SFX.play('ability', e.suit);
         else if (e.t === 'bank') SFX.play('coin', e.n);
         else if (e.t === 'crumble') SFX.play('ruin', e.over, e.found);
         else if (e.t === 'cursed') SFX.play('curse');
@@ -1049,7 +1078,7 @@
         '<select data-pkind="' + i + '" title="Who plays this seat">' + [['human', 'Human']].concat(BOT_CHOICES.map(function (b) { return [b, BOT_NAMES[b]]; })).map(function (o) { return '<option value="' + o[0] + '"' + ((p.kind || 'human') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
         '<input type="text" data-focus-key="pn' + i + '" data-pname="' + i + '" value="' + esc(p.name) + '" style="width:150px">' +
         '<select data-parch="' + i + '">' + A.map(function (c) { return '<option value="' + esc(c.archetype) + '"' + (c.archetype === p.arch ? ' selected' : '') + (taken.indexOf(c.archetype) >= 0 ? ' disabled' : '') + '>' + esc(c.archetype + ' (' + c.name + ', ' + c.suit + ')') + '</option>'; }).join('') + '</select>' +
-        '<span class="small muted">' + (function () { var f = A.find(function (c) { return c.archetype === p.arch; }); return f ? 'Weak to ' + esc(f.weakTo) : ''; })() + '</span></div>';
+        '<span class="small muted">' + (function () { var f = A.find(function (c) { return c.archetype === p.arch; }); return f ? 'Weak to ' + esc(f.weakTo) : ''; })() + ((p.kind || 'human') === 'human' && typeof KDeeds !== 'undefined' && KDeeds.MASTERY[p.arch] ? (function () { var r = KDeeds.rank(p.arch, ((lsGet('cs.deeds') || {}).mastery || {})[p.arch]); return ' · ' + (r.title ? '<i>' + esc(r.title) + '</i> (level ' + r.level + ')' : 'mastery level 0') + ' · <span title="Reach it for 2 more mastery marks">Goal: ' + esc(r.goal.replace(/^Finish with /, '').replace(/\.$/, '')) + '</span>'; })() : '') + '</span></div>';
     }
     h += '</fieldset><fieldset><legend>Options</legend><div class="form">' +
       '<label>Hand size</label><input type="number" min="1" max="10" data-set="handSize" value="' + setup.handSize + '">' +
@@ -1260,7 +1289,7 @@
     var byR = {}; c.forEach(function (e) { if (e.r > 0) byR[e.r] = e.t; }); Object.keys(byR).forEach(function (r) { h += '<tr><td>' + r + '</td>' + byR[r].map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; });
     return h + '</table></details></div>';
   }
-  function chronicleModal(ctx) { app.modal = function () { var st = ctx.state; return modal('The Chronicle', chronicleHTML(st), '<button class="btn" data-act="closeModal">Close</button>' + (ctx.online ? '' : '<button class="btn def" data-act="rematch">Rematch</button>')); }; render(); }
+  function chronicleModal(ctx) { app.modal = function () { var st = ctx.state; return modal('The Chronicle', masteryGained(st) + chronicleHTML(st), '<button class="btn" data-act="closeModal">Close</button>' + (ctx.online ? '' : '<button class="btn def" data-act="rematch">Rematch</button>')); }; render(); }
   function modal(title, body, btns) { return '<div class="modalbg"><div class="modal raised" role="dialog" aria-label="' + esc(title) + '"><div class="titlebar">' + crest() + '<span>' + esc(title) + '</span></div><div class="body">' + body + '</div><div class="btns">' + (btns || '') + '</div></div></div>'; }
   // Dialogs: app.modal for one-off ones; otherwise revealed hands, "pass the device" between turns,
   // and engine prompts that aren't answered by clicking the board.

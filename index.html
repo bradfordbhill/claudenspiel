@@ -529,9 +529,9 @@ h2:not(.plain) { font-family: "Jacquard 24", "DotGothic16", serif; font-weight: 
 :root[data-theme="dark"] .boardwrap { background-color: #262a2a; }
 /* Claudenspiel's look, loaded after Kartenspiel's style.css: a dusk-violet desk, oxblood-to-copper title bars and a
    verdigris logo, so the fork never passes for the original. */
-:root { --desk: #3d3350; --title1: #5a1020; --title2: #b4602a; --sel: #5a1020; --focus: #5a1020; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #1c1726; --title1: #3d0c18; --title2: #8a4520; --sel: #8a4520; --focus: #f0a86a; } }
-:root[data-theme="dark"] { --desk: #1c1726; --title1: #3d0c18; --title2: #8a4520; --sel: #8a4520; --focus: #f0a86a; }
+:root { --desk: #3d3350; --title1: #5a1020; --title2: #b4602a; --sel: #5a1020; --focus: #5a1020; --ink: #5a1020; --gild: #b4602a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #1c1726; --title1: #3d0c18; --title2: #8a4520; --sel: #8a4520; --focus: #f0a86a; --ink: #f0a86a; --gild: #d98a4a; } }
+:root[data-theme="dark"] { --desk: #1c1726; --title1: #3d0c18; --title2: #8a4520; --sel: #8a4520; --focus: #f0a86a; --ink: #f0a86a; --gild: #d98a4a; }
 h1.logo { aspect-ratio: 153 / 31; width: 460px; }
 h1.logo.small { width: 300px; }
 @media (max-width: 460px) { h1.logo { width: 300px; } }
@@ -552,7 +552,7 @@ h1.logo.small { width: 300px; }
 .deedgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 8px; }
 .deed { display: grid; gap: 3px; padding: 8px 10px; border: 2px solid var(--lo); background: var(--field); opacity: .7; }
 .deed.got { opacity: 1; border-color: var(--title2); box-shadow: inset 0 0 0 1px var(--title1); }
-.deed b { font-family: 'Jacquard 24', serif; font-size: 20px; font-weight: 400; color: var(--title1); }
+.deed b { font-family: 'Jacquard 24', serif; font-size: 20px; font-weight: 400; color: var(--ink); }
 /* Claudenspiel animations: pixel dust and the last-round banner */
 .fx.px { width: 4px; height: 4px; border-radius: 0; }
 .fx.banner { padding: 6px 18px; background: var(--title1); color: #f6efd8; border: 2px solid #f0a86a; font-family: 'Jacquard 24', serif; font-size: 26px; white-space: nowrap; transform-origin: top center; image-rendering: pixelated; }
@@ -624,6 +624,24 @@ svg.chron .hc:hover { fill-opacity: .07; }
 .fx.crack svg { display: block; overflow: visible; }
 .fx.chip { width: 4px; height: 4px; border: 1px solid rgba(0, 0, 0, .5); }
 .fx.chev { width: 16px; height: 18px; font: 700 16px/18px monospace; text-align: center; color: #e04a3a; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
+/* Archetype mastery */
+.masterygrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 8px; }
+.mastery { display: grid; gap: 4px; padding: 8px 10px; border: 2px solid var(--lo); background: var(--field); opacity: .8; }
+.mastery.got { opacity: 1; border-color: var(--title2); }
+.mastery.max { box-shadow: inset 0 0 0 1px var(--title1), 0 0 0 1px var(--title1); }
+.mastery > b { font-family: 'Jacquard 24', serif; font-size: 22px; font-weight: 400; color: var(--ink); }
+.mtitle { font-style: italic; }
+.pips { display: inline-flex; gap: 3px; vertical-align: middle; }
+.pip { width: 9px; height: 9px; border: 1px solid var(--muted); background: transparent; display: inline-block; }
+.pip.crown { transform: rotate(45deg) scale(.85); }
+.pip.on { background: var(--ink); border-color: var(--gild); }
+.mbar { display: block; height: 6px; border: 1px solid var(--muted); }
+.mbar > span { display: block; height: 100%; background: var(--gild); }
+.mgoal { color: var(--ink); }
+.mnote { font-size: 13px; line-height: 1.35; }
+.mnote.locked { opacity: .5; font-style: italic; }
+.mgained { display: grid; gap: 4px; margin-bottom: 10px; padding: 6px 8px; border: 1px dashed var(--title2); }
+.mup { color: var(--ink); }
 </style></head><body><div id="app"></div><script>
 /* Kartenspiel — starter data. Card definitions are plain JSON so they can live in a db later. */
 var KData = (function () {
@@ -5674,7 +5692,7 @@ var KEngine = (function () {
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
     burnBlock: burnBlock, BURN: BURN, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
-    archInfo: archInfo, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
+    archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };
 })();
 if (typeof module !== 'undefined') module.exports = KEngine;
@@ -6269,6 +6287,11 @@ if (typeof module !== 'undefined') module.exports = KCardArt;
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-mastery', date: '14 November 2026', title: 'Mastery', notes: [
+    'Every archetype now has <b>ten levels of mastery</b>. A finished game earns marks: 1 for playing, 2 for winning, and 2 more for reaching the archetype’s goal (the Cryptkeeper: 7 or more buried cards; the Gardener: a region of 7; and so on). The New game page shows each human seat’s goal.',
+    'Levels bring <b>titles</b> (from Novice to Prince of the Church, Gravedigger to Keeper of the Dead) and open three <b>strategy notes</b> per archetype, at levels 2, 5 and 8. Mastery never makes anyone stronger at the table.',
+    'See it all at the bottom of the <b>Deeds</b> page; the Chronicle shows what each game earned. Deed titles are now readable in dark mode too.'
+  ] },
   { v: 'cs-1.0-pre-mausoleum', date: '13 November 2026', title: 'The dead are everywhere', notes: [
     '<b>Mausoleum</b> is now also worth 1◇ for every two cards buried anywhere else on the board. The Cryptkeeper was the weakest archetype at 4 players. Bigger tables bury more cards, so the new bonus grows with the table. At 2 and 3 players it hardly changes anything.',
     'A <b>Ruin</b> now cracks the card along a jagged line. Its colours fade to grey in three steps, and chips fall off its edges.',
@@ -6351,13 +6374,13 @@ var KDeeds = (function () {
     var mine = function (re) { return log.filter(function (l) { return re.test(l) && l.indexOf(me) === 0; }).length; };
     var by = function (re) { return log.filter(function (l) { return re.test(l) && l.slice(-(me.length + 1)) === me + '.'; }).length; };
     var fk = kd.filter(function (k) { return E.top(st, k) === pl.foundationUid; })[0];
-    var foc = fk ? E.overwhelmCount(st, fk) : null, suits = {}; kd.forEach(function (k) { suits[E.suitOf(st, E.top(st, k))] = 1; });
+    var foc = fk ? E.overwhelmCount(st, fk) : null, suits = {}; kd.forEach(function (k) { var s = E.suitOf(st, E.top(st, k)); suits[s] = (suits[s] || 0) + 1; });
     var others = st.players.map(function (q, i) { return i; }).filter(function (i) { return i !== p; });
     var second = others.length ? Math.max.apply(null, others.map(function (i) { return sc[i].total; })) : 0;
     return {
       won: st.winner === p, arch: pl.arch, total: sc[p].total, margin: sc[p].total - second, round: st.round,
       bots: others.filter(function (i) { return st.players[i].bot; }).map(function (i) { return st.players[i].bot; }),
-      players: st.players.length, kingdom: kd.length, suits: Object.keys(suits).length,
+      players: st.players.length, kingdom: kd.length, suits: Object.keys(suits).length, suitCount: suits, region: E.largestRegion ? E.largestRegion(st, p) : 0,
       buried: kd.reduce(function (a, k) { return a + st.board[k].length - 1; }, 0),
       ascended: kd.some(function (k) { return st.cards[E.top(st, k)].ascended; }),
       foundationOneAway: !!(foc && foc.th && foc.n >= foc.th - 1),
@@ -6387,21 +6410,55 @@ var KDeeds = (function () {
     { id: 'seventy', name: 'Overflowing', text: 'Finish with 70◇ or more.', check: function (g) { return g.total >= 70; } },
     { id: 'six', name: 'Six Crowns', text: 'Win with every archetype.', progress: true, check: function (g, book) { return Object.keys(book.wins || {}).length >= 6; } }
   ];
+  // Archetype mastery: ten levels per archetype, earned by playing it. Each finished game as an archetype is worth
+  // 1 mark, a win 2 more, and reaching the archetype's goal (its fantasy, not its score) 2 more. Levels unlock a
+  // title and the archetype's strategy notes; they never make anyone stronger at the table.
+  var LEVELS = [2, 5, 9, 14, 20, 27, 35, 44, 54, 65];
+  var M = {
+    Archbishop: { goal: 'Finish with 4 or more Sceptre cards in your Kingdom.', met: function (g) { return (g.suitCount.Sceptre || 0) >= 4; },
+      titles: ['Novice', 'Deacon', 'Bishop', 'Prince of the Church'],
+      notes: ['Cathedral pays for every Sceptre card on the board you don\u2019t own, too: a rival\u2019s Sceptre card next door is half a gift.', 'Turned-in Curses come to your hand. Hold them for the turn a rival lays a big card beside yours.', 'Tome and Sword cards count against your Sceptre cards. Build in a tight block so few sides face open ground.'] },
+    Hedonist: { goal: 'Finish with 5 or more Goblet cards in your Kingdom.', met: function (g) { return (g.suitCount.Goblet || 0) >= 5; },
+      titles: ['Taster', 'Reveller', 'Host', 'Lord of Misrule'],
+      notes: ['Palace counts Goblet cards it doesn\u2019t own as well. Feed rivals cheap Goblets and the Palace still drinks.', 'Bank the surplus: each 6\u25cf left unspent becomes 1\u25c7, up to 2\u25c7 a turn. A rich turn with nothing to buy still scores.', 'At big tables the Palace grows with the board. Play the long game at 4 players and the short one at 2.'] },
+    Warmonger: { goal: 'Ruin or Overwhelm 4 or more cards.', met: function (g) { return g.destroyed >= 4; },
+      titles: ['Recruit', 'Sergeant', 'Captain', 'Warlord'],
+      notes: ['Every Ruin and Overwhelm pays the Warcamp, and its Reserves buy the next war.', 'A Battlefield beside a rival\u2019s card makes it one enemy easier to Overwhelm. Plant it, then wait.', 'Contest the card you can\u2019t break: 8\u25cf takes it whole.'] },
+    Cryptkeeper: { goal: 'Finish with 7 or more cards buried in your Kingdom.', met: function (g) { return g.buried >= 7; },
+      titles: ['Gravedigger', 'Sexton', 'Undertaker', 'Keeper of the Dead'],
+      notes: ['Actions and Blessings are buried once played. Every one you play is a point waiting underground.', 'Mausoleum also counts the dead under other people\u2019s cards, one \u25c7 for every two. The busier the table, the better.', 'With contest on, your dead follow you home: a contested card leaves its crypt under your Foundation.'] },
+    Gardener: { goal: 'Finish with a region of 7 or more connected cards.', met: function (g) { return g.region >= 7; },
+      titles: ['Weeder', 'Grower', 'Orchardist', 'Green Sovereign'],
+      notes: ['Orchard counts only your largest region. One great garden beats three small ones.', 'Each Leaf card in that region adds a \u25c7 more. A Fountain among Leaves is worth 3\u25c7 a neighbour.', 'A Marsh beside your garden makes it one enemy harder to Overwhelm. Gardens grow best by water.'] },
+    Philosopher: { goal: 'Finish with five or more suits in your Kingdom.', met: function (g) { return g.suits >= 5; },
+      titles: ['Student', 'Scholar', 'Magister', 'Sage of the Six'],
+      notes: ['Observatory adds 10\u25c7 the moment all six suits are in your Kingdom. The sixth suit is worth two of the others.', 'Keep a card of each suit you lack, and recolour toward the gaps rather than away from them.', 'Sword is your weakness, and six suits leave many sides open. Keep the Foundation at the heart of the Kingdom.'] }
+  };
+  function level(xp) { var l = 0; while (l < LEVELS.length && xp >= LEVELS[l]) l++; return l; }
+  // What a level means: its title (levels 1, 4, 7 and 10 each bring one) and how many strategy notes are open (at 2, 5, 8).
+  function rank(arch, xp) { var m = M[arch], l = level(xp || 0); if (!m) return null;
+    return { level: l, xp: xp || 0, next: l < LEVELS.length ? LEVELS[l] : null, prev: l ? LEVELS[l - 1] : 0, title: l >= 10 ? m.titles[3] : l >= 7 ? m.titles[2] : l >= 4 ? m.titles[1] : l >= 1 ? m.titles[0] : null, notes: m.notes.slice(0, l >= 8 ? 3 : l >= 5 ? 2 : l >= 2 ? 1 : 0), goal: m.goal }; }
+  // Marks seat p earns from finished game st: [{ why, n }].
+  function marks(st, p) { var g = facts(st, p), m = M[g.arch], out = [{ why: 'played', n: 1 }]; if (!m) return out;
+    if (g.won) out.push({ why: 'won', n: 2 }); if (m.met(g)) out.push({ why: 'goal', n: 2 }); return out; }
   // Record the finished game st in book ({ deeds: {id: {at, by, arch}}, wins: {arch: n}, games: n }) for every
   // human seat; returns the deeds earned for the first time, as [{ deed, by }].
   function award(st, book) {
     var fresh = [];
     if (st.winner == null) return fresh;
-    book.deeds = book.deeds || {}; book.wins = book.wins || {}; book.games = (book.games || 0) + 1;
+    book.deeds = book.deeds || {}; book.wins = book.wins || {}; book.games = (book.games || 0) + 1; book.lastMastery = [];
     st.players.forEach(function (pl, p) {
       if (pl.bot) return;
       var g = facts(st, p);
       if (g.won) book.wins[g.arch] = (book.wins[g.arch] || 0) + 1;
       L.forEach(function (d) { if (!book.deeds[d.id] && d.check(g, book)) { book.deeds[d.id] = { at: Date.now(), by: pl.name, arch: pl.arch }; fresh.push({ deed: d, by: pl.name }); } });
+      if (M[g.arch]) { book.mastery = book.mastery || {}; var before = level(book.mastery[g.arch] || 0), got = marks(st, p).reduce(function (a, x) { return a + x.n; }, 0);
+        book.mastery[g.arch] = (book.mastery[g.arch] || 0) + got; var after = level(book.mastery[g.arch]);
+        book.lastMastery = book.lastMastery || []; book.lastMastery.push({ by: pl.name, arch: g.arch, got: got, from: before, to: after, goal: M[g.arch].met(g) }); }
     });
     return fresh;
   }
-  return { LIST: L, award: award, facts: facts };
+  return { LIST: L, award: award, facts: facts, MASTERY: M, LEVELS: LEVELS, level: level, rank: rank, marks: marks };
 })();
 if (typeof module !== 'undefined') module.exports = KDeeds;
 /* Claudenspiel UI (forked from Kartenspiel's playtest UI). All game logic lives in KEngine; this file only renders state and dispatches actions. */
@@ -6548,7 +6605,26 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
   function earnDeeds(st) {
     if (typeof KDeeds === 'undefined') return;
     var book = lsGet('cs.deeds') || {}, fresh = KDeeds.award(st, book); lsSet('cs.deeds', book);
+    app.mastery = { log: st.log.length, list: book.lastMastery || [], book: book };
+    (book.lastMastery || []).forEach(function (m) { if (m.to > m.from) setTimeout(function () { SFX.play('deed'); var r = KDeeds.rank(m.arch, book.mastery[m.arch]); toast('🜲 ' + m.arch + ' mastery, level ' + m.to + (r.title ? ': ' + r.title : '')); }, 1800); });
     if (fresh.length) setTimeout(function () { SFX.play('deed'); toast('📜 Deed' + (fresh.length > 1 ? 's' : '') + ' earned: ' + fresh.map(function (f) { return f.deed.name + (st.players.filter(function (q) { return !q.bot; }).length > 1 ? ' (' + f.by + ')' : ''); }).join(', ')); }, 300);
+  }
+  // Archetype mastery (src/deeds.js): ten pips, a title, and strategy notes that open as levels rise.
+  function pips(l) { var h = ''; for (var i = 1; i <= 10; i++) h += '<i class="pip' + (i <= l ? ' on' : '') + (i === 4 || i === 7 || i === 10 ? ' crown' : '') + '"></i>'; return '<span class="pips" aria-label="level ' + l + ' of 10">' + h + '</span>'; }
+  function masteryHTML(book) {
+    var m = book.mastery || {};
+    return '<h3>Mastery</h3><p class="small muted">Every finished game as an archetype earns marks: 1 for playing, 2 for winning, 2 for reaching its goal. Levels bring titles and strategy notes, never power.</p><div class="masterygrid">' + Object.keys(KDeeds.MASTERY).map(function (a) {
+      var r = KDeeds.rank(a, m[a]), pct = r.next ? Math.round(100 * (r.xp - r.prev) / (r.next - r.prev)) : 100, locked = [2, 5, 8].slice(r.notes.length);
+      return '<div class="mastery' + (r.level ? ' got' : '') + (r.level >= 10 ? ' max' : '') + '"><b>' + esc(a) + '</b><span class="mtitle">' + (r.title ? esc(r.title) : '<span class="muted">' + (r.xp ? 'No title yet' : 'Untried') + '</span>') + ' · level ' + r.level + '</span>' + pips(r.level) +
+        '<span class="mbar"><span style="width:' + pct + '%"></span></span><span class="small muted">' + (r.next ? r.xp + ' of ' + r.next + ' marks to level ' + (r.level + 1) : 'Mastered: ' + r.xp + ' marks') + '</span>' +
+        '<span class="small"><b class="mgoal">Goal</b> ' + esc(r.goal) + '</span>' + r.notes.map(function (n) { return '<span class="mnote">❧ ' + esc(n) + '</span>'; }).join('') + locked.map(function (l) { return '<span class="mnote locked">❧ A strategy note opens at level ' + l + '.</span>'; }).join('') + '</div>';
+    }).join('') + '</div>';
+  }
+  // The marks a finished game just gave, for the Chronicle.
+  function masteryGained(st) {
+    var a = app.mastery; if (!a || a.log !== st.log.length || !a.list.length) return '';
+    return '<div class="mgained">' + a.list.map(function (m) { var r = KDeeds.rank(m.arch, a.book.mastery[m.arch]);
+      return '<div><b>' + esc(m.by) + '</b> · ' + esc(m.arch) + ' mastery +' + m.got + (m.goal ? ' (goal reached)' : '') + ' ' + pips(r.level) + (m.to > m.from ? ' <b class="mup">Level ' + m.to + (r.title ? ', ' + esc(r.title) : '') + '!</b>' : '') + '</div>'; }).join('') + '</div>';
   }
   function deedsPage() {
     var book = lsGet('cs.deeds') || {}, got = book.deeds || {}, n = KDeeds.LIST.filter(function (d) { return got[d.id]; }).length;
@@ -6556,7 +6632,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
     var items = KDeeds.LIST.map(function (d) { var g = got[d.id];
       return '<div class="deed' + (g ? ' got' : '') + '"><b>' + (g ? '📜 ' : '') + esc(d.name) + '</b><span>' + esc(d.text) + '</span>' + (g ? '<span class="small muted">' + esc(g.by) + ' as ' + esc(g.arch) + ', ' + new Date(g.at).toLocaleDateString() + '</span>' : '') +
         (d.progress ? '<span class="small muted">' + arch.map(function (a) { return (book.wins && book.wins[a] ? '✓ ' : '○ ') + a; }).join(' · ') + '</span>' : '') + '</div>'; }).join('');
-    return '<div class="page scroll"><div class="pane deeds"><h2>The Book of Deeds</h2><p>' + n + ' of ' + KDeeds.LIST.length + ' deeds earned, in ' + (book.games || 0) + ' finished game' + (book.games === 1 ? '' : 's') + '. Deeds are earned by the people at the table, not the bots, and kept in this browser.</p><div class="deedgrid">' + items + '</div></div></div>';
+    return '<div class="page scroll"><div class="pane deeds"><h2>The Book of Deeds</h2><p>' + n + ' of ' + KDeeds.LIST.length + ' deeds earned, in ' + (book.games || 0) + ' finished game' + (book.games === 1 ? '' : 's') + '. Deeds are earned by the people at the table, not the bots, and kept in this browser.</p><div class="deedgrid">' + items + '</div>' + masteryHTML(book) + '</div></div>';
   }
   function toast(m) { app.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { app.toast = null; render(); }, 4000); }
 
@@ -6662,6 +6738,14 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
         if (!over) { noise('highpass', 1600, 0.12, 0.6); noise('bandpass', 3200, 0.05, 0.3, 0.09); noise('lowpass', 500, 0.35, 0.4, 0.05); for (var c = 0; c < 4; c++) noise('bandpass', 1800 - c * 200, 0.03, 0.15, 0.3 + c * 0.07); return; }
         var d = found ? 70 : 110; for (var i = 0; i < 12; i++) { noise('lowpass', d * 2, 0.07, 0.12 + i * 0.03, i * 0.045); tone('sine', d, 0.07, 0.05 + i * 0.012, i * 0.045); }
         noise('highpass', 1400, 0.1, 0.6, 0.6); noise('lowpass', 400, 0.45, 0.5, 0.6); tone('sine', d * 0.75, 0.5, 0.3, 0.6, 0.5); },
+      // An ability: a small bell for Sceptre and Tome, a forge hammer for Sword, a goblet clink, a hollow knock for Bone, a rustle for Leaf.
+      ability: function (suit) {
+        if (suit === 'Sceptre' || suit === 'Tome') { var f0 = suit === 'Sceptre' ? 1046 : 880; [1, 2.76, 5.4].forEach(function (m, i) { tone('sine', f0 * m, 1.1 - i * 0.3, 0.07 / (i + 1)); }); }
+        else if (suit === 'Sword') { [0, 0.22].forEach(function (t) { noise('bandpass', 2600, 0.04, 0.6, t); tone('square', 330, 0.06, 0.08, t, 0.7); tone('sine', 1760, 0.45, 0.05, t + 0.01); }); }
+        else if (suit === 'Goblet') { tone('sine', 2637, 0.35, 0.08); tone('sine', 3520, 0.3, 0.05, 0.004); tone('sine', 2793, 0.3, 0.06, 0.09); }
+        else if (suit === 'Bone') { tone('triangle', 220, 0.08, 0.2); tone('triangle', 196, 0.08, 0.16, 0.12); noise('lowpass', 600, 0.06, 0.2, 0.12); }
+        else { for (var i = 0; i < 5; i++) noise('bandpass', 2000 + i * 300, 0.06, 0.12, i * 0.05); }
+      },
       curse: function () { noise('highpass', 3000, 0.4, 0.08); tone('sawtooth', 220, 0.5, 0.06); tone('sawtooth', 261.6, 0.5, 0.05, 0.12); },
       bell: function () { [220, 440, 554, 660, 880].forEach(function (f, i) { tone('sine', f, 2.8 - i * 0.3, 0.12 / (i + 1)); }); },
       deed: function () { noise('highpass', 4000, 0.05, 0.12); noise('highpass', 4200, 0.05, 0.12, 0.08); S.claim(); },
@@ -6714,6 +6798,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
       if (act.t === 'claim') ev.push({ t: 'claim', k: act.k, p: a.cur });
       if (act.t === 'buyClaim') ev.push({ t: 'buy' });
       if (act.t === 'burn' && b.turn && b.turn.burned) ev.push({ t: 'burn', suit: b.turn.burned, k: act.k || null });
+      if (act.t === 'ability' && act.k && E.top(a, act.k)) ev.push({ t: 'ability', suit: E.suitOf(a, E.top(a, act.k)) });
       var banked = b.log.slice(a.log.length).filter(function (l) { return / banks \d◇ from unspent/.test(l); });
       if (banked.length) ev.push({ t: 'bank', p: a.cur, n: +(/banks (\d)/.exec(banked[0]) || [0, 1])[1] });
       if (act.t === 'contest' && b.turn && b.turn.contested && !(a.turn && a.turn.contested)) { var cu = E.top(b, act.k), was = a.cards[cu] && a.cards[cu].claimants[0]; ev.push({ t: 'contest', k: act.k, p: a.cur, loser: was }); }
@@ -6832,6 +6917,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
         else if (e.t === 'claim') SFX.play('claim');
         else if (e.t === 'buy') SFX.play('coin', 2);
         else if (e.t === 'burn') SFX.play('burn', e.suit);
+        else if (e.t === 'ability') SFX.play('ability', e.suit);
         else if (e.t === 'bank') SFX.play('coin', e.n);
         else if (e.t === 'crumble') SFX.play('ruin', e.over, e.found);
         else if (e.t === 'cursed') SFX.play('curse');
@@ -7455,7 +7541,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
         '<select data-pkind="' + i + '" title="Who plays this seat">' + [['human', 'Human']].concat(BOT_CHOICES.map(function (b) { return [b, BOT_NAMES[b]]; })).map(function (o) { return '<option value="' + o[0] + '"' + ((p.kind || 'human') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
         '<input type="text" data-focus-key="pn' + i + '" data-pname="' + i + '" value="' + esc(p.name) + '" style="width:150px">' +
         '<select data-parch="' + i + '">' + A.map(function (c) { return '<option value="' + esc(c.archetype) + '"' + (c.archetype === p.arch ? ' selected' : '') + (taken.indexOf(c.archetype) >= 0 ? ' disabled' : '') + '>' + esc(c.archetype + ' (' + c.name + ', ' + c.suit + ')') + '</option>'; }).join('') + '</select>' +
-        '<span class="small muted">' + (function () { var f = A.find(function (c) { return c.archetype === p.arch; }); return f ? 'Weak to ' + esc(f.weakTo) : ''; })() + '</span></div>';
+        '<span class="small muted">' + (function () { var f = A.find(function (c) { return c.archetype === p.arch; }); return f ? 'Weak to ' + esc(f.weakTo) : ''; })() + ((p.kind || 'human') === 'human' && typeof KDeeds !== 'undefined' && KDeeds.MASTERY[p.arch] ? (function () { var r = KDeeds.rank(p.arch, ((lsGet('cs.deeds') || {}).mastery || {})[p.arch]); return ' · ' + (r.title ? '<i>' + esc(r.title) + '</i> (level ' + r.level + ')' : 'mastery level 0') + ' · <span title="Reach it for 2 more mastery marks">Goal: ' + esc(r.goal.replace(/^Finish with /, '').replace(/\.$/, '')) + '</span>'; })() : '') + '</span></div>';
     }
     h += '</fieldset><fieldset><legend>Options</legend><div class="form">' +
       '<label>Hand size</label><input type="number" min="1" max="10" data-set="handSize" value="' + setup.handSize + '">' +
@@ -7666,7 +7752,7 @@ if (typeof module !== 'undefined') module.exports = KDeeds;
     var byR = {}; c.forEach(function (e) { if (e.r > 0) byR[e.r] = e.t; }); Object.keys(byR).forEach(function (r) { h += '<tr><td>' + r + '</td>' + byR[r].map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; });
     return h + '</table></details></div>';
   }
-  function chronicleModal(ctx) { app.modal = function () { var st = ctx.state; return modal('The Chronicle', chronicleHTML(st), '<button class="btn" data-act="closeModal">Close</button>' + (ctx.online ? '' : '<button class="btn def" data-act="rematch">Rematch</button>')); }; render(); }
+  function chronicleModal(ctx) { app.modal = function () { var st = ctx.state; return modal('The Chronicle', masteryGained(st) + chronicleHTML(st), '<button class="btn" data-act="closeModal">Close</button>' + (ctx.online ? '' : '<button class="btn def" data-act="rematch">Rematch</button>')); }; render(); }
   function modal(title, body, btns) { return '<div class="modalbg"><div class="modal raised" role="dialog" aria-label="' + esc(title) + '"><div class="titlebar">' + crest() + '<span>' + esc(title) + '</span></div><div class="body">' + body + '</div><div class="btns">' + (btns || '') + '</div></div></div>'; }
   // Dialogs: app.modal for one-off ones; otherwise revealed hands, "pass the device" between turns,
   // and engine prompts that aren't answered by clicking the board.

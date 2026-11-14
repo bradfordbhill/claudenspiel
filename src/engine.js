@@ -1564,7 +1564,7 @@ var KEngine = (function () {
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
     burnBlock: burnBlock, BURN: BURN, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
-    archInfo: archInfo, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
+    archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };
 })();
 if (typeof module !== 'undefined') module.exports = KEngine;

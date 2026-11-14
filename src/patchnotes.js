@@ -1,6 +1,11 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-mastery', date: '14 November 2026', title: 'Mastery', notes: [
+    'Every archetype now has <b>ten levels of mastery</b>. A finished game earns marks: 1 for playing, 2 for winning, and 2 more for reaching the archetype’s goal (the Cryptkeeper: 7 or more buried cards; the Gardener: a region of 7; and so on). The New game page shows each human seat’s goal.',
+    'Levels bring <b>titles</b> (from Novice to Prince of the Church, Gravedigger to Keeper of the Dead) and open three <b>strategy notes</b> per archetype, at levels 2, 5 and 8. Mastery never makes anyone stronger at the table.',
+    'See it all at the bottom of the <b>Deeds</b> page; the Chronicle shows what each game earned. Deed titles are now readable in dark mode too.'
+  ] },
   { v: 'cs-1.0-pre-mausoleum', date: '13 November 2026', title: 'The dead are everywhere', notes: [
     '<b>Mausoleum</b> is now also worth 1◇ for every two cards buried anywhere else on the board. The Cryptkeeper was the weakest archetype at 4 players. Bigger tables bury more cards, so the new bonus grows with the table. At 2 and 3 players it hardly changes anything.',
     'A <b>Ruin</b> now cracks the card along a jagged line. Its colours fade to grey in three steps, and chips fall off its edges.',

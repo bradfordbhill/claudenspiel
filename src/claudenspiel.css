@@ -1,8 +1,8 @@
 /* Claudenspiel's look, loaded after Kartenspiel's style.css: a dusk-violet desk, oxblood-to-copper title bars and a
    verdigris logo, so the fork never passes for the original. */
-:root { --desk: #3d3350; --title1: #5a1020; --title2: #b4602a; --sel: #5a1020; --focus: #5a1020; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #1c1726; --title1: #3d0c18; --title2: #8a4520; --sel: #8a4520; --focus: #f0a86a; } }
-:root[data-theme="dark"] { --desk: #1c1726; --title1: #3d0c18; --title2: #8a4520; --sel: #8a4520; --focus: #f0a86a; }
+:root { --desk: #3d3350; --title1: #5a1020; --title2: #b4602a; --sel: #5a1020; --focus: #5a1020; --ink: #5a1020; --gild: #b4602a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #1c1726; --title1: #3d0c18; --title2: #8a4520; --sel: #8a4520; --focus: #f0a86a; --ink: #f0a86a; --gild: #d98a4a; } }
+:root[data-theme="dark"] { --desk: #1c1726; --title1: #3d0c18; --title2: #8a4520; --sel: #8a4520; --focus: #f0a86a; --ink: #f0a86a; --gild: #d98a4a; }
 h1.logo { aspect-ratio: 153 / 31; width: 460px; }
 h1.logo.small { width: 300px; }
 @media (max-width: 460px) { h1.logo { width: 300px; } }
@@ -23,7 +23,7 @@ h1.logo.small { width: 300px; }
 .deedgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 8px; }
 .deed { display: grid; gap: 3px; padding: 8px 10px; border: 2px solid var(--lo); background: var(--field); opacity: .7; }
 .deed.got { opacity: 1; border-color: var(--title2); box-shadow: inset 0 0 0 1px var(--title1); }
-.deed b { font-family: 'Jacquard 24', serif; font-size: 20px; font-weight: 400; color: var(--title1); }
+.deed b { font-family: 'Jacquard 24', serif; font-size: 20px; font-weight: 400; color: var(--ink); }
 /* Claudenspiel animations: pixel dust and the last-round banner */
 .fx.px { width: 4px; height: 4px; border-radius: 0; }
 .fx.banner { padding: 6px 18px; background: var(--title1); color: #f6efd8; border: 2px solid #f0a86a; font-family: 'Jacquard 24', serif; font-size: 26px; white-space: nowrap; transform-origin: top center; image-rendering: pixelated; }
@@ -95,3 +95,21 @@ svg.chron .hc:hover { fill-opacity: .07; }
 .fx.crack svg { display: block; overflow: visible; }
 .fx.chip { width: 4px; height: 4px; border: 1px solid rgba(0, 0, 0, .5); }
 .fx.chev { width: 16px; height: 18px; font: 700 16px/18px monospace; text-align: center; color: #e04a3a; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
+/* Archetype mastery */
+.masterygrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 8px; }
+.mastery { display: grid; gap: 4px; padding: 8px 10px; border: 2px solid var(--lo); background: var(--field); opacity: .8; }
+.mastery.got { opacity: 1; border-color: var(--title2); }
+.mastery.max { box-shadow: inset 0 0 0 1px var(--title1), 0 0 0 1px var(--title1); }
+.mastery > b { font-family: 'Jacquard 24', serif; font-size: 22px; font-weight: 400; color: var(--ink); }
+.mtitle { font-style: italic; }
+.pips { display: inline-flex; gap: 3px; vertical-align: middle; }
+.pip { width: 9px; height: 9px; border: 1px solid var(--muted); background: transparent; display: inline-block; }
+.pip.crown { transform: rotate(45deg) scale(.85); }
+.pip.on { background: var(--ink); border-color: var(--gild); }
+.mbar { display: block; height: 6px; border: 1px solid var(--muted); }
+.mbar > span { display: block; height: 100%; background: var(--gild); }
+.mgoal { color: var(--ink); }
+.mnote { font-size: 13px; line-height: 1.35; }
+.mnote.locked { opacity: .5; font-style: italic; }
+.mgained { display: grid; gap: 4px; margin-bottom: 10px; padding: 6px 8px; border: 1px dashed var(--title2); }
+.mup { color: var(--ink); }

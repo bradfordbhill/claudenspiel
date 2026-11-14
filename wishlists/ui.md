@@ -56,7 +56,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.4 **Curse:** a whispered breath and a minor-key pluck on a lute.
 - ✅ 1.0-pre **Burying:** a spade into earth for Bone and Foundation burials; a book closing for everything else.
 - ✅ 0.4 **Grounds:** Marsh: frogs and water; Battlefield: a distant horn; Crossroads: cart wheels on gravel.
-- ○ **Ability used:** a short bell for Sceptre and Tome abilities, a forge hammer for Sword, a goblet clink for Goblet.
+- ✅ 1.0-pre **Ability used:** a short bell for Sceptre and Tome abilities, a forge hammer for Sword, a goblet clink for Goblet, a hollow knock for Bone, a rustle for Leaf.
 - ✅ 1.0-pre **Your turn:** a small hand bell, only when a human is up after bots have played.
 - ✅ 1.0-pre **Contest:** two blades meet off-key; the ousted meeple tumbles off the card in its owner's colour and the taker's meeple lands in a puff.
 - ✅ 0.4 **Last round:** the city's great bell tolls once, far away.

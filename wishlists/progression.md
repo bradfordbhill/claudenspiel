@@ -4,7 +4,8 @@ How players grow with Claudenspiel. The rule: progress widens what you can do an
 
 ## Learning
 - ▶ Three archetypes to start (Archbishop, Hedonist, Gardener); the other three unlock by playing, each with a short guided game.
-- ▶ Archetype mastery: ten levels per archetype, earned by reaching its goal in play (6 Sceptre cards for the Archbishop, all suits for the Philosopher, 8 buried cards for the Cryptkeeper), unlocking a strategy page, cosmetics and a title at level 10.
+- ✅ 1.0-pre Archetype mastery: ten levels per archetype (marks: 1 a game, 2 a win, 2 for the archetype's goal), four titles each, three strategy notes opening at levels 2, 5 and 8. Goals set near the top third of tactician games.
+- ○ Mastery cosmetics: a meeple style or card back per archetype at level 10.
 
 ## A campaign against bots: The Long Road to the City
 - ▶ Act I (6 stops), the prairie: against greedy bots, one rule taught at each stop.
