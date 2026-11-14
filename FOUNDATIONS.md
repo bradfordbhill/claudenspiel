@@ -100,6 +100,7 @@ Seasons and Reckonings were prototyped (`seasons: 3`, `seasonLength: 2`, three s
    *Done in 0.9.* With the Genius planning its picks, **the market: +10.9** (level with the base game's +10; planning the picks is worth 8 points, so the choice is real but no larger than the luck it removes). **Burn, by suit: +7.0** (no gain; one suit-wide effect per suit is just more interchangeable options; a per-card burn waits for the card pass). Neither reached 65%; next is influence.
    *Done in 1.0-pre:* **contest, the first form of influence: +24.4** (Genius 73.2%, 164 paired deals), the first change to beat the 65% bar. Balance with it on is still to measure.
 3. Return to Reckonings only once claims are contestable (influence), since a Reckoning that reads an uncontested board just compounds.
+   *Done in 1.0-pre (14 November):* with contest on, Reckonings give a gap of **+18.2** (165 paired deals), against +24.4 for contest alone. They add no skill, so the race stays. Next pillar: two uses per card, designed card by card.
 
 ## Experiments run for this document
 

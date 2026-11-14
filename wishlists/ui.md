@@ -66,6 +66,6 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ○ **Menus:** a muted wooden click for buttons and a page turn between tabs, so the interface sounds like a desk, not a computer.
 
 ## Play
-- ▶ Undo past a bot's turn in single player shows what the bot did, as a short summary, before taking it back.
+- ✅ 1.0-pre Undo past a bot's turn in single player shows what the bots did (up to ten log lines) as it takes it back.
 - ○ Keyboard-only play from start to finish, with spoken prompts for screen readers.
 - ○ A tablet layout: the board large, the hand as a fan along the bottom edge.

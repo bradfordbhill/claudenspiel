@@ -113,3 +113,4 @@ svg.chron .hc:hover { fill-opacity: .07; }
 .mnote.locked { opacity: .5; font-style: italic; }
 .mgained { display: grid; gap: 4px; margin-bottom: 10px; padding: 6px 8px; border: 1px dashed var(--title2); }
 .mup { color: var(--ink); }
+.undone { margin: 4px 0; padding-left: 18px; max-height: 40vh; overflow: auto; } .undone li { margin: 2px 0; }

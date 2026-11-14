@@ -243,8 +243,15 @@
     maybeAutoEnd.t = setTimeout(function () { if (ctx.ui.autoEnding && ctx.state.log.length === mark && stuck(ctx.state)) { ctx.ui.autoEnding = false; dispatch(ctx, { t: 'endTurn' }); } }, 1600);
   }
   // Go back to the previous state in the history.
-  function undo(ctx) { if (ctx.online || !ctx.hist.length) return; ctx.state = ctx.hist.pop();
-    if (hasBots(ctx.state)) { while (ctx.hist.length && botToAct(ctx.state) != null) ctx.state = ctx.hist.pop(); clearTimeout(ctx.botTimer); ctx.botTimer = null; ctx.botQueue = null; } ctx.err = null; ctx.ui.hand = null; ctx.ui.picked = []; lsSet(ctx.kind === 'game' ? 'cs.game' : 'cs.sandbox', ctx.state); render(); }
+  function undo(ctx) { if (ctx.online || !ctx.hist.length) return; var was = ctx.state; ctx.state = ctx.hist.pop();
+    if (hasBots(ctx.state)) { var n0 = ctx.hist.length; while (ctx.hist.length && botToAct(ctx.state) != null) ctx.state = ctx.hist.pop(); if (ctx.hist.length < n0) undoneBots(was, ctx.state); clearTimeout(ctx.botTimer); ctx.botTimer = null; ctx.botQueue = null; } ctx.err = null; ctx.ui.hand = null; ctx.ui.picked = []; lsSet(ctx.kind === 'game' ? 'cs.game' : 'cs.sandbox', ctx.state); render(); }
+  // Undo went back past bots' turns: say what they had done before it is taken back, so nothing vanishes unseen.
+  function undoneBots(from, to) {
+    var lines = (from.log || []).slice((to.log || []).length).filter(function (l) { return from.players.some(function (q) { return q.bot && l.indexOf(q.name + ' ') === 0; }); });
+    if (!lines.length) return;
+    var more = lines.length > 10 ? lines.length - 10 : 0;
+    app.modal = function () { return modal('Taken back', '<p>Undo also took back these bot moves. The bots play again from here, and may choose differently.</p><ul class="undone">' + lines.slice(0, 10).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' + (more ? '<p class="small muted">… and ' + more + ' more.</p>' : ''), '<button class="btn def" data-act="closeModal">Close</button>'); };
+  }
   // The context for the page on screen.
   function cur() { return app.page === 'sandbox' ? app.sandbox : app.page === 'online' ? (N.room && N.room.status !== 'lobby' ? N.ctx : null) : app.page === 'game' ? app.game : null; }
 

@@ -2,6 +2,34 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 14 November 2026 · 1.0-pre, mastery; Reckonings judged on a contestable board
+
+**Reckonings on a contestable board: no.** FOUNDATIONS said to return to Reckonings once claims could change hands. Measured the same way as contest (paired, 2 players, Genius vs tactician, deals 0–263, time-capped):
+
+| Rules | Deals | Genius | Tactician | Gap | Flips (+/−) |
+|---|---|---|---|---|---|
+| Contest (1.0-pre default) | 164 | 73.2% | 48.8% | **+24.4** | |
+| Contest + Reckonings (`seasons: 3`, `seasonLength: 2`) | 165 | 70.9% | 52.7% | +18.2 (z≈4.1) | 42 / 12 |
+
+Reckonings still let the better player win clearly, but less clearly than the race does, and in 0.5 they broke the archetype balance (spread 1.03). They add nothing that contest hasn't already given, so the race to 52◇ stays, and Reckonings stay an engine switch with no button. The second edition's next step is no longer scoring structure. It is cards: per-card burns and new Grounds.
+
+**The 4-player Hedonist, settled** (contest on, mixed greedy, tactician and raider bots, deals 20000–24000, 835 games):
+
+| 4 players | Archbishop | Hedonist | Warmonger | Cryptkeeper | Gardener | Philosopher | Spread | Seats |
+|---|---|---|---|---|---|---|---|---|
+| 835 games | **0.85** | 1.04 | **1.16** | 1.10 | 0.88 | 0.97 | 0.31 | 1.02 · 0.95 · 0.95 · 1.09 |
+
+The Hedonist is at par, so Palace stays as it is. The 1.23–1.45 readings were noise. With about 560 appearances each, one standard error is about 0.07, so two results are real but small. The Warmonger is high (+2σ): 1.29 under the raider style, 1.23 under the tactician and 0.97 under greedy. It scores 16◇ a game from the Warcamp and makes 2.4 Ruins or Overwhelms. The Archbishop is low (−2σ). The spread of 0.31 misses the 0.25 target. The Mausoleum fix held: the Cryptkeeper is at 1.10. **Next balance job:** the 4-player Archbishop. Try Cathedral +1◇ a Sceptre card not owned at 4+ players only, or a war tax that doesn't grow with table size, measured paired with `CARDS=`.
+
+**Archetype mastery** (progression wishlist ▶). Every archetype has ten levels. A finished game earns marks: 1 for playing, 2 for a win and 2 for reaching the archetype's goal. A goal is that archetype's fantasy, not its score: 4 Sceptre cards, 5 Goblet cards, 4 Ruins or Overwhelms, 7 buried cards, a region of 7, five suits. Each archetype has four titles (at levels 1, 4, 7 and 10; Gravedigger → Keeper of the Dead) and three strategy notes, opening at levels 2, 5 and 8. Every note was checked against the card text. Mastery never changes play. *Goals were calibrated* on 100 tactician games with contest on. The first goals, from the wishlist (6 Sceptre cards, all six suits), were never met: 0% for the Archbishop and the Philosopher, against 56% for the Warmonger. Each goal is now set near the top third of games, so it is something to aim for, not an accident. Mastery shows on the Deeds page and beside each human seat on the New game page, and the Chronicle lists the marks each game earned. A level-up gets a toast. `tests/cs11-mastery.js` checks it.
+
+**Smaller things.**
+- *Abilities have sounds:* a small bell for Sceptre and Tome, a forge hammer for Sword, a goblet clink, a hollow knock for Bone, a rustle for Leaf.
+- *Undo past bots shows what was taken back:* up to ten of the bots' log lines, since they replay and may choose differently.
+- *Deed titles are readable in dark mode* (they were dark red on dark grey). There is a new `--ink` colour for headings on fields.
+
+**Next:** the 4-player Archbishop; per-card burns as the next second-edition pillar; 5 players with contest.
+
 ## 13 November 2026 · 1.0-pre, the dead are everywhere
 
 **The 4-player Cryptkeeper, fixed.** The question from last time was why the Cryptkeeper falls behind at 4 players. Ruins per game don't explain it: they are flat from 3 to 4 players (2.1 and 2.0 a game), and the Warcamp's ◇ is flat too (14.5–17.1 a game at every size). What does change is turn count. A 4-player game lasts 5.1 rounds, against 6.2 at 2 players. The Mausoleum scores only the Cryptkeeper's own burials, so it loses a turn's worth. Palace and Cathedral don't, because they also score rivals' cards and a bigger table has more of those. Mausoleum now follows the same pattern: **3◇ per buried card in your Kingdom, and 1◇ for every two buried cards elsewhere on the board** (`score.o`, rounded down).
