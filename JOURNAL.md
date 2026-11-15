@@ -2,6 +2,34 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 15 November 2026 · 1.0-pre, a Grounds card for every suit
+
+**Why.** Grounds were Claudenspiel's best idea that stopped short: three terrains (Leaf, Sword, Goblet) and nothing for the other half of the suits. Every suit now has its own terrain. Each new one gives a reason to build *beside* something you don't own, which is what a shared board should reward:
+- **Library** (Tome, 5●): placing a card next to it draws you a card, once a turn. A reading room anyone may use, so it's a race to build around it first.
+- **Barrow** (Bone, 5●): a card buried under a card next to it banks 2◇ for the player burying it. The Cryptkeeper's ground, but anyone who buries can use it.
+- **Shrine** (Sceptre, 6●): cards next to it keep *the Shrine's peace*: they can't be contested or Cursed. Contest is now the main way cards change hands, so this is the counter to it, laid on the board for everyone to see. (Called "peace", not "sanctuary", because Sanctuary is already a card.)
+
+Two copies each; the deck is 128. The bots value them by what they pay later (open spaces beside a Library, their own cards beside a Barrow or Shrine), and they lay them about as often as the old Grounds: Library 35–61 times per 100 games, Barrow 20–38, Shrine 21–33.
+
+**Feel.** Cards in the Shrine's peace wear a gilded inner frame that slowly breathes, with a small ✠ seal. Each new Ground has a sound: rustling pages and a reading-room bell, a low earthen thud, a soft rising chord. Help and patch notes explain all three. `tests/cs12-grounds.js` checks each rule.
+
+**Measured** (contest on, mixed greedy, tactician and raider bots, deals 30000+, 900-second runs). The baseline removes the three cards with `CARDS=` (copies 0). That changes the deck, so these are *not* paired: about half the winners differ for reasons that have nothing to do with the new cards.
+
+| | Without (2p · 3p · 4p) | With | Barrow 1◇ |
+|---|---|---|---|
+| Games | 375 · 216 · 136 | 375 · 216 · 141 | 380 · 219 · 141 |
+| Archbishop | 1.09 · 1.09 · 0.84 | 0.77 · 1.01 · 0.96 | 0.75 · 0.98 · 1.00 |
+| Hedonist | 0.90 · 1.09 · 1.19 | 0.99 · 0.74 · 1.25 | 0.98 · 0.82 · 1.21 |
+| Warmonger | 1.12 · 0.81 · 0.88 | 0.94 · 1.07 · 0.86 | 0.94 · 1.04 · 0.86 |
+| Cryptkeeper | 0.85 · 0.98 · 1.01 | 1.09 · 1.12 · 1.36 | 1.08 · 1.10 · 1.33 |
+| Gardener | 1.09 · 1.01 · 1.02 | 1.04 · 0.81 · 0.80 | 1.06 · 0.83 · 0.82 |
+| Philosopher | 0.96 · 1.01 · 1.07 | 1.17 · 1.26 · 0.71 | 1.19 · 1.24 · 0.77 |
+| Spread | 0.27 · 0.28 · 0.35 | 0.40 · 0.52 · 0.65 | 0.44 · 0.42 · 0.56 |
+
+Rounds (6 · 5 · 5) and Ruins plus Overwhelms per game (2.1 · 3.1 · 4.0) don't change. The one steady signal is the **Cryptkeeper, up at every table size** (about 0.94 → 1.17 pooled, roughly 2σ). The obvious suspect was the Barrow, but halving it to 1◇ changed almost nothing (same deals, same deck, so that comparison *is* paired). So it isn't the Barrow's ◇. It may be the Library's extra cards, which a Cryptkeeper can bury, or noise. The other moves flip sign between table sizes, which is what noise looks like at about 100 appearances an archetype. **Shipped as designed (Barrow 2◇), on the condition that a bigger run checks it.**
+
+**Next:** 600+ games per table size with and without the new Grounds, on enough deals that the deck change averages out; if the Cryptkeeper holds above 1.15, trim the Library to "draw when you build beside it, if you own a card beside it". Then the 4-player Archbishop, and per-card burns.
+
 ## 14 November 2026 · 1.0-pre, mastery; Reckonings judged on a contestable board
 
 **Reckonings on a contestable board: no.** FOUNDATIONS said to return to Reckonings once claims could change hands. Measured the same way as contest (paired, 2 players, Genius vs tactician, deals 0–263, time-capped):

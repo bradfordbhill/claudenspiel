@@ -34,6 +34,7 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ○ Hallowed ground (a card with buried cards can't be contested): measured, no effect on the Cryptkeeper; left off.
 - ✅ 1.0-pre Reckonings on a contestable board: skill gap +18.2 against contest's +24.4 (165 paired deals), so they are left off and the race stays.
 - ▶ Per-card burns: the next second-edition pillar.
+- ▶ Measure the new Grounds properly (600+ games a table size): the Cryptkeeper read 0.94 → 1.17 pooled on unpaired deals; Barrow 1◇ didn't move it.
 
 ## Turn structure and pacing
 - ✅ 0.1 The last round: reaching the target starts it, everyone gets the same number of turns, the highest total wins.
