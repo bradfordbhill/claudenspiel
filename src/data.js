@@ -3475,6 +3475,111 @@ var KData = (function () {
      "adjacentCost": -3
     },
     "text": "Grounds: nobody claims it, and it never counts as an enemy. Placing a card next to it costs 3● less."
+   },
+   {
+    "type": "Grounds",
+    "copies": 2,
+    "income": 0,
+    "place": [
+     "N",
+     "E",
+     "S",
+     "W"
+    ],
+    "overwhelm": null,
+    "score": {
+     "kind": "none"
+    },
+    "sees": {
+     "area": "adjacent"
+    },
+    "onPlay": [],
+    "curse": null,
+    "ability": null,
+    "perTurn": null,
+    "incomePerToken": 0,
+    "archetype": "",
+    "weakTo": "",
+    "art": "",
+    "note": "Claudenspiel 1.0: a reading room anyone may use. Build around it early.",
+    "id": "library",
+    "name": "Library",
+    "suit": "Tome",
+    "cost": 5,
+    "mods": {
+     "libraryDraw": 1
+    },
+    "text": "Grounds: nobody claims it, and it never counts as an enemy. Placing a card next to it draws you a card (once a turn)."
+   },
+   {
+    "type": "Grounds",
+    "copies": 2,
+    "income": 0,
+    "place": [
+     "N",
+     "E",
+     "S",
+     "W"
+    ],
+    "overwhelm": null,
+    "score": {
+     "kind": "none"
+    },
+    "sees": {
+     "area": "adjacent"
+    },
+    "onPlay": [],
+    "curse": null,
+    "ability": null,
+    "perTurn": null,
+    "incomePerToken": 0,
+    "archetype": "",
+    "weakTo": "",
+    "art": "",
+    "note": "Claudenspiel 1.0: old dead, honoured. The Cryptkeeper's ground.",
+    "id": "barrow",
+    "name": "Barrow",
+    "suit": "Bone",
+    "cost": 5,
+    "mods": {
+     "barrowVP": 2
+    },
+    "text": "Grounds: nobody claims it, and it never counts as an enemy. Whenever a card is buried under a card next to it, the player burying it banks 2◇."
+   },
+   {
+    "type": "Grounds",
+    "copies": 2,
+    "income": 0,
+    "place": [
+     "N",
+     "E",
+     "S",
+     "W"
+    ],
+    "overwhelm": null,
+    "score": {
+     "kind": "none"
+    },
+    "sees": {
+     "area": "adjacent"
+    },
+    "onPlay": [],
+    "curse": null,
+    "ability": null,
+    "perTurn": null,
+    "incomePerToken": 0,
+    "archetype": "",
+    "weakTo": "",
+    "art": "",
+    "note": "Claudenspiel 1.0: holy ground. A wall against contest, open to anyone who builds beside it.",
+    "id": "shrine",
+    "name": "Shrine",
+    "suit": "Sceptre",
+    "cost": 6,
+    "mods": {
+     "peace": 1
+    },
+    "text": "Grounds: nobody claims it, and it never counts as an enemy. Cards next to it keep the Shrine's peace: they can't be contested or Cursed."
    }
   ].map(c);
 

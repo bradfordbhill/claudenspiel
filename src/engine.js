@@ -92,12 +92,22 @@ var KEngine = (function () {
   function protectedStack(st, k) { var s = st.board[k]; return !!s && s.slice(1).some(function (x) { var m = rawDef(st, x).mods || {}; return m.burialEffect && m.burialEffect.protect; }); }
   // Cards with a burialEffect (Flowers, Eye for an Eye, Standard Bearer) boost whatever they are buried under.
   function onBuried(st, u, k) {
+    if (top(st, k)) barrowBank(st, u, k);
     var m = (rawDef(st, u).mods || {}).burialEffect, t = top(st, k); if (!m || !t) return;
     var c = st.cards[t], nm = rawDef(st, t).name;
     if (m.ap) { c.apBonus = (c.apBonus || 0) + m.ap; log(st, nm + ' now produces ' + m.ap + '● more per turn, permanently (' + rawDef(st, u).name + ').'); }
     if (m.vp) { c.vpBonus = (c.vpBonus || 0) + m.vp; log(st, nm + ' is now worth ' + m.vp + '◇ more, permanently (' + rawDef(st, u).name + ').'); }
     if (m.protect) log(st, nm + ' cannot be Ruined or Overwhelmed while ' + rawDef(st, u).name + ' stays buried under it.');
   }
+  // Grounds that change the cells next to them (Claudenspiel 1.0): how much of mod `m` the active Grounds around k give.
+  function groundsAround(st, k, m) { var n = 0; n4(k).forEach(function (x) { var t = top(st, x); if (isGrounds(st, t) && active(st, x)) n += +((def(st, t).mods || {})[m] || 0); }); return n; }
+  // Barrow: a card buried next to it banks ◇ for whoever buried it (the player whose turn it is).
+  function barrowBank(st, u, k) {
+    var v = groundsAround(st, k, 'barrowVP'), p = st.cur; if (!v || p == null || !st.players[p]) return;
+    bank(st, p, v, top(st, k)); log(st, 'The Barrow keeps its dead: ' + st.players[p].name + ' banks ' + v + '◇.');
+  }
+  // Shrine: cards next to it keep the Shrine's peace; they can't be contested or Cursed.
+  function shrinePeace(st, k) { return groundsAround(st, k, 'peace') > 0; }
   // With the weak-to rule on, a player can't use a reaction card of their weak suit.
   function canReact(st, q, uid) { var a = archInfo(st)[st.players[q].arch]; return !(st.opts.enforceWeak && a && a.weakTo === rawDef(st, uid).suit); }
   // Number of Curses with effect e tucked under the stack at k.
@@ -549,7 +559,7 @@ var KEngine = (function () {
       if (kind === 'curse' && rawDef(st, res.src).curse && rawDef(st, res.src).curse.mode === 'top' && unburiable(st, u)) return false;
       if (kind === 'ruin') { if (c.ruined || protectedStack(st, k)) return false; if (step.oppOwned && (!c.claimants.length || c.claimants.indexOf(res.player) >= 0)) return false; if (step.ownerIs === 'ctx' && c.claimants.indexOf(res.ctx.ownerIs) < 0) return false; }
       if (kind === 'suit') { if (c.ruined) return false; }
-      if (kind === 'curse') { if (c.ruined || isFoundation(st, u) || isCovered(st, k) || d.type === 'Curse') return false; }
+      if (kind === 'curse') { if (c.ruined || isFoundation(st, u) || isCovered(st, k) || d.type === 'Curse' || shrinePeace(st, k)) return false; }
       if (kind === 'uncurse') { if (!isCursed(st, k)) return false; }
       if (kind === 'unruin') { if (!c.ruined) return false; }
       if (kind === 'owned') { if (c.ruined || !c.claimants.length) return false; }
@@ -1249,6 +1259,8 @@ var KEngine = (function () {
           if (!st.opts.sandbox) { pl.ap += +d.income || 0; st.turn.paid[uid] = 1; log(st, d.name + ' produces ' + d.income + '● right away.'); }
         }
         checkSarcophagusRelease(st, a.k);
+        // Library: placing a card next to one draws a card, once a turn.
+        if (!st.turn.libraryDrew && !st.opts.sandbox && groundsAround(st, a.k, 'libraryDraw') > 0 && drawOne(st, p)) { st.turn.libraryDrew = true; log(st, 'The Library lends ' + pl.name + ' a card.'); }
         if (['Action', 'Blessing', 'Curse'].indexOf(d.type) < 0) checkWatchmakers(st);
         startRes(st, 'play', uid, a.k, d.onPlay);
         return st;
@@ -1372,6 +1384,7 @@ var KEngine = (function () {
         if (tcc.ruined || unclaimable(st, tu2) || isCovered(st, tk)) return err(st, 'That card cannot be contested.');
         if (!tcc.claimants.length || tcc.claimants.indexOf(p) >= 0) return err(st, 'Contest a card a rival owns.');
         if (tcc.fixed || tcc.ascended) return err(st, 'That card’s claim cannot be taken.');
+        if (shrinePeace(st, tk)) return err(st, 'The Shrine’s peace: a card next to a Shrine cannot be contested.');
         if (hallowed(st, tk)) return err(st, 'Hallowed ground: a card with a card buried under it cannot be contested.');
         if (tcc.claimants.length > 1) return err(st, 'A shared card cannot be contested.');
         if ((tp.ap || 0) < CONTEST_PRICE) return err(st, 'Contesting costs ' + CONTEST_PRICE + '● of this turn’s ●.');
@@ -1543,7 +1556,7 @@ var KEngine = (function () {
     if (!st.opts.contest || !st.turn || !st.turn.started || st.turn.contested || !st.turn.lastKey || st.players[p].meeples <= 0 || (st.players[p].ap || 0) < CONTEST_PRICE) return [];
     return n4(st.turn.lastKey).filter(function (k) {
       var u = top(st, k); if (!u) return false; var c = st.cards[u];
-      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended && !hallowed(st, k);
+      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended && !hallowed(st, k) && !shrinePeace(st, k);
     });
   }
   // Hallowed ground (opts.hallowed, on trial): a card with a card buried under it can't be contested.
@@ -1564,7 +1577,7 @@ var KEngine = (function () {
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
     burnBlock: burnBlock, BURN: BURN, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
-    archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
+    shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };
 })();
 if (typeof module !== 'undefined') module.exports = KEngine;

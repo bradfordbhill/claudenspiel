@@ -34,6 +34,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ○ **Burying:** the card slides under its host, leaving a sliver of its edge visible for a moment, like a page tucked into a book.
 - ○ **Curse:** a wisp of violet dithered smoke curls out of the cursed card and settles as a small mark in its corner.
 - ○ **Grounds:** Marsh grows reeds that sway two pixels in the wind; Battlefield leaves a faint scorched ring on the board; Crossroads draws its paths out to its neighbours as it lands.
+- ✅ 1.0-pre **The Shrine’s peace:** cards next to a Shrine wear a gilded inner frame that breathes slowly, and a small ✠ seal.
 - ○ **Ascension:** the five suit colours of the stack spiral upward as a pixel helix, then the card's border turns to gold leaf for good.
 - ✅ 0.5 (the tick) **Score changes:** the ◇ number ticks up digit by digit; big gains float a small "+6◇" above the card that earned it.
 - ✅ 0.4 (the banner) **Race bar:** the leader's marker leans forward; when someone reaches the target, a bell icon swings on the bar and the last-round banner unrolls from the top like a scroll.
@@ -56,6 +57,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.4 **Curse:** a whispered breath and a minor-key pluck on a lute.
 - ✅ 1.0-pre **Burying:** a spade into earth for Bone and Foundation burials; a book closing for everything else.
 - ✅ 0.4 **Grounds:** Marsh: frogs and water; Battlefield: a distant horn; Crossroads: cart wheels on gravel.
+- ✅ 1.0-pre **The new Grounds:** Library: rustling pages and a reading-room bell; Barrow: a low earthen thud; Shrine: a soft rising chord.
 - ✅ 1.0-pre **Ability used:** a short bell for Sceptre and Tome abilities, a forge hammer for Sword, a goblet clink for Goblet, a hollow knock for Bone, a rustle for Leaf.
 - ✅ 1.0-pre **Your turn:** a small hand bell, only when a human is up after bots have played.
 - ✅ 1.0-pre **Contest:** two blades meet off-key; the ousted meeple tumbles off the card in its owner's colour and the taker's meeple lands in a puff.

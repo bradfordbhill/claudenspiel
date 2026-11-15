@@ -187,7 +187,16 @@ var KBots = (function () {
     return swapDead(st,p,stats); }
   // Claudenspiel: what laying a Grounds card does, which the ◇-and-● scoring can't see: Marsh shelters the bot's own cards
   // that are close to Overwhelm, Battlefield exposes rivals' cards, Crossroads opens cheap spaces next to its own.
-  function groundsWorth(st0,st,p){ return GROUNDS_W*((danger(st0,p)-danger(st,p)) + 0.6*(pressure(st,p)-pressure(st0,p))); }
+  function groundsWorth(st0,st,p){ return GROUNDS_W*((danger(st0,p)-danger(st,p)) + 0.6*(pressure(st,p)-pressure(st0,p)) + newGrounds(st,p)); }
+  // Claudenspiel 1.0: Library, Barrow and Shrine pay off later, so value them by the bot's own cards beside them:
+  // a Library is a draw for each future build there, a Barrow pays a Cryptkeeper's burials, a Shrine shelters claims from contest.
+  function newGrounds(st,p){ const k=st.turn&&st.turn.lastKey, u=k&&E.top(st,k); if(!u) return 0; const m=E.rawDef(st,u).mods||{};
+    const mine=E.n4(k).filter(x=>{const t=E.top(st,x); return t&&st.cards[t].claimants.indexOf(p)>=0;}).length;
+    const open=E.n4(k).filter(x=>!E.top(st,x)).length; let v=0;
+    if(m.libraryDraw) v+=0.5*Math.min(2,open)+0.2*mine;
+    if(m.barrowVP) v+=(st.players[p].arch==='Cryptkeeper'?1.2:0.3)*mine;
+    if(m.peace&&st.opts.contest) v+=0.7*mine;
+    return v; }
   let GROUNDS_W=+(typeof process!=='undefined'&&process.env&&process.env.CS_GROUNDS!=null?process.env.CS_GROUNDS:1);
   // The market: take a face-up card worth keeping (by the archetype's keep value), else draw blind. Done first, for options.
   let MARKET_BAR=+(typeof process!=='undefined'&&process.env&&process.env.CS_MARKETBAR!=null?process.env.CS_MARKETBAR:1.8);

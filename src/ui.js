@@ -273,6 +273,9 @@
       play: function (suit) { var f = SUIT[suit] || 700; noise('bandpass', f, 0.07, 0.5); tone('sine', f / 2, 0.09, 0.25); if (suit === 'Sword') tone('triangle', 2400, 0.25, 0.06, 0.01); if (suit === 'Goblet') tone('sine', 2600, 0.2, 0.06, 0.01); },
       grounds: function (id) { if (id === 'marsh') { for (var i = 0; i < 3; i++) tone('square', 180 + i * 40, 0.06, 0.05, i * 0.12, 0.6); noise('lowpass', 400, 0.4, 0.2); }
         else if (id === 'battlefield') { tone('sawtooth', 147, 0.7, 0.08, 0, 1.01); tone('sawtooth', 220, 0.6, 0.05, 0.08); }
+        else if (id === 'library') { for (var l = 0; l < 6; l++) noise('highpass', 3000 + l * 300, 0.03, 0.12, l * 0.05); tone('sine', 1320, 0.5, 0.05, 0.32, 0.999); }
+        else if (id === 'barrow') { noise('lowpass', 180, 0.5, 0.6); tone('sine', 65, 0.6, 0.3, 0.02, 0.8); tone('triangle', 98, 0.9, 0.05, 0.25); }
+        else if (id === 'shrine') { [262, 330, 392, 523].forEach(function (f, i) { tone('sine', f, 1.4, 0.05, i * 0.07); }); }
         else { for (var j = 0; j < 4; j++) noise('bandpass', 300 + j * 60, 0.08, 0.3, j * 0.09); } },
       burn: function (suit) { noise('bandpass', 900, 0.5, 0.25); noise('highpass', 2400, 0.3, 0.08, 0.1); tone('sine', (SUIT[suit] || 700) / 2, 0.4, 0.08, 0.15, 0.5); },
       claim: function () { noise('lowpass', 260, 0.16, 0.7); tone('sine', 110, 0.18, 0.4, 0, 0.7); },
@@ -582,6 +585,7 @@
     if (stack.length > 1) h += '<span class="stackn" title="' + (stack.length - 1) + ' card(s) underneath">+' + (stack.length - 1) + '</span>';
     if (c.dtok > 0 && !ruined) h += '<span class="defb" title="' + c.dtok + ' Defense token' + (c.dtok > 1 ? 's' : '') + ': each one stops a Ruin or Curse">' + shieldStack(c.dtok) + (c.dtok > 4 ? '<b>' + c.dtok + '</b>' : '') + '</span>';
     if (!ruined && (c.apBonus || c.vpBonus || c.decay || E.protectedStack(st, k))) h += '<span class="bonusb">' + (E.protectedStack(st, k) ? '⚑' : '') + (c.vpBonus ? '+' + c.vpBonus + '◇' : '') + (c.apBonus ? '+' + c.apBonus + '●' : '') + (c.decay ? ' ☠' + c.decay : '') + '</span>';
+    if (!ruined && !E.isGrounds(st, u) && E.shrinePeace(st, k)) h += '<span class="sanct" title="The Shrine’s peace: next to a Shrine, it can’t be contested or Cursed"></span>';
     if (c.ascended && !ruined) h += '<span class="ascb" title="Ascended: invulnerable, every suit, +8◇ and +12●">Ascended</span>';
     if (ctx.ui.showOW && !ruined && !noOW) { var oc = E.overwhelmCount(st, k); if (oc && oc.n > 0) h += '<span class="owc' + (oc.n >= oc.th - 1 ? ' hot' : '') + '" title="Enemy-suit neighbors / Overwhelm number">' + oc.n + '/' + oc.th + '</span>'; }
     if (covered) h += '<div class="badge curse">Covering a card</div>';
@@ -1594,7 +1598,7 @@
         '<li><b>The last round:</b> reaching the target starts it. Everyone gets the same number of turns, then the highest total wins; a tie goes to whoever got there first. With three or more players, earlier seats start with a few ◇, since later seats see the score to beat: 6◇ and 4◇ for the first two of three players, 9◇, 6◇ and 3◇ for the first three of four.</li>' +
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
         '<li><b>A second claim:</b> once a turn, after claiming, press <b>Buy a claim</b> and pay 10● to claim once more.</li>' +
-        '<li><b>Grounds:</b> terrain cards. You place them like a Structure, but nobody claims them and they never count as an enemy. <i>Marsh</i>: cards next to it need one more enemy to be Overwhelmed. <i>Battlefield</i>: one fewer. <i>Crossroads</i>: placing next to it costs 3● less.</li>' +
+        '<li><b>Grounds:</b> terrain cards. You place them like a Structure, but nobody claims them and they never count as an enemy. <i>Marsh</i>: cards next to it need one more enemy to be Overwhelmed. <i>Battlefield</i>: one fewer. <i>Crossroads</i>: placing next to it costs 3● less. <i>Library</i>: placing a card next to it draws you a card, once a turn. <i>Barrow</i>: burying a card under a card next to it banks you 2◇. <i>Shrine</i>: cards next to it keep the Shrine’s peace (a gilded frame and ✠) and can’t be contested or Cursed.</li>' +
         '<li><b>Contest</b> (on by default for 2–4 players): once a turn, after placing a card, pay 8● of this turn’s ● to take a rival’s card next to it. Their meeple goes home and yours takes its place; it doesn’t use your claim. Foundations, Ascended and shared cards can’t be taken, and a Cryptkeeper’s buried cards move under its Mausoleum instead of changing hands.</li>' +
         '<li><b>The Chronicle:</b> when a game ends, it tells the story: everyone’s ◇ after every turn, where the Ruins, contests and the last round fell, and the turning points. Open it again with <b>Chronicle</b> above the board.</li>' +
         '<li>A 116-card deck with two or three copies of the staples, and reworked cards: Orchard, Observatory, Obelisk, Fountain, Revenge, Repent and Brambles.</li></ul>' +

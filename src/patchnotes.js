@@ -1,6 +1,10 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-grounds', date: '15 November 2026', title: 'Holy ground, old dead and a reading room', notes: [
+    'Three new <b>Grounds</b>, so every suit now has its own terrain. <b>Library</b> (Tome, 5●): placing a card next to it draws you a card, once a turn. <b>Barrow</b> (Bone, 5●): burying a card under a card next to it banks you 2◇. <b>Shrine</b> (Sceptre, 6●): cards next to it keep the Shrine’s peace and can’t be contested or Cursed. Two of each; the deck is now 128 cards.',
+    'Cards in the Shrine’s peace wear a gilded frame and a small gold cross (✠). Each new Ground has its own sound: rustling pages and a bell, a low earthen thud, a soft chord.'
+  ] },
   { v: 'cs-1.0-pre-mastery', date: '14 November 2026', title: 'Mastery', notes: [
     'Every archetype now has <b>ten levels of mastery</b>. A finished game earns marks: 1 for playing, 2 for winning, and 2 more for reaching the archetype’s goal (the Cryptkeeper: 7 or more buried cards; the Gardener: a region of 7; and so on). The New game page shows each human seat’s goal.',
     'Levels bring <b>titles</b> (from Novice to Prince of the Church, Gravedigger to Keeper of the Dead) and open three <b>strategy notes</b> per archetype, at levels 2, 5 and 8. Mastery never makes anyone stronger at the table.',
