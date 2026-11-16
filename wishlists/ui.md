@@ -33,7 +33,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.5 **One away from Overwhelm:** the chevrons beat slowly, like a heart, until the danger passes.
 - ○ **Burying:** the card slides under its host, leaving a sliver of its edge visible for a moment, like a page tucked into a book.
 - ○ **Curse:** a wisp of violet dithered smoke curls out of the cursed card and settles as a small mark in its corner.
-- ○ **Grounds:** Marsh grows reeds that sway two pixels in the wind; Battlefield leaves a faint scorched ring on the board; Crossroads draws its paths out to its neighbours as it lands.
+- ✅ 1.0-pre (living terrain) ○ (effects on the board around them) **Grounds:** every Grounds card shows a four-frame pixel diorama of its terrain (Marsh reeds sway, Battlefield embers rise, a cart crosses the Crossroads, the Library's candle gutters, a Barrow wisp drifts, light walks the Shrine's roof). Still to come: Battlefield's scorched ring on the board, Crossroads drawing its paths out to its neighbours as it lands.
 - ✅ 1.0-pre **The Shrine’s peace:** cards next to a Shrine wear a gilded inner frame that breathes slowly, and a small ✠ seal.
 - ✅ 1.0-pre **Ascension:** the five suit colours of the stack spiral upward as a pixel helix, then the card's border turns to gold leaf for good.
 - ✅ 0.5 (the tick) **Score changes:** the ◇ number ticks up digit by digit; big gains float a small "+6◇" above the card that earned it.

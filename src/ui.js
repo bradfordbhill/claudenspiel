@@ -595,6 +595,7 @@
     var h = '<div class="card s-' + esc(suit) + (ruined ? ' ruined' : '') + (!ruined && !c.ascended && inkOf(c.def) ? ' lighttext' : '') + '' + (E.rawDef(st, u).type === 'Foundation' ? ' found' : '') + (c.ascended && !ruined ? ' ascended' : '') + (E.isCursed(st, k) && !ruined ? ' cursed' : '') + '"' + (ruined || c.ascended ? '' : ' style="' + (FACES[c.def] && FACES[c.def].board ? KF.picCSS(FACES[c.def].board) : cardTex(suit, u, CW, CH)) + '"') + '>';
     h += '<div class="top"><span>' + esc(d.cost) + '●</span>' + icon(suit) + '</div>';
     var art = artOf(c.def); if (art && !ruined) h += '<div class="art" style="' + artStyle(art) + '"></div>';
+    else if (!ruined && typeof CSTerrain !== 'undefined' && E.isGrounds(st, u) && CSTerrain.has(c.def)) h += '<div class="art terrain" style="' + CSTerrain.css(c.def) + '"></div>';   // living Grounds (src/terrain.js)
     h += '<div class="nm">' + esc(ruined ? E.rawDef(st, u).name : d.name) + '</div><div class="ty">' + esc(ruined ? (c.overwhelmed ? 'Overwhelmed' : 'Ruined') : d.type) + '</div>';
     if (stack.length > 1) h += '<span class="stackn" title="' + (stack.length - 1) + ' card(s) underneath">+' + (stack.length - 1) + '</span>';
     if (c.dtok > 0 && !ruined) h += '<span class="defb" title="' + c.dtok + ' Defense token' + (c.dtok > 1 ? 's' : '') + ': each one stops a Ruin or Curse">' + shieldStack(c.dtok) + (c.dtok > 4 ? '<b>' + c.dtok + '</b>' : '') + '</span>';

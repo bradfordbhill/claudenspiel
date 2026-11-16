@@ -143,3 +143,8 @@ svg.chron .hc:hover { fill-opacity: .07; }
 .cst-foot { position: absolute; right: 12px; bottom: 10px; color: #9a90b8; font-size: 12px; display: flex; gap: 6px; align-items: center; }
 @media (max-width: 520px) { .cst-banner .cst-hint { display: none; } .cst-banner { padding-bottom: 28px; } }
 @media (prefers-reduced-motion: reduce) { .cst-banner { animation: none !important; } }
+/* Living Grounds (src/terrain.js): a four-frame pixel diorama in the art window, stepped, never tweened. */
+.card .art.terrain { background-repeat: repeat-x; background-position: 0 0; image-rendering: pixelated; border-color: rgba(0, 0, 0, .45); }
+@keyframes cs-terrain { to { background-position: 0 -120px; } }
+:root[data-motion="full"] .card .art.terrain { animation: cs-terrain 1.6s steps(4) infinite; }
+@media (prefers-reduced-motion: reduce) { .card .art.terrain { animation: none !important; } }
