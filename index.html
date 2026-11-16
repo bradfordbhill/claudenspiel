@@ -691,7 +691,6 @@ svg.chron .hc:hover { fill-opacity: .07; }
 .rainfx { position: fixed; z-index: 40; pointer-events: none; image-rendering: pixelated; background-size: 128px 128px; animation: cs-rain 1.1s steps(11) infinite; opacity: .8; }
 .rainfx.calm { animation-duration: 3.2s; opacity: .5; }
 @keyframes cs-rain { from { background-position: 0 0; } to { background-position: -32px 128px; } }
-@keyframes cs-rain { from { background-position: 0 0, 0 0; } to { background-position: 0 24px, 0 18px; } }
 </style></head><body><div id="app"></div><script>
 /* Kartenspiel — starter data. Card definitions are plain JSON so they can live in a db later. */
 var KData = (function () {
