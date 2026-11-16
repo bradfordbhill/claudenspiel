@@ -5,7 +5,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 ## Identity
 - ✅ 0.1 Its own logo (verdigris and copper Fraktur), oxblood-to-copper title bars on a dusk-violet desk, its own window title.
 - ✅ 0.3 Its own app icon and favicon (a verdigris C on a parchment card).
-- ○ A title screen: the walled city at dusk, animated in dithered pixels, with the menu as banners hanging from the walls.
+- ✅ 1.0-pre A title screen: the walled city at dusk, animated in dithered pixels (stars, lit windows, chimney smoke, a lantern on the wall, wind in the grass, a glinting river), with the menu as six suit banners hanging from the wall. It can be skipped; the crest brings it back.
 - ○ Fork Dithry into Claudenspiel, so painted cards save under `cs.faces` and show up here.
 
 ## Reading the game
@@ -35,7 +35,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ○ **Curse:** a wisp of violet dithered smoke curls out of the cursed card and settles as a small mark in its corner.
 - ○ **Grounds:** Marsh grows reeds that sway two pixels in the wind; Battlefield leaves a faint scorched ring on the board; Crossroads draws its paths out to its neighbours as it lands.
 - ✅ 1.0-pre **The Shrine’s peace:** cards next to a Shrine wear a gilded inner frame that breathes slowly, and a small ✠ seal.
-- ○ **Ascension:** the five suit colours of the stack spiral upward as a pixel helix, then the card's border turns to gold leaf for good.
+- ✅ 1.0-pre **Ascension:** the five suit colours of the stack spiral upward as a pixel helix, then the card's border turns to gold leaf for good.
 - ✅ 0.5 (the tick) **Score changes:** the ◇ number ticks up digit by digit; big gains float a small "+6◇" above the card that earned it.
 - ✅ 0.4 (the banner) **Race bar:** the leader's marker leans forward; when someone reaches the target, a bell icon swings on the bar and the last-round banner unrolls from the top like a scroll.
 - ○ **Turn handover:** the active player's card in the player list slides out a few pixels and their crest catches a glint; bot turns show a small hourglass that turns over once per move.

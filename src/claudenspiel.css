@@ -120,3 +120,26 @@ svg.chron .hc:hover { fill-opacity: .07; }
 .card .sanct::after { content: '✠'; position: absolute; right: 3px; bottom: 17px; width: 14px; height: 14px; line-height: 14px; text-align: center; font-size: 11px; color: #f3d27a; background: #3b2350; border: 1px solid #d9b44a; border-radius: 50%; }
 @media (prefers-reduced-motion: no-preference) { .card .sanct { animation: sanctGlow 3.2s ease-in-out infinite; } }
 @keyframes sanctGlow { 0%,100% { box-shadow: inset 0 0 0 2px rgba(217,180,74,.7), inset 0 0 6px rgba(255,214,110,.35); } 50% { box-shadow: inset 0 0 0 2px rgba(240,200,90,1), inset 0 0 14px rgba(255,214,110,.75); } }
+/* The title screen: the walled city at dusk (drawn by src/title.js), with the menu as banners hung from the wall. */
+.cstitle { position: fixed; inset: 0; z-index: 2000; background: #120c22; overflow: hidden; }
+.cstitle.gone { opacity: 0; transition: opacity .25s steps(3); pointer-events: none; }
+.cstitle canvas { position: absolute; left: 0; top: 0; image-rendering: pixelated; }
+.cstitle .cst-logo { position: absolute; left: 50%; transform: translateX(-50%); margin: 0; width: min(560px, 84vw); filter: drop-shadow(0 3px 0 #120c22); }
+.cstitle .cst-sub { position: absolute; left: 0; right: 0; text-align: center; color: #f0a86a; font-family: 'DotGothic16', monospace; font-size: 14px; letter-spacing: .08em; text-shadow: 0 2px 0 #120c22; }
+.cst-banners { position: absolute; left: 0; right: 0; display: flex; justify-content: center; gap: clamp(6px, 2vw, 22px); padding: 0 12px; }
+.cst-banner { --b: #5a1020; --e: #f0a86a; position: relative; display: grid; justify-items: center; align-content: start; gap: 6px; width: clamp(64px, 15vw, 118px); min-height: clamp(120px, 22vh, 170px); padding: 14px 6px 34px;
+  background: var(--b); color: #f6efd8; border: 0; border-top: 6px solid #2a1e34; box-shadow: inset 3px 0 0 var(--e), inset -3px 0 0 var(--e), 0 4px 0 rgba(0,0,0,.35);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 22px), 0 100%); cursor: pointer; font: inherit; transform-origin: 50% 0;
+  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.12) 0 2px, transparent 2px 6px); }
+.cst-banner .cst-ico svg { width: 26px; height: 26px; color: var(--e); }
+.cst-banner .cst-lab { font-family: 'Jacquard 24', serif; font-size: clamp(18px, 3.4vw, 26px); line-height: 1; text-align: center; }
+.cst-banner .cst-hint { font-size: 11px; opacity: .8; text-align: center; line-height: 1.2; }
+.cst-banner:hover, .cst-banner:focus-visible { filter: brightness(1.18); outline: none; padding-top: 20px; }
+.cst-banner:focus-visible { box-shadow: inset 3px 0 0 #fff, inset -3px 0 0 #fff, 0 4px 0 rgba(0,0,0,.35); }
+.sb-Sceptre { --b: #7a5a10; --e: #f3d27a; } .sb-Goblet { --b: #6a1e5a; --e: #f0a0e0; } .sb-Sword { --b: #6e1414; --e: #ff9a8a; }
+.sb-Bone { --b: #3e3a40; --e: #e0dcd0; } .sb-Leaf { --b: #1e4a26; --e: #9ae08a; } .sb-Tome { --b: #1e2e62; --e: #9ab8ff; }
+@keyframes cs-sway { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(1.2deg); } 75% { transform: rotate(-1.2deg); } }
+:root[data-motion="full"] .cst-banner { animation: cs-sway 3.2s steps(8) infinite; }
+.cst-foot { position: absolute; right: 12px; bottom: 10px; color: #9a90b8; font-size: 12px; display: flex; gap: 6px; align-items: center; }
+@media (max-width: 520px) { .cst-banner .cst-hint { display: none; } .cst-banner { padding-bottom: 28px; } }
+@media (prefers-reduced-motion: reduce) { .cst-banner { animation: none !important; } }

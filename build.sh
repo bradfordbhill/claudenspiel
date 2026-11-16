@@ -25,7 +25,7 @@ H
 echo ":root { --logo: url(data:image/png;base64,$(base64 -w0 assets/logo.png)); }"
 cat src/style.css src/claudenspiel.css
 echo '</style></head><body><div id="app"></div><script>'
-cat src/data.js src/engine.js src/bots.js src/cardface.js src/cardart.js src/patchnotes.js src/deeds.js src/ui.js
+cat src/data.js src/engine.js src/bots.js src/cardface.js src/cardart.js src/patchnotes.js src/deeds.js src/title.js src/ui.js
 echo '</script></body></html>'
 } > index.html
 echo "built index.html ($(wc -c < index.html) bytes)"

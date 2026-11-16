@@ -1,6 +1,11 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-title', date: '16 November 2026', title: 'The city at dusk', notes: [
+    'Claudenspiel now opens on a <b>title screen</b>: the walled city at dusk, drawn in dithered pixels. Stars twinkle, windows light and go out, smoke rises from the chimneys, a lantern walks the wall, and wind moves through the grass. The menu hangs from the wall as six banners, one per suit.',
+    'Tick <b>Skip this screen next time</b> to go straight to the workshop. The crest in the title bar always brings it back.',
+    'An <b>Ascension</b> now has its own moment: the five suit colours spiral up out of the card, it flashes gold, and five rising notes play.'
+  ] },
   { v: 'cs-1.0-pre-grounds', date: '15 November 2026', title: 'Holy ground, old dead and a reading room', notes: [
     'Three new <b>Grounds</b>, so every suit now has its own terrain. <b>Library</b> (Tome, 5●): placing a card next to it draws you a card, once a turn. <b>Barrow</b> (Bone, 5●): burying a card under a card next to it banks you 2◇. <b>Shrine</b> (Sceptre, 6●): cards next to it keep the Shrine’s peace and can’t be contested or Cursed. Two of each; the deck is now 128 cards.',
     'Cards in the Shrine’s peace wear a gilded frame and a small gold cross (✠). Each new Ground has its own sound: rustling pages and a bell, a low earthen thud, a soft chord.'

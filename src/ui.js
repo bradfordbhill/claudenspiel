@@ -294,6 +294,8 @@
         else { for (var i = 0; i < 5; i++) noise('bandpass', 2000 + i * 300, 0.06, 0.12, i * 0.05); }
       },
       curse: function () { noise('highpass', 3000, 0.4, 0.08); tone('sawtooth', 220, 0.5, 0.06); tone('sawtooth', 261.6, 0.5, 0.05, 0.12); },
+      // Ascension: five rising notes, one per suit, over a held fifth.
+      ascend: function () { [262, 330, 392, 523, 659].forEach(function (f, i) { tone('triangle', f, 0.9 - i * 0.08, 0.08, i * 0.11); }); tone('sine', 131, 1.4, 0.06); tone('sine', 196, 1.4, 0.04); },
       bell: function () { [220, 440, 554, 660, 880].forEach(function (f, i) { tone('sine', f, 2.8 - i * 0.3, 0.12 / (i + 1)); }); },
       deed: function () { noise('highpass', 4000, 0.05, 0.12); noise('highpass', 4200, 0.05, 0.12, 0.08); S.claim(); },
       win: function (arch) { var sad = arch === 'Archbishop' || arch === 'Cryptkeeper'; var notes = sad ? [196, 233, 294, 392] : arch === 'Warmonger' ? [196, 196, 262, 392] : [262, 330, 392, 523];
@@ -323,7 +325,7 @@
       var ev = [];
       // newly Ruined / Overwhelmed cards
       E.keys(b).forEach(function (k) { var u = topUid(b, k), c = b.cards[u], c0 = a.cards[u]; if (!c0) return;
-        if (c.ascended && !c0.ascended) ev.push({ t: 'note', k: k, text: 'Ascended!', cls: 'asc' });
+        if (c.ascended && !c0.ascended) { ev.push({ t: 'note', k: k, text: 'Ascended!', cls: 'asc' }); ev.push({ t: 'ascend', k: k }); }
         if (E.isCursed(b, k) && !E.isCursed(a, k)) ev.push({ t: 'cursed', k: k });
         if ((c.dtok || 0) < (c0.dtok || 0)) ev.push({ t: 'note', k: k, text: 'Defended!', cls: 'def' });
         if ((c.dtok || 0) > (c0.dtok || 0)) ev.push({ t: 'note', k: k, text: '+1 Defense', cls: 'def' }); });
@@ -436,6 +438,16 @@
       m.animate([{ transform: 'translate(0,0) rotate(0)', opacity: 1 }, { transform: 'translate(' + dir * 22 + 'px,-30px) rotate(' + dir * 120 + 'deg)', opacity: 1, offset: .35 }, { transform: 'translate(' + dir * 46 + 'px,26px) rotate(' + dir * 300 + 'deg)', opacity: 0 }],
         { duration: 800, easing: 'steps(10)', fill: 'both' }).onfinish = function () { m.remove(); }; }
     // Burying: clods of earth (or a few loose pages) settle at the card's foot.
+    // Ascension: the five suit colours of the stack spiral up out of the card as a pixel helix (12 steps), then flash gold.
+    function helix(r) {
+      var cols = ['#e0b830', '#d070c0', '#d84040', '#9a9a9a', '#4aa84a', '#4a78d8'], cx = r.left + r.width / 2, by = r.top + r.height * 0.8, n = 30;
+      for (var q = 0; q < n; q++) { var strand = q % 5, ph = strand * 2 * Math.PI / 5, d = piece('dust px', '', cx, by); d.style.background = cols[strand + (strand > 2 ? 1 : 0)];
+        var kf = []; for (var f = 0; f <= 12; f++) { var a = ph + f * 0.55 + q * 0.2, rad = r.width * 0.36 * (1 - f / 18);
+          kf.push({ transform: 'translate(' + Math.round(Math.cos(a) * rad / 2) * 2 + 'px,' + (-Math.round(f * r.height * 0.09 / 2) * 2) + 'px)', opacity: f < 2 ? f / 2 : f > 10 ? (12 - f) / 2 : 1 }); }
+        d.animate(kf, { duration: 1300, delay: Math.floor(q / 5) * 70, easing: 'steps(12)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); }
+      var g = piece('glory', '', r.left, r.top); g.style.width = r.width + 'px'; g.style.height = r.height + 'px';
+      g.animate([{ opacity: 0 }, { opacity: 0, offset: .6 }, { opacity: 1, offset: .75 }, { opacity: 0 }], { duration: 1700, easing: 'steps(6)', fill: 'both' }).onfinish = function () { g.remove(); };
+    }
     function sink(r, earth) { for (var q = 0; q < 7; q++) { var d = piece('dust px', '', r.left + r.width * (0.15 + q * 0.11), r.top + r.height - 4); d.style.background = earth ? (q % 2 ? '#5a4632' : '#3b2d20') : (q % 2 ? '#efe6cf' : '#cbbf9e');
         d.animate([{ transform: 'translate(0,-' + (14 + (q % 3) * 6) + 'px)', opacity: 0 }, { transform: 'translate(0,-' + (8 + (q % 3) * 3) + 'px)', opacity: 1, offset: .3 }, { transform: 'translate(' + ((q - 3) * 2) + 'px,2px)', opacity: 0 }],
           { duration: 600, delay: q * 40, easing: 'steps(6)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); } }
@@ -471,6 +483,7 @@
         else if (e.t === 'lastround') SFX.play('bell');
         else if (e.t === 'contest') SFX.play('clash');
         else if (e.t === 'bury') SFX.play('bury', e.earth);
+        else if (e.t === 'ascend') SFX.play('ascend');
         else if (e.t === 'yourturn') SFX.play('turn');
         else if (e.t === 'end') { if (!e.anyHuman || e.humanWon) SFX.play('win', e.arch); else SFX.play('lose'); }
       });
@@ -486,6 +499,7 @@
         if (e.t === 'end' && !calm) glory(e.winner);
         if (e.t === 'contest') { var rk = cellRect(e.k), cst = cur() && cur().state; if (rk) { popup('⚔ Contested!', 'contest', rk, 0);
             if (!calm && cst) { var lc = (cst.players[e.loser] && cst.players[e.loser].color) || '#888'; ousted(rk, lc); puff(rk, cst.players[e.p].color || '#888', 350); } } }
+        if (e.t === 'ascend' && !calm) { var ra = cellRect(e.k); if (ra) helix(ra); }
         if (e.t === 'bury' && !calm) { var rb = cellRect(e.k); if (rb) sink(rb, e.earth); }
         if (e.t === 'cursed') { var rc = cellRect(e.k); if (rc) { popup('Cursed!', 'curse', rc, i * 100); if (!calm) flare(rc, i * 100); } }
         if (e.t === 'note') { var rn = cellRect(e.k); if (rn) popup(e.text, e.cls, rn, i * 100); }
@@ -2629,5 +2643,22 @@
   }
   var sv = lsGet('cs.game'); if (sv && sv.players && sv.winner == null) { /* offered on New game page */ }
   render();
+  // The title screen (src/title.js): the walled city at dusk with the menu as banners. Offline only; it can be skipped.
+  function showTitle() {
+    if (ONLINE || typeof CSTitle === 'undefined') return;
+    var saved = lsGet('cs.game'), items = [];
+    if (app.game || (saved && saved.players && saved.winner == null)) items.push({ id: 'continue', label: 'Continue', suit: 'Sceptre', hint: 'your game in progress' });
+    items.push({ id: 'new', label: 'New game', suit: 'Sword', hint: 'bots or friends' }, { id: 'sandbox', label: 'Sandbox', suit: 'Leaf', hint: 'build freely' },
+      { id: 'library', label: 'Library', suit: 'Goblet', hint: 'every card' }, { id: 'deeds', label: 'Deeds', suit: 'Bone', hint: 'deeds and mastery' }, { id: 'help', label: 'Help', suit: 'Tome', hint: 'how to play' });
+    CSTitle.show({ items: items, motion: prefs.motion || 'full', skip: !!lsGet('cs.notitle'),
+      onSkipToggle: function (v) { lsSet('cs.notitle', v); },
+      onPick: function (id) {
+        if (id === 'continue') { if (!app.game) { var sv = lsGet('cs.game'); if (sv) app.game = newCtx(sv, 'game'); } app.page = app.game ? 'game' : 'new'; }
+        else app.page = id;
+        app.modal = null; render();
+      } });
+  }
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.win > .titlebar .crest')) showTitle(); });
+  if (!lsGet('cs.notitle')) showTitle();
   maybePatchPopup();   // after an update: what's new
 })();
