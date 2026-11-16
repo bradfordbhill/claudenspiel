@@ -466,6 +466,15 @@
       var g = piece('glory', '', r.left, r.top); g.style.width = r.width + 'px'; g.style.height = r.height + 'px';
       g.animate([{ opacity: 0 }, { opacity: 0, offset: .6 }, { opacity: 1, offset: .75 }, { opacity: 0 }], { duration: 1700, easing: 'steps(6)', fill: 'both' }).onfinish = function () { g.remove(); };
     }
+    // Defeat is quieter: the board dims in steps, and a few dithered gusts of wind blow across it.
+    function dusk() {
+      var b = rectOf('.boardwrap'); if (!b) return;
+      var d = piece('dusk', '', b.left, b.top); d.style.width = b.width + 'px'; d.style.height = b.height + 'px';
+      d.animate([{ opacity: 0 }, { opacity: 1, offset: .25 }, { opacity: 1, offset: .85 }, { opacity: 0 }], { duration: 4200, easing: 'steps(10)', fill: 'both' }).onfinish = function () { d.remove(); };
+      for (var q = 0; q < 14; q++) { var w = piece('dust px', '', b.left - 10, b.top + b.height * (0.1 + (q * 37 % 80) / 100)); w.style.background = q % 2 ? '#9a90b8' : '#5a5070'; w.style.width = (8 + (q % 3) * 6) + 'px';
+        w.animate([{ transform: 'translate(0,0)', opacity: 0 }, { transform: 'translate(' + b.width * 0.2 + 'px,-2px)', opacity: .9, offset: .2 }, { transform: 'translate(' + (b.width + 20) + 'px,' + (q % 2 ? 4 : -4) + 'px)', opacity: 0 }],
+          { duration: 1400 + (q % 4) * 200, delay: 600 + q * 160, easing: 'steps(14)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(w); }
+    }
     function sink(r, earth) { for (var q = 0; q < 7; q++) { var d = piece('dust px', '', r.left + r.width * (0.15 + q * 0.11), r.top + r.height - 4); d.style.background = earth ? (q % 2 ? '#5a4632' : '#3b2d20') : (q % 2 ? '#efe6cf' : '#cbbf9e');
         d.animate([{ transform: 'translate(0,-' + (14 + (q % 3) * 6) + 'px)', opacity: 0 }, { transform: 'translate(0,-' + (8 + (q % 3) * 3) + 'px)', opacity: 1, offset: .3 }, { transform: 'translate(' + ((q - 3) * 2) + 'px,2px)', opacity: 0 }],
           { duration: 600, delay: q * 40, easing: 'steps(6)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); } }
@@ -514,7 +523,7 @@
         if (e.t === 'burn') popup('🔥 ' + BURN_TEXT[e.suit](), 'ap', cellRect(e.k) || center(), 0);
         if (e.t === 'bank') { var jr = rectOf('[data-fx="jar"]'), pr = rectOf('[data-fx="pile-' + e.p + '"]'); if (jr) popup('+' + e.n + '◇ banked', 'vp', jr, 0); if (jr && pr && !calm) { pr.p = e.p; fly('vp', jr, pr, e.n * 3, 200); } }
         if (e.t === 'lastround') banner('🔔 The last round');
-        if (e.t === 'end' && !calm) glory(e.winner);
+        if (e.t === 'end' && !calm) { glory(e.winner); if (e.anyHuman && !e.humanWon) dusk(); }
         if (e.t === 'contest') { var rk = cellRect(e.k), cst = cur() && cur().state; if (rk) { popup('⚔ Contested!', 'contest', rk, 0);
             if (!calm && cst) { var lc = (cst.players[e.loser] && cst.players[e.loser].color) || '#888'; ousted(rk, lc); puff(rk, cst.players[e.p].color || '#888', 350); } } }
         if (e.t === 'ascend' && !calm) { var ra = cellRect(e.k); if (ra) helix(ra); }
@@ -1061,9 +1070,26 @@
     var hs2 = $('.bottom .hand, .mhand .hand'); if (hs2) hs2.scrollLeft = hsl;
     var bw2 = $('.boardwrap'); if (bw2) { applyZoom(cur()); if (!cur().ui.fit) { bw2.scrollLeft = bsx; bw2.scrollTop = bsy; } }
     if (app.page === 'game') botDriver(app.game);
+    rain();
     keyHints();
     if (focusSel) { var f = document.querySelector('[data-focus-key="' + focusSel + '"]'); if (f) { f.focus(); if (f.setSelectionRange && f.value != null) { try { f.setSelectionRange(f.value.length, f.value.length); } catch (e) { } } } }
   }
+  // Rain on the board in the last round: stepped, dithered streaks over the board (not with Motion off).
+  var rainEl = null;
+  function rain() {
+    var c = cur(), st = c && c.state, bw = $('.boardwrap');
+    var on = bw && st && st.lastRound && st.winner == null && (app.page === 'game' || app.page === 'online') && prefs.motion !== 'off' && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (!on) { if (rainEl) { rainEl.remove(); rainEl = null; } return; }
+    if (!rainEl) { rainEl = document.createElement('div'); rainEl.className = 'rainfx'; rainEl.setAttribute('aria-hidden', 'true'); document.body.appendChild(rainEl); }
+    var dark = isDark(); if (rain.dark !== dark) { rain.dark = dark;   // a 64-pixel tile (shown at 2×) of slanted streaks, darker on a light board
+      var cv = document.createElement('canvas'); cv.width = cv.height = 64; var g = cv.getContext('2d'), R = rng('rain');
+      for (var i = 0; i < 46; i++) { var x = Math.floor(R() * 64), y = Math.floor(R() * 64), len = 3 + Math.floor(R() * 4); g.fillStyle = dark ? (i % 3 ? 'rgba(170,190,230,.55)' : 'rgba(220,230,255,.75)') : (i % 3 ? 'rgba(50,70,120,.45)' : 'rgba(40,55,100,.7)');
+        for (var j = 0; j < len; j++) g.fillRect((x - (j >> 2) + 64) % 64, (y + j) % 64, 1, 1); }
+      rainEl.style.backgroundImage = 'url(' + cv.toDataURL() + ')'; }
+    var r = bw.getBoundingClientRect(); rainEl.style.left = r.left + 'px'; rainEl.style.top = r.top + 'px'; rainEl.style.width = r.width + 'px'; rainEl.style.height = r.height + 'px';
+    rainEl.classList.toggle('calm', prefs.motion === 'calm');
+  }
+  window.addEventListener('resize', function () { rain(); });
   function statusText() {
     if (app.toast) return app.toast;
     var c = cur();
