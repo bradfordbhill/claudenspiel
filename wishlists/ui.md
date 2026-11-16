@@ -12,7 +12,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.2 A score race bar above the board: every player's ◇ on one track to the target, and the last round announced.
 - ○ Add each player's likely pace (from the Genius's race model) to the race bar as a ghost marker.
 - ✅ 0.5 "Why is this good?" on hover in the hand: what the card would gain if played (and claimed) now, at its best space, worked out without peeking.
-- ○ The same hint for cards played from hand (Actions, Blessings).
+- ✅ 1.0-pre The same hint for cards played from hand (Actions, Blessings): played in an imagined game with greedy choices, it reports your ◇, ● a turn and cards drawn, and what it costs the rival it hurts most.
 - ○ Turn replay: step through the last round's moves on the board, like a chess move list.
 - ✅ 1.0-pre (the chart and the story) ○ (the Genius's view) **The Chronicle**, a post-game report: each player's ◇ after every turn as a stepped pixel line, marks where Ruins, Overwhelms, contests and the last round happened, and the turning points in words (lead changes, the biggest turns). Still to come: the Genius's suggested better move at the two biggest moments.
 - ○ Colour-blind mode: suit patterns (the dithered suit textures, stronger) and suit glyphs on every board card.

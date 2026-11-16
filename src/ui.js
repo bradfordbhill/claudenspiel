@@ -2583,7 +2583,8 @@
   // (and claimed it, if you still can). Tried in KBots.determinize's fair view, so it never uses cards you can't see.
   function whyGood(ctx, uid) {
     var st = ctx.state, p = st.cur; if (!myTurn(ctx) || !st.turn || !st.turn.started || st.pending || st.res || st.winner != null) return '';
-    var d = E.rawDef(st, uid); if (!E.needsPlacement(d) || E.playBlock(st, p, uid)) return '';
+    var d = E.rawDef(st, uid); if (E.playBlock(st, p, uid)) return '';
+    if (!E.needsPlacement(d)) return whyInstant(st, p, uid);
     var L = E.legalCells(st, uid), cash = E.funds(st.players[p]), ks = Object.keys(L).filter(function (k) { return L[k] <= cash; }).slice(0, 24);
     if (!ks.length) return 'Can’t be placed for the ● you have.';
     var w = KBots.determinize(st, p, Math.random), base = E.scores(w)[p].total, inc0 = E.income(w, p), best = null;
@@ -2592,6 +2593,24 @@
       tries.forEach(function (s2) { var g = E.scores(s2)[p].total - base, gi = E.income(s2, p) - inc0, v = g + gi * 0.5; if (!best || v > best.v) best = { v: v, g: g, gi: gi, k: k, c: s2.turn.claimed && !st.turn.claimed }; }); });
     if (!best) return '';
     return 'Best now: <b>' + (best.g >= 0 ? '+' : '') + best.g + '◇</b>' + (best.gi ? ', ' + (best.gi > 0 ? '+' : '') + best.gi + '● a turn' : '') + ' at ' + esc(best.k) + (best.c ? ', claimed' : '') + ' (' + L[best.k] + '●)';
+  }
+  // The same hint for a card played straight from hand: play it in an imagined game (hidden cards guessed, choices made
+  // greedily) and report what it did for you and to the strongest rival: ◇, ● a turn and cards in hand.
+  function whyInstant(st, p, uid) {
+    var d = E.rawDef(st, uid), cost = E.isFree(st, uid) ? 0 : +d.cost || 0;
+    if (cost > E.funds(st.players[p])) return 'Costs ' + cost + '●; you have ' + E.funds(st.players[p]) + '●.';
+    var w = KBots.determinize(st, p, Math.random), s0 = E.scores(w), inc0 = E.income(w, p), hand0 = w.players[p].hand.length;
+    var s1 = E.apply(w, { t: 'cast', uid: uid }); if (s1.error) return '';
+    for (var n = 0; n < 12 && s1 && (s1.pending || s1.res); n++) { var nx = KBots.resolve(s1, p, 'greedy'); if (!nx || nx === s1) break; s1 = nx; }
+    if (!s1 || s1.pending || s1.res) return '';
+    var sc = E.scores(s1), g = sc[p].total - s0[p].total, gi = E.income(s1, p) - inc0, dh = s1.players[p].hand.length - (hand0 - 1);
+    var hurt = null; s1.players.forEach(function (q, i) { if (i === p) return; var dd = sc[i].total - s0[i].total, di = E.income(s1, i) - E.income(w, i); if ((dd < 0 || di < 0) && (!hurt || dd + di / 2 < hurt.d + hurt.di / 2)) hurt = { i: i, d: dd, di: di }; });
+    var bits = [];
+    if (g) bits.push('<b>' + (g > 0 ? '+' : '') + g + '◇</b>');
+    if (gi) bits.push((gi > 0 ? '+' : '') + gi + '● a turn');
+    if (dh > 0) bits.push('+' + dh + ' card' + (dh > 1 ? 's' : ''));
+    if (hurt) bits.push(esc(st.players[hurt.i].name) + ' ' + [hurt.d ? '<b>' + hurt.d + '◇</b>' : '', hurt.di ? hurt.di + '● a turn' : ''].filter(Boolean).join(', '));
+    return bits.length ? 'Played now: ' + bits.join(', ') + ' (' + cost + '●)' : 'Played now: no change to anyone’s ◇ or ● (' + cost + '●).';
   }
   /* ---------------- hover magnifier ---------------- */
   var hov = document.createElement('div'); hov.className = 'hovercard'; hov.setAttribute('aria-hidden', 'true'); document.body.appendChild(hov);
