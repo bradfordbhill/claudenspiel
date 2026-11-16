@@ -2,6 +2,37 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 16 November 2026 · 1.0-pre, the city at dusk; the new Grounds measured properly
+
+**The Grounds check from last time.** 3,227 games with contest on (mixed greedy, tactician and raider bots, deals 40000+ and 50000+, 1,100-second runs). "Without" removes Library, Barrow and Shrine with `CARDS=` (copies 0), so the deck differs and the pairs are not exact, but with about 3× the games of the first look the deck change averages out.
+
+| | Without (2p · 3p · 4p) | With |
+|---|---|---|
+| Games | 871 · 474 · 278 | 819 · 476 · 309 |
+| Archbishop | 1.03 · 0.90 · 0.98 | 0.95 · **0.80** · 0.94 |
+| Hedonist | 0.78 · 1.10 · 0.96 | 0.99 · 1.07 · 0.93 |
+| Warmonger | 0.98 · 0.92 · 1.16 | 0.82 · 1.03 · 0.93 |
+| Cryptkeeper | 1.06 · 1.09 · 0.74 | 1.04 · **1.22** · 1.09 |
+| Gardener | 1.07 · 0.88 · 0.99 | 1.05 · 1.02 · 1.10 |
+| Philosopher | 1.08 · 1.12 · 1.17 | 1.15 · 0.87 · 1.01 |
+| Spread | 0.30 · 0.24 · 0.43 | 0.33 · 0.42 · **0.17** |
+
+Pooled over every table size (±1 standard error): Cryptkeeper **1.01 → 1.10 ±0.05**, Archbishop 0.98 → 0.90, Warmonger 1.00 → 0.90, Hedonist 0.90 → 1.00, Gardener 1.00 → 1.05, Philosopher 1.11 → 1.04. Rounds (6 · 5 · 5) don't change.
+
+**Decision: the Grounds stay as designed, and the Library is not trimmed.** The bar set last time was "Cryptkeeper above 1.15 pooled"; it reads 1.10, about 2σ above its baseline but under the bar. The 4-player game is the best it has been (spread 0.17, from 0.43 without the new Grounds), which is worth a lot, since 4 players has been the hardest table since 0.4. What is left is **3 players**: Cryptkeeper 1.22 and Archbishop 0.80, each about 2σ from par on ~240 appearances. A 3-player-only fix is the next balance job, measured paired on fixed deals with the new Grounds in. First candidates: Shrine's peace also stops burials beside it (it would shelter the Archbishop from the Cryptkeeper's best play), or Cathedral counting Sceptre Grounds.
+
+**The city at dusk.** Claudenspiel opens on a title screen (`src/title.js`): the walled city drawn at about 200 pixels high in Bayer-dithered dusk colours, stepped at 10 frames a second. Stars twinkle, the sun sets behind the roofs with bands of cloud, windows light and go out, chimney smoke rises in puffs, a flag snaps on the keep, a lantern walks the wall, wind runs through the grass in slow waves, the river glints and fireflies blink. The menu is six suit banners hung from the wall that sway in steps (Continue, New game, Sandbox, Library, Deeds, Help). Esc picks the first. *Skip this screen next time* turns it off; the crest in the title bar always brings it back. Why: a first impression is part of the game. The Kartenspiel heritage is a workshop window, and this is the one place the game gets to be a place.
+
+**Living Grounds.** Every Grounds card on the board shows a four-frame pixel diorama of its terrain in the art window (`src/terrain.js`, a 48×15 tile per card drawn once into a sprite sheet): reeds sway in the Marsh, embers rise over the Battlefield, a cart crosses the Crossroads, the Library's candle gutters, a wisp drifts over the Barrow, light walks the Shrine's gold roof. Terrain should read as land at a glance, not as one more card.
+
+**Smaller things.**
+- *The hand hint for Actions and Blessings:* hovering one plays it in an imagined game (hidden cards guessed, choices greedy) and reports your ◇, ● a turn and cards drawn, and what it costs the rival it hurts most.
+- *Ascension* spirals the five suit colours up out of the card as a pixel helix, flashes gold, and plays five rising notes.
+- *Deeds and mastery levels* drop a parchment scroll; a wax seal stamps it, and it rolls up and flies to the Deeds tab.
+- *Rain* falls on the board in the last round (a scattered-streak tile, darker on a light board). Losing to a bot dims the board and blows a few gusts across it.
+
+**Next:** the 3-player Archbishop and Cryptkeeper with the new Grounds; per-card burns; 5 players with contest.
+
 ## 15 November 2026 · 1.0-pre, a Grounds card for every suit
 
 **Why.** Grounds were Claudenspiel's best idea that stopped short: three terrains (Leaf, Sword, Goblet) and nothing for the other half of the suits. Every suit now has its own terrain. Each new one gives a reason to build *beside* something you don't own, which is what a shared board should reward:
