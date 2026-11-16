@@ -6,6 +6,7 @@ var KPatch = [
     'Tick <b>Skip this screen next time</b> to go straight to the workshop. The crest in the title bar always brings it back.',
     '<b>Living Grounds:</b> every Grounds card on the board shows its terrain in a tiny moving picture. Reeds sway in the Marsh, embers rise over the Battlefield, a cart crosses the Crossroads, the Library’s candle gutters, a wisp drifts over the Barrow and light walks across the Shrine’s gold roof.',
     'Hovering an Action or Blessing in your hand now says what playing it would do: your ◇, ● a turn and cards drawn, and what it costs the rival it hurts most. Placed cards already had this.',
+    'Earning a <b>deed</b> or a mastery level now drops a parchment scroll onto the screen. A wax seal stamps it, then it rolls itself up and flies off to the Deeds tab.',
     'An <b>Ascension</b> now has its own moment: the five suit colours spiral up out of the card, it flashes gold, and five rising notes play.'
   ] },
   { v: 'cs-1.0-pre-grounds', date: '15 November 2026', title: 'Holy ground, old dead and a reading room', notes: [

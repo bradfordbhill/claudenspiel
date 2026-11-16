@@ -677,6 +677,15 @@ svg.chron .hc:hover { fill-opacity: .07; }
 @keyframes cs-terrain { to { background-position: 0 -120px; } }
 :root[data-motion="full"] .card .art.terrain { animation: cs-terrain 1.6s steps(4) infinite; }
 @media (prefers-reduced-motion: reduce) { .card .art.terrain { animation: none !important; } }
+/* A deed earned: a parchment scroll with a wax seal, which rolls itself up and flies to the Deeds tab. */
+.deedscroll { position: fixed; left: 50%; top: 70px; z-index: 1500; width: min(340px, 86vw); pointer-events: none; transform-origin: 50% 0; image-rendering: pixelated; }
+.deedscroll .dsroll { height: 10px; margin: 0 -8px; background: repeating-linear-gradient(90deg, #c8a868 0 6px, #b08c50 6px 8px); border: 2px solid #5a3a1a; }
+.deedscroll .dsbody { display: grid; gap: 2px; padding: 10px 16px 12px; text-align: center; color: #3a2410; border-left: 2px solid #5a3a1a; border-right: 2px solid #5a3a1a;
+  background: #efe0b8; background-image: repeating-linear-gradient(0deg, rgba(90, 58, 26, .07) 0 1px, transparent 1px 4px); }
+.deedscroll .dsbody b { font-family: 'Jacquard 24', serif; font-weight: 400; font-size: 26px; color: #5a1020; line-height: 1; }
+.deedscroll .dsbody span { font-size: 13px; }
+.deedscroll .dsseal { position: absolute; right: 6px; bottom: -6px; width: 34px; height: 34px; display: grid; place-items: center; font-style: normal; font-size: 18px; color: #f0c0a0;
+  background: #8a1424; border: 2px solid #5a0a14; clip-path: polygon(50% 0, 64% 8%, 82% 6%, 88% 22%, 100% 34%, 94% 50%, 100% 66%, 88% 78%, 82% 94%, 64% 92%, 50% 100%, 36% 92%, 18% 94%, 12% 78%, 0 66%, 6% 50%, 0 34%, 12% 22%, 18% 6%, 36% 8%); }
 </style></head><body><div id="app"></div><script>
 /* Kartenspiel — starter data. Card definitions are plain JSON so they can live in a db later. */
 var KData = (function () {
@@ -6454,6 +6463,7 @@ var KPatch = [
     'Tick <b>Skip this screen next time</b> to go straight to the workshop. The crest in the title bar always brings it back.',
     '<b>Living Grounds:</b> every Grounds card on the board shows its terrain in a tiny moving picture. Reeds sway in the Marsh, embers rise over the Battlefield, a cart crosses the Crossroads, the Library’s candle gutters, a wisp drifts over the Barrow and light walks across the Shrine’s gold roof.',
     'Hovering an Action or Blessing in your hand now says what playing it would do: your ◇, ● a turn and cards drawn, and what it costs the rival it hurts most. Placed cards already had this.',
+    'Earning a <b>deed</b> or a mastery level now drops a parchment scroll onto the screen. A wax seal stamps it, then it rolls itself up and flies off to the Deeds tab.',
     'An <b>Ascension</b> now has its own moment: the five suit colours spiral up out of the card, it flashes gold, and five rising notes play.'
   ] },
   { v: 'cs-1.0-pre-grounds', date: '15 November 2026', title: 'Holy ground, old dead and a reading room', notes: [
@@ -7069,12 +7079,30 @@ var CSTerrain = (function () {
   }
   // Show a message in the status bar for 4 seconds.
   // Claudenspiel's Book of Deeds (src/deeds.js), kept in this browser.
+  // A deed or a level earned: a parchment scroll drops in, a wax seal stamps onto it, then it rolls itself up and flies
+  // off to the Deeds tab. Stepped, never smooth; with calm or no motion only the toast in the status bar shows.
+  function deedScroll(head, line, delay) {
+    if (prefs.motion === 'off' || prefs.motion === 'calm' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    setTimeout(function () {
+      var d = document.createElement('div'); d.className = 'deedscroll'; d.setAttribute('aria-hidden', 'true');
+      d.innerHTML = '<div class="dsroll"></div><div class="dsbody"><b>' + esc(head) + '</b><span>' + esc(line) + '</span></div><div class="dsroll lo"></div><i class="dsseal">✠</i>';
+      document.body.appendChild(d);
+      var seal = d.querySelector('.dsseal'), tab = document.querySelector('.tab[data-page="deeds"]'), tr = tab && tab.getBoundingClientRect(), r = d.getBoundingClientRect();
+      if (!d.animate) { setTimeout(function () { d.remove(); }, 3000); return; }
+      d.animate([{ transform: 'translate(-50%,-40px) scaleY(.1)' }, { transform: 'translate(-50%,0) scaleY(1)', offset: .12 }, { transform: 'translate(-50%,0) scaleY(1)', offset: .78 },
+        { transform: 'translate(-50%,0) scaleY(.08)', offset: .86 },
+        { transform: tr ? 'translate(calc(-50% + ' + Math.round(tr.left + tr.width / 2 - r.left - r.width / 2) + 'px),' + Math.round(tr.top - r.top) + 'px) scale(.2,.08)' : 'translate(-50%,-60px) scaleY(.08)', opacity: .6 }],
+        { duration: 3000, easing: 'steps(24)', fill: 'both' }).onfinish = function () { d.remove(); };
+      seal.animate([{ transform: 'scale(2.4)', opacity: 0 }, { transform: 'scale(2.4)', opacity: 0, offset: .15 }, { transform: 'scale(.85)', opacity: 1, offset: .22 }, { transform: 'scale(1)', opacity: 1, offset: .26 }, { transform: 'scale(1)', opacity: 1 }],
+        { duration: 3000, easing: 'steps(24)', fill: 'both' });
+    }, delay || 0);
+  }
   function earnDeeds(st) {
     if (typeof KDeeds === 'undefined') return;
     var book = lsGet('cs.deeds') || {}, fresh = KDeeds.award(st, book); lsSet('cs.deeds', book);
     app.mastery = { log: st.log.length, list: book.lastMastery || [], book: book };
-    (book.lastMastery || []).forEach(function (m) { if (m.to > m.from) setTimeout(function () { SFX.play('deed'); var r = KDeeds.rank(m.arch, book.mastery[m.arch]); toast('🜲 ' + m.arch + ' mastery, level ' + m.to + (r.title ? ': ' + r.title : '')); }, 1800); });
-    if (fresh.length) setTimeout(function () { SFX.play('deed'); toast('📜 Deed' + (fresh.length > 1 ? 's' : '') + ' earned: ' + fresh.map(function (f) { return f.deed.name + (st.players.filter(function (q) { return !q.bot; }).length > 1 ? ' (' + f.by + ')' : ''); }).join(', ')); }, 300);
+    (book.lastMastery || []).forEach(function (m) { if (m.to > m.from) setTimeout(function () { SFX.play('deed'); var r = KDeeds.rank(m.arch, book.mastery[m.arch]); deedScroll(m.arch + ', level ' + m.to, r.title || 'Mastery rises'); toast('🜲 ' + m.arch + ' mastery, level ' + m.to + (r.title ? ': ' + r.title : '')); }, 1800); });
+    if (fresh.length) setTimeout(function () { SFX.play('deed'); deedScroll(fresh.length > 1 ? fresh.length + ' deeds earned' : 'Deed earned', fresh.map(function (f) { return f.deed.name; }).join(' · ')); toast('📜 Deed' + (fresh.length > 1 ? 's' : '') + ' earned: ' + fresh.map(function (f) { return f.deed.name + (st.players.filter(function (q) { return !q.bot; }).length > 1 ? ' (' + f.by + ')' : ''); }).join(', ')); }, 300);
   }
   // Archetype mastery (src/deeds.js): ten pips, a title, and strategy notes that open as levels rise.
   function pips(l) { var h = ''; for (var i = 1; i <= 10; i++) h += '<i class="pip' + (i <= l ? ' on' : '') + (i === 4 || i === 7 || i === 10 ? ' crown' : '') + '"></i>'; return '<span class="pips" aria-label="level ' + l + ' of 10">' + h + '</span>'; }

@@ -40,7 +40,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.4 (the banner) **Race bar:** the leader's marker leans forward; when someone reaches the target, a bell icon swings on the bar and the last-round banner unrolls from the top like a scroll.
 - ○ **Turn handover:** the active player's card in the player list slides out a few pixels and their crest catches a glint; bot turns show a small hourglass that turns over once per move.
 - ✅ 0.5 **The Genius thinking:** a candle beside its name, with the flame flickering faster the longer it thinks.
-- ○ **Deeds:** a wax seal stamps onto the toast when a deed is earned, then the scroll rolls itself up into the Deeds tab.
+- ✅ 1.0-pre **Deeds:** a wax seal stamps onto the toast when a deed is earned, then the scroll rolls itself up into the Deeds tab.
 - ✅ 1.0-pre (the light) ○ (the dimming) **Victory:** the winner's Kingdom cards light up one by one in order of value, then a pixel banner with their crest unfurls over the board. Defeat is quieter: the board dims and the wind picks up.
 - ○ **Ambient board:** the night prairie's grass ripples in slow dithered waves, the river glints, and a lantern now and then moves along the city wall. Rain on the board in the last round.
 - ✅ 1.0-pre **Hover:** hand cards lift two pixels when hovered; legal spaces breathe gently (one shade lighter and back) instead of a static highlight.

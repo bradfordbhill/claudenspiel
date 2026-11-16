@@ -139,12 +139,30 @@
   }
   // Show a message in the status bar for 4 seconds.
   // Claudenspiel's Book of Deeds (src/deeds.js), kept in this browser.
+  // A deed or a level earned: a parchment scroll drops in, a wax seal stamps onto it, then it rolls itself up and flies
+  // off to the Deeds tab. Stepped, never smooth; with calm or no motion only the toast in the status bar shows.
+  function deedScroll(head, line, delay) {
+    if (prefs.motion === 'off' || prefs.motion === 'calm' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    setTimeout(function () {
+      var d = document.createElement('div'); d.className = 'deedscroll'; d.setAttribute('aria-hidden', 'true');
+      d.innerHTML = '<div class="dsroll"></div><div class="dsbody"><b>' + esc(head) + '</b><span>' + esc(line) + '</span></div><div class="dsroll lo"></div><i class="dsseal">✠</i>';
+      document.body.appendChild(d);
+      var seal = d.querySelector('.dsseal'), tab = document.querySelector('.tab[data-page="deeds"]'), tr = tab && tab.getBoundingClientRect(), r = d.getBoundingClientRect();
+      if (!d.animate) { setTimeout(function () { d.remove(); }, 3000); return; }
+      d.animate([{ transform: 'translate(-50%,-40px) scaleY(.1)' }, { transform: 'translate(-50%,0) scaleY(1)', offset: .12 }, { transform: 'translate(-50%,0) scaleY(1)', offset: .78 },
+        { transform: 'translate(-50%,0) scaleY(.08)', offset: .86 },
+        { transform: tr ? 'translate(calc(-50% + ' + Math.round(tr.left + tr.width / 2 - r.left - r.width / 2) + 'px),' + Math.round(tr.top - r.top) + 'px) scale(.2,.08)' : 'translate(-50%,-60px) scaleY(.08)', opacity: .6 }],
+        { duration: 3000, easing: 'steps(24)', fill: 'both' }).onfinish = function () { d.remove(); };
+      seal.animate([{ transform: 'scale(2.4)', opacity: 0 }, { transform: 'scale(2.4)', opacity: 0, offset: .15 }, { transform: 'scale(.85)', opacity: 1, offset: .22 }, { transform: 'scale(1)', opacity: 1, offset: .26 }, { transform: 'scale(1)', opacity: 1 }],
+        { duration: 3000, easing: 'steps(24)', fill: 'both' });
+    }, delay || 0);
+  }
   function earnDeeds(st) {
     if (typeof KDeeds === 'undefined') return;
     var book = lsGet('cs.deeds') || {}, fresh = KDeeds.award(st, book); lsSet('cs.deeds', book);
     app.mastery = { log: st.log.length, list: book.lastMastery || [], book: book };
-    (book.lastMastery || []).forEach(function (m) { if (m.to > m.from) setTimeout(function () { SFX.play('deed'); var r = KDeeds.rank(m.arch, book.mastery[m.arch]); toast('🜲 ' + m.arch + ' mastery, level ' + m.to + (r.title ? ': ' + r.title : '')); }, 1800); });
-    if (fresh.length) setTimeout(function () { SFX.play('deed'); toast('📜 Deed' + (fresh.length > 1 ? 's' : '') + ' earned: ' + fresh.map(function (f) { return f.deed.name + (st.players.filter(function (q) { return !q.bot; }).length > 1 ? ' (' + f.by + ')' : ''); }).join(', ')); }, 300);
+    (book.lastMastery || []).forEach(function (m) { if (m.to > m.from) setTimeout(function () { SFX.play('deed'); var r = KDeeds.rank(m.arch, book.mastery[m.arch]); deedScroll(m.arch + ', level ' + m.to, r.title || 'Mastery rises'); toast('🜲 ' + m.arch + ' mastery, level ' + m.to + (r.title ? ': ' + r.title : '')); }, 1800); });
+    if (fresh.length) setTimeout(function () { SFX.play('deed'); deedScroll(fresh.length > 1 ? fresh.length + ' deeds earned' : 'Deed earned', fresh.map(function (f) { return f.deed.name; }).join(' · ')); toast('📜 Deed' + (fresh.length > 1 ? 's' : '') + ' earned: ' + fresh.map(function (f) { return f.deed.name + (st.players.filter(function (q) { return !q.bot; }).length > 1 ? ' (' + f.by + ')' : ''); }).join(', ')); }, 300);
   }
   // Archetype mastery (src/deeds.js): ten pips, a title, and strategy notes that open as levels rise.
   function pips(l) { var h = ''; for (var i = 1; i <= 10; i++) h += '<i class="pip' + (i <= l ? ' on' : '') + (i === 4 || i === 7 || i === 10 ? ' crown' : '') + '"></i>'; return '<span class="pips" aria-label="level ' + l + ' of 10">' + h + '</span>'; }
