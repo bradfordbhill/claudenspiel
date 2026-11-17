@@ -2,6 +2,27 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 17 November 2026 · 1.0-pre, the 3-player gap that wasn't; tucked pages and violet smoke
+
+**The 3-player check.** Last time's 3-player numbers (Cryptkeeper 1.22, Archbishop 0.80) came from about 240 appearances each, so I set up a paired test on fresh deals before changing any card: 257 3-player games (deals 60000+, contest on, mixed greedy, tactician and raider bots, 1,300-second runs), the same deals for each variant.
+
+| | Archbishop | Hedonist | Warmonger | Cryptkeeper | Gardener | Philosopher | Spread | Winners changed |
+|---|---|---|---|---|---|---|---|---|
+| As it is | 0.97 | 0.95 | 0.96 | **0.91** | 1.03 | 1.18 | 0.27 | — |
+| Cathedral 2◇ per unowned Sceptre | 1.08 | 0.90 | 0.98 | 0.84 | 1.01 | 1.18 | 0.34 | 14 |
+| Cathedral 7◇ per own Sceptre | 1.04 | 0.97 | 1.01 | 0.91 | 0.91 | 1.16 | 0.24 | 20 |
+| Mausoleum 1◇ per three buried elsewhere | 0.92 | 0.95 | 1.03 | 0.89 | 1.05 | 1.16 | 0.27 | 20 |
+
+**Decision: no change.** On fresh deals the baseline has the Cryptkeeper *below* par (0.91) and the Archbishop at par (0.97), so last time's gap doesn't hold up. It looks like noise from too few games (±0.13 per archetype at this size). Each fix moves only 14–20 of 257 winners, which is too small to separate from that noise, and none of them beats the baseline spread by a clear margin. The Shrine-stops-burials idea wasn't tried: burials are almost all self-burials, so it would mostly tax whoever builds next to a Shrine, not shelter the Archbishop. The Philosopher (1.18 here, 1.04 pooled last time) is the one to watch. **Lesson for the yardstick:** no 3-player balance change without at least 500 paired games, and none from one batch of deals.
+
+**Tucked pages.** Burying finally looks like burying. A pixel copy of the buried card drops onto its host, slides under it in steps, and its bottom edge peeks out below for a moment, like a page tucked into a book. Then the old clods of earth (or loose pages) settle.
+
+**Violet smoke.** The Curse effect was the last soft glow in the game (blurred violet box-shadows and gradient flames), which broke the pixel-art rule. Now violet dithered pixels in four shades curl up out of the card in a spiral and sink into its lower-left corner. A small pixel **hex eye** stamps in there and stays while the Curse does, blinking now and then. The cursed frame is a crisp double ring instead of a glow.
+
+**The strongbox.** A bought claim used to be a word in a box. Now an iron-bound strongbox appears beside the ● counter, two coins flip out of it in arcs (squashing edge-on and back, like real coins), and the lid slams shut with a one-pixel jolt.
+
+**Next:** per-card burns (the next second-edition pillar); 5 players with contest; a bigger 3-player sample before anyone touches the Philosopher.
+
 ## 16 November 2026 · 1.0-pre, the city at dusk; the new Grounds measured properly
 
 **The Grounds check from last time.** 3,227 games with contest on (mixed greedy, tactician and raider bots, deals 40000+ and 50000+, 1,100-second runs). "Without" removes Library, Barrow and Shrine with `CARDS=` (copies 0), so the deck differs and the pairs are not exact, but with about 3× the games of the first look the deck change averages out.

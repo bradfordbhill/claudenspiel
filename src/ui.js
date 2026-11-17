@@ -372,13 +372,13 @@
       // A card slid under another one (Actions after they resolve, Embalm, Funeral Pyre, burns): the top card stays the same, the stack grows.
       Object.keys(b.board).forEach(function (k) { var sb = b.board[k], sa = a.board[k]; if (!sa || sb.length <= sa.length || sb[0] !== sa[0]) return;
         var nu = sb.filter(function (u) { return sa.indexOf(u) < 0; })[0]; if (nu == null) return; var nd = E.rawDef(b, nu), td = E.rawDef(b, sb[0]);
-        ev.push({ t: 'bury', k: k, earth: nd.suit === 'Bone' || td.type === 'Foundation' }); });
+        ev.push({ t: 'bury', k: k, suit: nd.suit, earth: nd.suit === 'Bone' || td.type === 'Foundation' }); });
       if (b.lastRound && !a.lastRound) ev.push({ t: 'lastround' });
       if (a.cur !== b.cur && b.winner == null && !b.players[b.cur].bot && a.players[a.cur].bot) ev.push({ t: 'yourturn' });
       if (b.winner != null && a.winner == null) ev.push({ t: 'end', winner: b.winner, arch: b.players[b.winner].arch, humanWon: !b.players[b.winner].bot, anyHuman: b.players.some(function (q) { return !q.bot; }) });
       return ev;
     }
-    // Animation pieces: floating text, gems and marbles flying to the score piles, crumbling cards, the Curse flare.
+    // Animation pieces: floating text, gems and marbles flying to the score piles, crumbling cards, Curse smoke and tucked cards.
     function rectOf(sel) { var e = document.querySelector(sel); return e ? e.getBoundingClientRect() : null; }
     function cellRect(k) { return k ? rectOf('.cell [data-cell="' + k + '"]') : null; }
     function center() { var b = rectOf('.boardwrap'); return b ? { left: b.left + b.width / 2 - 20, top: b.top + b.height / 2 - 20, width: 40, height: 40 } : { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 }; }
@@ -435,17 +435,6 @@
       popup(e.found ? 'Foundation falls!' : 'Overwhelmed!', 'ruin', r, dl + 800);
     }
     function cellEl(k) { var el = document.querySelector('.cell [data-cell="' + k + '"]'); return el && el.closest('.cell'); }
-    function flare(r, delay) {
-      var f = piece('flare', '', r.left - 4, r.top - 4); f.style.width = r.width + 8 + 'px'; f.style.height = r.height + 8 + 'px';
-      f.animate([{ opacity: 0, boxShadow: '0 0 0 0 rgba(160,60,255,0)' }, { opacity: 1, boxShadow: '0 0 18px 10px rgba(170,70,255,.95), 0 0 40px 22px rgba(220,80,255,.55)', offset: .15 },
-        { boxShadow: '0 -6px 22px 8px rgba(190,90,255,.9), 0 0 30px 14px rgba(120,30,220,.6)', offset: .3 }, { boxShadow: '0 -10px 26px 12px rgba(210,110,255,.85), 0 0 36px 18px rgba(140,40,240,.5)', offset: .45 },
-        { opacity: 1, boxShadow: '0 0 10px 4px rgba(150,70,255,.6)', offset: .75 }, { opacity: 0, boxShadow: '0 0 6px 2px rgba(150,70,255,.3)' }], { duration: 1800, delay: delay || 0, easing: 'ease-out', fill: 'both' }).onfinish = function () { f.remove(); };
-      for (var q = 0; q < 14; q++) {
-        var side = q % 4, x = side === 0 ? r.left + Math.random() * r.width : side === 1 ? r.left + r.width : side === 2 ? r.left + Math.random() * r.width : r.left, y = side === 0 ? r.top : side === 1 ? r.top + Math.random() * r.height : side === 2 ? r.top + r.height : r.top + Math.random() * r.height;
-        var fl = piece('flame', '', x - 4, y - 6);
-        fl.animate([{ transform: 'translateY(0) scale(.4)', opacity: 0 }, { transform: 'translateY(-6px) scale(1.2)', opacity: 1, offset: .25 }, { transform: 'translateY(-' + (22 + Math.random() * 18) + 'px) scale(.3)', opacity: 0 }], { duration: 900 + Math.random() * 400, delay: (delay || 0) + Math.random() * 350, easing: 'ease-out', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(fl);
-      }
-    }
     // Play the listed animations, slightly staggered.
     // The meeple's landing: a puff of dithered dust in the player's colour.
     function puff(r, col, delay) { for (var q = 0; q < 6; q++) { var d = piece('dust px', '', r.left + r.width * (0.2 + q * 0.12), r.top + r.height * 0.85); d.style.background = col;
@@ -475,9 +464,48 @@
         w.animate([{ transform: 'translate(0,0)', opacity: 0 }, { transform: 'translate(' + b.width * 0.2 + 'px,-2px)', opacity: .9, offset: .2 }, { transform: 'translate(' + (b.width + 20) + 'px,' + (q % 2 ? 4 : -4) + 'px)', opacity: 0 }],
           { duration: 1400 + (q % 4) * 200, delay: 600 + q * 160, easing: 'steps(14)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(w); }
     }
-    function sink(r, earth) { for (var q = 0; q < 7; q++) { var d = piece('dust px', '', r.left + r.width * (0.15 + q * 0.11), r.top + r.height - 4); d.style.background = earth ? (q % 2 ? '#5a4632' : '#3b2d20') : (q % 2 ? '#efe6cf' : '#cbbf9e');
+    // A bought claim: a small iron-bound strongbox appears beside the ● counter, two coins flip out of the counter
+    // into it in steps, and its lid shuts with a jolt.
+    function strongbox(r) {
+      var bx = r.left + r.width + 18, by = r.top + r.height / 2 - 8, box = piece('strongbox', '<i></i>', bx, by);
+      box.animate([{ transform: 'translateY(-6px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1, offset: .12 }, { transform: 'translateY(0)', opacity: 1, offset: .62 }, { transform: 'translateY(2px)', offset: .66 },
+        { transform: 'translateY(0)', opacity: 1, offset: .7 }, { transform: 'translateY(0)', opacity: 1, offset: .9 }, { transform: 'translateY(0)', opacity: 0 }], { duration: 1500, easing: 'steps(15)', fill: 'both' }).onfinish = function () { box.remove(); };
+      box.firstChild.animate([{ transform: 'rotate(-35deg)' }, { transform: 'rotate(-35deg)', offset: .6 }, { transform: 'rotate(0)', offset: .66 }, { transform: 'rotate(0)' }], { duration: 1500, easing: 'steps(15)', fill: 'both' });
+      for (var q = 0; q < 2; q++) { var c = piece('coin px', '', r.left + r.width / 2 - 3, r.top + r.height / 2 - 3), dx = bx + 4 - (r.left + r.width / 2 - 3), kf = [];
+        for (var f = 0; f <= 10; f++) { var t = f / 10; kf.push({ transform: 'translate(' + Math.round(dx * t) + 'px,' + Math.round(-28 * 4 * t * (1 - t) + (by - r.top - r.height / 2 + 3) * t) + 'px) scaleX(' + [1, .5, .15, .5][f % 4] + ')', opacity: f === 10 ? 0 : 1 }); }
+        c.animate(kf, { duration: 520, delay: 200 + q * 180, easing: 'steps(10)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(c); }
+    }
+    // Burying: a copy of the buried card drops onto its host and slides underneath it, in steps; its bottom edge peeks
+    // out below the host for a moment, like a page tucked into a book, then is gone.
+    function tuck(r, suit, delay) {
+      var h = Math.round(r.height), sl = 9, base = { Sceptre: '#fff6c2', Goblet: '#f6dcf2', Sword: '#ffdad5', Bone: '#ececec', Leaf: '#dcf2d4', Tome: '#d9e4ff' }[suit] || '#eee';
+      var d = piece('tucked s-' + (suit || 'none'), '', r.left, r.top); d.style.width = Math.round(r.width) + 'px'; d.style.height = h + 'px'; d.style.background = base;
+      var up = Math.round(h * 0.55);
+      d.animate([
+        { transform: 'translate(0,-' + up + 'px)', clipPath: 'inset(0 0 ' + (h - up) + 'px 0)', opacity: 0 },
+        { transform: 'translate(0,-' + up + 'px)', clipPath: 'inset(0 0 ' + (h - up) + 'px 0)', opacity: 1, offset: .12 },
+        { transform: 'translate(0,0)', clipPath: 'inset(0 0 ' + h + 'px 0)', opacity: 1, offset: .42 },
+        { transform: 'translate(0,0)', clipPath: 'inset(' + h + 'px 0 0 0)', opacity: 1, offset: .43 },
+        { transform: 'translate(0,' + sl + 'px)', clipPath: 'inset(' + (h - sl) + 'px 0 0 0)', opacity: 1, offset: .55 },
+        { transform: 'translate(0,' + sl + 'px)', clipPath: 'inset(' + (h - sl) + 'px 0 0 0)', opacity: 1, offset: .85 },
+        { transform: 'translate(0,0)', clipPath: 'inset(' + h + 'px 0 0 0)', opacity: 1 }],
+        { duration: 1100, delay: delay || 0, easing: 'steps(14)', fill: 'both' }).onfinish = function () { d.remove(); };
+    }
+    // A Curse: violet smoke in dithered pixels curls up out of the card in a spiral, then sinks into its top-right
+    // corner, where the hex mark appears.
+    function smoke(r, delay) {
+      var cols = ['#2a1240', '#5b2a86', '#8a3ff0', '#c79bff'], n = 22, cx = r.left + r.width / 2, cy = r.top + r.height * 0.7, ex = r.left + 11, ey = r.top + r.height - 10;
+      for (var q = 0; q < n; q++) { var d = piece('dust px', '', cx + ((q * 7) % 11 - 5) * 2, cy); d.style.background = cols[q % 4];
+        var kf = [], ph = q * 0.9; for (var f = 0; f <= 16; f++) { var t = f / 16, x, y;
+          if (t < 0.65) { var u = t / 0.65; x = Math.sin(ph + u * 7) * r.width * 0.28 * (1 - u * 0.4); y = -u * r.height * 0.75; }
+          else { var v = (t - 0.65) / 0.35, x0 = Math.sin(ph + 7) * r.width * 0.168, y0 = -r.height * 0.75; x = x0 + (ex - cx - x0) * v; y = y0 + (ey - cy - y0) * v; }
+          kf.push({ transform: 'translate(' + Math.round(x / 2) * 2 + 'px,' + Math.round(y / 2) * 2 + 'px)', opacity: f === 0 ? 0 : (f + q) % 3 === 0 ? 0.55 : 1 }); }
+        kf[16].opacity = 0;
+        d.animate(kf, { duration: 1300, delay: (delay || 0) + q * 28, easing: 'steps(16)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); }
+    }
+    function sink(r, earth, delay) { for (var q = 0; q < 7; q++) { var d = piece('dust px', '', r.left + r.width * (0.15 + q * 0.11), r.top + r.height - 4); d.style.background = earth ? (q % 2 ? '#5a4632' : '#3b2d20') : (q % 2 ? '#efe6cf' : '#cbbf9e');
         d.animate([{ transform: 'translate(0,-' + (14 + (q % 3) * 6) + 'px)', opacity: 0 }, { transform: 'translate(0,-' + (8 + (q % 3) * 3) + 'px)', opacity: 1, offset: .3 }, { transform: 'translate(' + ((q - 3) * 2) + 'px,2px)', opacity: 0 }],
-          { duration: 600, delay: q * 40, easing: 'steps(6)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); } }
+          { duration: 600, delay: (delay || 0) + q * 40, easing: 'steps(6)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); } }
     // A card arriving: it drops in from two pixels up and settles in steps, like a sprite.
     function land(k) { var el = document.querySelector('.cell [data-cell="' + k + '"]'); var card = el && el.closest('.cell'); if (card && card.animate) card.animate([{ transform: 'translateY(-6px)' }, { transform: 'translateY(1px)', offset: .7 }, { transform: 'translateY(0)' }], { duration: 260, easing: 'steps(4)' }); }
     // A player's ◇ counter counts up to its new value, a step at a time.
@@ -519,7 +547,7 @@
       ev.forEach(function (e, i) {
         if (e.t === 'land' && !calm) land(e.k);
         if (e.t === 'claim' && !calm) { var rcl = cellRect(e.k), st = cur() && cur().state; if (rcl) puff(rcl, (st && st.players[e.p] && st.players[e.p].color) || '#888', 80); }
-        if (e.t === 'buy') popup('Second claim', 'ap', center(), 0);
+        if (e.t === 'buy') { var jb = rectOf('[data-fx="jar"]'); if (jb && !calm) strongbox(jb); popup('Second claim', 'ap', jb || center(), calm ? 0 : 700); }
         if (e.t === 'burn') popup('🔥 ' + BURN_TEXT[e.suit](), 'ap', cellRect(e.k) || center(), 0);
         if (e.t === 'bank') { var jr = rectOf('[data-fx="jar"]'), pr = rectOf('[data-fx="pile-' + e.p + '"]'); if (jr) popup('+' + e.n + '◇ banked', 'vp', jr, 0); if (jr && pr && !calm) { pr.p = e.p; fly('vp', jr, pr, e.n * 3, 200); } }
         if (e.t === 'lastround') banner('🔔 The last round');
@@ -527,8 +555,8 @@
         if (e.t === 'contest') { var rk = cellRect(e.k), cst = cur() && cur().state; if (rk) { popup('⚔ Contested!', 'contest', rk, 0);
             if (!calm && cst) { var lc = (cst.players[e.loser] && cst.players[e.loser].color) || '#888'; ousted(rk, lc); puff(rk, cst.players[e.p].color || '#888', 350); } } }
         if (e.t === 'ascend' && !calm) { var ra = cellRect(e.k); if (ra) helix(ra); }
-        if (e.t === 'bury' && !calm) { var rb = cellRect(e.k); if (rb) sink(rb, e.earth); }
-        if (e.t === 'cursed') { var rc = cellRect(e.k); if (rc) { popup('Cursed!', 'curse', rc, i * 100); if (!calm) flare(rc, i * 100); } }
+        if (e.t === 'bury' && !calm) { var rb = cellRect(e.k); if (rb) { tuck(rb, e.suit, i * 90); sink(rb, e.earth, i * 90 + 420); } }
+        if (e.t === 'cursed') { var rc = cellRect(e.k); if (rc) { popup('Cursed!', 'curse', rc, i * 100 + 950); if (!calm) smoke(rc, i * 100); } }
         if (e.t === 'note') { var rn = cellRect(e.k); if (rn) popup(e.text, e.cls, rn, i * 100); }
         if (e.t === 'crumble') { if (!calm) (e.over ? crush : crack)(e, i); else { var r0 = cellRect(e.k); if (r0) popup(e.over ? 'Overwhelmed!' : 'Ruined', 'ruin', r0); } }
         if (e.t === 'vp') { tick(e.p, e.n); var from = cellRect(e.k) || center(), to = rectOf('[data-fx="pile-' + e.p + '"]'); popup('+' + e.n + '◇', 'vp', from, nV * 150); if (to && !calm) { to.p = e.p; fly('vp', from, to, e.n, 250 + nV * 150); } nV++; }
@@ -628,6 +656,7 @@
     if (c.dtok > 0 && !ruined) h += '<span class="defb" title="' + c.dtok + ' Defense token' + (c.dtok > 1 ? 's' : '') + ': each one stops a Ruin or Curse">' + shieldStack(c.dtok) + (c.dtok > 4 ? '<b>' + c.dtok + '</b>' : '') + '</span>';
     if (!ruined && (c.apBonus || c.vpBonus || c.decay || E.protectedStack(st, k))) h += '<span class="bonusb">' + (E.protectedStack(st, k) ? '⚑' : '') + (c.vpBonus ? '+' + c.vpBonus + '◇' : '') + (c.apBonus ? '+' + c.apBonus + '●' : '') + (c.decay ? ' ☠' + c.decay : '') + '</span>';
     if (!ruined && !E.isGrounds(st, u) && E.shrinePeace(st, k)) h += '<span class="sanct" title="The Shrine’s peace: next to a Shrine, it can’t be contested or Cursed"></span>';
+    if (E.isCursed(st, k) && !ruined && !E.isCovered(st, k)) h += '<span class="hex" title="Cursed"></span>';
     if (c.ascended && !ruined) h += '<span class="ascb" title="Ascended: invulnerable, every suit, +8◇ and +12●">Ascended</span>';
     if (ctx.ui.showOW && !ruined && !noOW) { var oc = E.overwhelmCount(st, k); if (oc && oc.n > 0) h += '<span class="owc' + (oc.n >= oc.th - 1 ? ' hot' : '') + '" title="Enemy-suit neighbors / Overwhelm number">' + oc.n + '/' + oc.th + '</span>'; }
     if (covered) h += '<div class="badge curse">Covering a card</div>';

@@ -1,6 +1,11 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-tuck', date: '17 November 2026', title: 'Tucked pages and violet smoke', notes: [
+    '<b>Burying</b> now shows the card going under: it drops onto its host, slides beneath it, and its edge peeks out below for a moment, like a page tucked into a book.',
+    'A <b>Curse</b> no longer glows. Violet smoke curls up out of the card in dithered pixels and sinks into its lower-left corner, where a small <b>hex eye</b> stays for as long as the Curse does. Cursed cards keep a crisp violet frame.',
+    'A <b>bought claim</b> has its moment too: an iron-bound strongbox appears beside your ●, two coins flip into it and the lid slams shut.'
+  ] },
   { v: 'cs-1.0-pre-title', date: '16 November 2026', title: 'The city at dusk', notes: [
     'Claudenspiel now opens on a <b>title screen</b>: the walled city at dusk, drawn in dithered pixels. Stars twinkle, windows light and go out, smoke rises from the chimneys, a lantern walks the wall, and wind moves through the grass. The menu hangs from the wall as six banners, one per suit.',
     'Tick <b>Skip this screen next time</b> to go straight to the workshop. The crest in the title bar always brings it back.',

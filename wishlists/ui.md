@@ -26,13 +26,13 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 ## Animations
 - ✅ 0.4 (the drop) ○ (the flip) **Card play:** the card flips from the hand in two pixel steps (edge-on, then face-up) and drops into its space with a one-pixel bounce; the dithered suit texture "settles" from coarse to fine as it lands.
 - ✅ 0.4 (the dust) **Claim:** the meeple falls from above the card, lands with a puff of four dithered dust pixels in the player's colour, and the card's border fills in clockwise.
-- ○ **Bought claim:** two coins flip from the ● counter into a small strongbox icon before the meeple appears.
+- ✅ 1.0-pre **Bought claim:** two coins flip from the ● counter into a small strongbox, and its lid slams shut.
 - ✅ 0.5 **Banking:** leftover ● coins slide into the ◇ pile at the end of the turn, each becoming a small gem with a single-frame glint.
 - ✅ 1.0-pre **Ruin:** the card cracks along a jagged pixel line, its colours step down to the grey Ruined palette in three frames, and a few chips fall off the edge.
 - ✅ 1.0-pre **Overwhelm:** the enemy chevrons around the card pulse inward together, then the card is crushed (squashed two pixels shorter) and greys out; the chevrons scatter.
 - ✅ 0.5 **One away from Overwhelm:** the chevrons beat slowly, like a heart, until the danger passes.
-- ○ **Burying:** the card slides under its host, leaving a sliver of its edge visible for a moment, like a page tucked into a book.
-- ○ **Curse:** a wisp of violet dithered smoke curls out of the cursed card and settles as a small mark in its corner.
+- ✅ 1.0-pre **Burying:** the card slides under its host, leaving a sliver of its edge visible for a moment, like a page tucked into a book.
+- ✅ 1.0-pre **Curse:** a wisp of violet dithered smoke curls out of the cursed card and settles as a small pixel hex eye in its corner, which stays while the Curse does. (This replaced the old soft glow, which broke the pixel-art rule.)
 - ✅ 1.0-pre (living terrain) ○ (effects on the board around them) **Grounds:** every Grounds card shows a four-frame pixel diorama of its terrain (Marsh reeds sway, Battlefield embers rise, a cart crosses the Crossroads, the Library's candle gutters, a Barrow wisp drifts, light walks the Shrine's roof). Still to come: Battlefield's scorched ring on the board, Crossroads drawing its paths out to its neighbours as it lands.
 - ✅ 1.0-pre **The Shrine’s peace:** cards next to a Shrine wear a gilded inner frame that breathes slowly, and a small ✠ seal.
 - ✅ 1.0-pre **Ascension:** the five suit colours of the stack spiral upward as a pixel helix, then the card's border turns to gold leaf for good.
