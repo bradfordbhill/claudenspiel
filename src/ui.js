@@ -378,6 +378,7 @@
         ev.push({ t: 'bury', k: k, suit: nd.suit, earth: nd.suit === 'Bone' || td.type === 'Foundation' }); });
       if (b.lastRound && !a.lastRound) ev.push({ t: 'lastround' });
       if (a.cur !== b.cur && b.winner == null && !b.players[b.cur].bot && a.players[a.cur].bot) ev.push({ t: 'yourturn' });
+      if (a.cur !== b.cur && b.winner == null) ev.push({ t: 'handover', p: b.cur });
       if (b.winner != null && a.winner == null) ev.push({ t: 'end', winner: b.winner, arch: b.players[b.winner].arch, humanWon: !b.players[b.winner].bot, anyHuman: b.players.some(function (q) { return !q.bot; }) });
       return ev;
     }
@@ -519,6 +520,12 @@
       for (var a = 0; a < 6; a++) { var e = piece('dust px', '', r.left + r.width * (0.2 + a * 0.12), r.top + r.height * 0.4); e.style.background = a % 2 ? '#7a7066' : '#a99f92';
         e.animate([{ transform: 'translate(0,0)', opacity: 0 }, { transform: 'translate(0,0)', opacity: 1, offset: .2 }, { transform: 'translate(' + ((a - 3) * 3) + 'px,' + (r.height * 0.5) + 'px)', opacity: 0 }], { duration: 900, delay: 420 + a * 50, easing: 'steps(8)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(e); }
     }
+    // Turn handover: the new player's card slides out a few pixels in steps and its colour swatch catches a glint.
+    function handover(p) { var el = document.querySelectorAll('.plist .pcard')[p]; if (!el || !el.animate) return;
+      el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(6px)', offset: .35 }, { transform: 'translateX(4px)', offset: .6 }, { transform: 'translateX(0)' }], { duration: 480, easing: 'steps(6)' });
+      var sw = el.querySelector('.swatch'), r = sw && sw.getBoundingClientRect(); if (!r) return;
+      [[0, 0], [2, -2], [4, -4], [2, 2], [-2, 2]].forEach(function (o, i) { var d = piece('dust px', '', Math.round(r.left + r.width / 2 + o[0] * 2), Math.round(r.top + r.height / 2 + o[1] * 2)); d.style.background = i ? '#fff7d6' : '#ffffff';
+        d.animate([{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 360, delay: 160 + i * 30, easing: 'steps(3)', fill: 'both' }).onfinish = function () { d.remove(); }; }); }
     // A ward: a ring of pale blue pixels draws itself around the card, corner by corner, then the ward seal stays.
     function wardRing(r, delay) {
       var per = 2 * (r.width + r.height), n = 28;
@@ -576,6 +583,7 @@
           if (e.ward) { var rw = cellRect(e.k); if (rw && !calm) wardRing(rw, 500); } }
         if (e.t === 'bank') { var jr = rectOf('[data-fx="jar"]'), pr = rectOf('[data-fx="pile-' + e.p + '"]'); if (jr) popup('+' + e.n + '◇ banked', 'vp', jr, 0); if (jr && pr && !calm) { pr.p = e.p; fly('vp', jr, pr, e.n * 3, 200); } }
         if (e.t === 'lastround') banner('🔔 The last round');
+        if (e.t === 'handover' && !calm) handover(e.p);
         if (e.t === 'end' && !calm) { glory(e.winner); if (e.anyHuman && !e.humanWon) dusk(); }
         if (e.t === 'contest') { var rk = cellRect(e.k), cst = cur() && cur().state; if (rk) { popup('⚔ Contested!', 'contest', rk, 0);
             if (!calm && cst) { var lc = (cst.players[e.loser] && cst.players[e.loser].color) || '#888'; ousted(rk, lc); puff(rk, cst.players[e.p].color || '#888', 350); } } }
@@ -946,7 +954,7 @@
   /* ---------------- inspector ---------------- */
   // Burn (second edition): every card's own one-time effect, in short for the flame tag on hand cards, and the button.
   var BURN_SHORT = { coin: function (x) { return '+' + x.n + '●'; }, draw: function (x) { return 'draw ' + x.n; }, bank: function (x) { return '+' + x.n + '◇'; }, cheap: function (x) { return '−' + x.n + '● next'; }, meeple: function () { return '+1 meeple'; },
-    per: function (x) { return x.n + '◇/' + ({ mine: 'your ' + x.suit, board: x.suit, ruined: 'Ruin', buried: 'buried', suits: 'suit' })[x.of]; }, reclaim: function () { return 'claim again'; }, sword: function () { return 'war'; }, bury: function () { return 'bury'; }, ward: function () { return 'ward'; } };
+    per: function (x) { return x.n + '◇/' + ({ mine: 'your ' + x.suit, board: x.suit, ruined: 'Ruin', buried: 'buried', suits: 'suit' })[x.of]; }, reclaim: function () { return '+1 claim'; }, sword: function () { return 'war'; }, bury: function () { return 'bury'; }, ward: function () { return 'ward'; } };
   function burnShort(d) { return E.defBurn(d).map(function (x) { return BURN_SHORT[x.k] ? BURN_SHORT[x.k](x) : x.k; }).join(' · '); }
   function burnBtn(ctx) {
     var st = ctx.state, u = ctx.ui.hand; if (!st.opts.burn || !u || !myTurn(ctx) || !st.turn || !st.turn.started || st.turn.burned) return '';
@@ -1718,7 +1726,7 @@
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
         '<li><b>A second claim:</b> once a turn, after claiming, press <b>Buy a claim</b> and pay 10● to claim once more.</li>' +
         '<li><b>Grounds:</b> terrain cards. You place them like a Structure, but nobody claims them and they never count as an enemy. <i>Marsh</i>: cards next to it need one more enemy to be Overwhelmed. <i>Battlefield</i>: one fewer. <i>Crossroads</i>: placing next to it costs 3● less. <i>Library</i>: placing a card next to it draws you a card, once a turn. <i>Barrow</i>: burying a card under a card next to it banks you 2◇. <i>Shrine</i>: cards next to it keep the Shrine’s peace (a gilded frame and ✠) and can’t be contested or Cursed.</li>' +
-        '<li><b>Burn</b> (a New game option, on trial): every card has two uses. Once a turn you may burn a card from your hand instead of building it, for the one-time effect on its flame tag: ● (Goblet’s voice), cards (Tome), ◇ (Leaf), a second claim or a <i>ward</i> (Sceptre), war (Sword: rivals’ cards need one fewer enemy to be Overwhelmed this turn) or a burial (Bone). Some burns read the board, such as 1◇ per Ruined card. A warded card (dashed blue frame, ⛨) can’t be Ruined, Overwhelmed, contested or Cursed until its owner’s next turn. The dearer the card, the richer its burn: an Obelisk or a Watchtower burns for 4–5◇.</li>' +
+        '<li><b>Burn</b> (a New game option, on trial): every card has two uses. Once a turn you may burn a card from your hand instead of building it, for the one-time effect on its flame tag: ● (Goblet’s voice), cards (Tome), ◇ (Leaf), a second claim or a <i>ward</i> (Sceptre), war (Sword: rivals’ cards need one fewer enemy to be Overwhelmed this turn) or a burial (Bone). Some burns read the board, such as 1◇ per Ruined card. A warded card (dashed blue frame, ⛨) can’t be Ruined, Overwhelmed, contested or Cursed until its owner’s next turn. The dearer the card, the richer its burn: a Watchtower or a Hilltop Relic burns for 3◇.</li>' +
         '<li><b>Contest</b> (on by default for 2–4 players): once a turn, after placing a card, pay 8● of this turn’s ● to take a rival’s card next to it. Their meeple goes home and yours takes its place; it doesn’t use your claim. Foundations, Ascended and shared cards can’t be taken, and a Cryptkeeper’s buried cards move under its Mausoleum instead of changing hands.</li>' +
         '<li><b>The Chronicle:</b> when a game ends, it tells the story: everyone’s ◇ after every turn, where the Ruins, contests and the last round fell, and the turning points. Open it again with <b>Chronicle</b> above the board.</li>' +
         '<li>A 116-card deck with two or three copies of the staples, and reworked cards: Orchard, Observatory, Obelisk, Fountain, Revenge, Repent and Brambles.</li></ul>' +
@@ -1771,6 +1779,7 @@
         '<li><b>Sandbox:</b> place any card anywhere and watch scores and Overwhelm update.</li>' +
         '<li><b>Library</b> lists every card; <b>Card builder</b> edits one: how it scores, what it sees, where it may touch, its Overwhelm number, what it does when played, and any ability. Saved cards go to the shared library when there is one, otherwise to this browser. Games keep the card set they started with.</li></ul>' },
       { id: 'app', title: 'Install as an app', only: 'online', html: '<p>Play full screen from your home screen: <b>Install app</b> on the Home page (Android, or Chrome and Edge on a computer), or on iPhone and iPad tap <b>Share → Add to Home Screen</b>. Single player and pass-and-play then work offline.</p>' },
+      { id: 'print', title: 'Print and play', html: '<p>Claudenspiel at a real table: <a href="https://bradfordbhill.github.io/claudenspiel/print/claudenspiel-print-and-play.pdf" target="_blank" rel="noopener">the print-and-play PDF</a> has every card in the deck (134, nine to an A4 page with crop marks, each with its burn) and a one-page rules sheet. Bring 8 meeples a player, coins for ● and tokens for ◇.</p>' },
       { id: 'art', title: 'Card art', html: '<p><a href="' + dithry + '" target="_blank" rel="noopener">Dithry</a> is a pixel-art paint tool in the game’s dithered style. Its card mode (<b>Paint cards</b> in the ' + (ONLINE ? 'Cards' : 'Library') + ' page) paints each card’s face, in hand and on the board, behind its text; saving shows it here straight away.</p>' +
         (ONLINE ? '' : '<p>For a card’s small art band, export a 64 × 24 picture from Dithry at 1× and choose it under <b>Artwork</b> in the Card builder.</p>') },
       { id: 'referee', title: 'Referee and undo', html: '<p>' + (ONLINE ? 'In pass-and-play games, every' : 'Every') + ' card on the board has <b>Referee tools</b>: Ruin or flip back, change suit, move, remove, bury, tokens and claims, for anything the rules don’t automate. <b>Undo</b> steps back one action at a time. ' + (ONLINE ? 'Online games have neither: the server enforces the rules.' : 'An effect can be cancelled from the prompt bar.') + '</p>' },

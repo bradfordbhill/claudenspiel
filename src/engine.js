@@ -404,7 +404,7 @@ var KEngine = (function () {
       case 'cheap': return 'your next card this turn costs ' + x.n + '● less';
       case 'meeple': return '+1 meeple';
       case 'per': return x.n + '◇ per ' + PER_WORDS[x.of](x) + (x.max ? ' (up to ' + x.max + '◇)' : '');
-      case 'reclaim': return 'claim again';
+      case 'reclaim': return 'claim once more this turn';
       case 'sword': return 'rivals’ cards need one fewer enemy to be Overwhelmed this turn';
       case 'bury': return 'bury it under a card of yours';
       case 'ward': return 'ward a card of yours until your next turn';
@@ -415,7 +415,7 @@ var KEngine = (function () {
   function burnText(st, uid) { return defBurnText(rawDef(st, uid)); }
   function burnBlock(st, p, uid, k) {
     var pl = st.players[p], S = burnSteps(st, uid), has = function (n) { return S.some(function (x) { return x.k === n; }); };
-    if (has('reclaim')) { if (!st.turn.claimed) return 'Burn it after your claim, to claim again.'; if (pl.meeples <= 0 && !has('meeple')) return 'You have no meeples left.'; }
+    if (has('reclaim') && pl.meeples <= (st.turn.claimed ? 0 : 1) && !has('meeple')) return 'You have no meeple for another claim.';
     if (burnNeedsCell(st, uid) && (k == null || kingdom(st, p).indexOf(k) < 0)) return 'Choose a card of your Kingdom.';
     if (has('ward') && k != null && st.cards[top(st, k)] && st.cards[top(st, k)].ruined) return 'A Ruined card can’t be warded.';
     return null;
@@ -1362,6 +1362,7 @@ var KEngine = (function () {
         if (cc.ascended && cc.claimants.length) return err(st, 'An Ascended card cannot change hands.');
         if (plc.meeples <= 0) return err(st, 'You have no meeples left.');
         cc.claimants.push(p); plc.meeples--; st.turn.claimed = true;
+        if (st.turn.extraClaim > 0) { st.turn.extraClaim--; st.turn.claimed = false; }   // a burn's claim once more
         log(st, plc.name + ' claims ' + cd.name + '.');
         if (!st.opts.sandbox && !st.turn.paid[cu]) { var inc = cardIncome(st, ck); if (inc) { plc.ap += inc; log(st, cd.name + ' produces ' + inc + '● right away.'); } st.turn.paid[cu] = 1; }
         var drain = [ck].concat(n4(ck)).filter(function (x) { var t = top(st, x); return t && active(st, x) && mods(st, t).claimDrain && mods(st, t).claimDrain !== plc.arch; })[0];
@@ -1470,7 +1471,7 @@ var KEngine = (function () {
           if (x.k === 'per') bgain += Math.min(x.max || 99, x.n * burnCount(st, p, x));
           if (x.k === 'cheap') st.turn.cheap = (st.turn.cheap || 0) + x.n;
           if (x.k === 'meeple') bpl.meeples++;
-          if (x.k === 'reclaim') st.turn.claimed = false;
+          if (x.k === 'reclaim') { if (st.turn.claimed) st.turn.claimed = false; else st.turn.extraClaim = (st.turn.extraClaim || 0) + 1; }
           if (x.k === 'sword') { st.turn.swordBurn = true; bboard = true; }
           if (x.k === 'ward') { st.wards = st.wards || {}; st.wards[top(st, a.k)] = p; log(st, rawDef(st, top(st, a.k)).name + ' is warded until ' + bpl.name + '’s next turn.'); }
           if (x.k === 'bury') { st.board[a.k].splice(1, 0, bu); log(st, bn + ' is buried under ' + rawDef(st, top(st, a.k)).name + '.'); onBuried(st, bu, a.k); bboard = true; }

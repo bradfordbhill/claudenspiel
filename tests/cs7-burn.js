@@ -22,10 +22,15 @@ chk('Once', !!E.apply(st,{t:'burn',uid:give(st,'gundy-and-dundy')}).error, 'only
 st=started(); u=give(st,'reconstructed-map'); let h0=st.players[0].hand.length; st=must(st,{t:'burn',uid:u});
 chk('Draw', st.players[0].hand.length===h0-1+3, 'Reconstructed Map burns to draw 3');
 st=started(); u=give(st,'watchtower'); let t0=st.players[0].tokens||0; st=must(st,{t:'burn',uid:u});
-chk('Bank', (st.players[0].tokens||0)===t0+5, 'Watchtower burns for 5◇');
-st=started(); u=give(st,'convert');
-chk('Reclaim', !!E.apply(st,{t:'burn',uid:u}).error, 'a claim-again burn waits for the claim');
-st.turn.claimed=true; st=must(st,{t:'burn',uid:u});
+chk('Bank', (st.players[0].tokens||0)===t0+3, 'Watchtower burns for 3◇');
+st=started(); u=give(st,'convert'); st=must(st,{t:'burn',uid:u});
+chk('Reclaim', st.turn.extraClaim===1&&!st.turn.claimed, 'before the claim, Convert burns for one more claim this turn');
+st=must(st,{t:'sbPlace',id:'gundy-and-dundy',k:'0,0'}); st=must(st,{t:'sbPlace',id:'gundy-and-dundy',k:'1,0'}); st.turn.lastKey='0,0';
+st=must(st,{t:'claim',k:'0,0'});
+chk('Reclaim', !st.turn.claimed&&!st.turn.extraClaim, 'the first claim leaves one more');
+st=must(st,{t:'claim',k:'1,0'});
+chk('Reclaim', st.turn.claimed, 'and the second claim uses it');
+st=started(); u=give(st,'convert'); st.turn.claimed=true; st=must(st,{t:'burn',uid:u});
 chk('Reclaim', st.turn.claimed===false, 'after the claim, Convert burns to claim again');
 st=started(); u=give(st,'errata'); let m0=st.players[0].meeples; st=must(st,{t:'burn',uid:u});
 chk('Meeple', st.players[0].meeples===m0+1, 'Errata burns for a meeple');
@@ -33,7 +38,7 @@ chk('Meeple', st.players[0].meeples===m0+1, 'Errata burns for a meeple');
 let fk; [st,fk]=withFoundation(); u=give(st,'obelisk');
 chk('Bury', !!E.apply(st,{t:'burn',uid:u}).error, 'a burial burn needs a card of your Kingdom');
 t0=st.players[0].tokens||0; st=must(st,{t:'burn',uid:u,k:fk});
-chk('Bury', st.board[fk][1]===u&&!st.discard.includes(u)&&(st.players[0].tokens||0)===t0+4, 'Obelisk is buried under your card and banks 4◇');
+chk('Bury', st.board[fk][1]===u&&!st.discard.includes(u)&&(st.players[0].tokens||0)===t0+2, 'Obelisk is buried under your card and banks 2◇');
 // Per: Alchemy Lab banks 1◇ per suit in the Kingdom.
 [st,fk]=withFoundation(); u=give(st,'alchemy-lab'); t0=st.players[0].tokens||0; const g=E.burnGain(st,0,u); st=must(st,{t:'burn',uid:u});
 chk('Per', g===1&&(st.players[0].tokens||0)===t0+1, 'Alchemy Lab banks 1◇ for the one suit in a new Kingdom');

@@ -31,6 +31,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 1.0-pre **Ruin:** the card cracks along a jagged pixel line, its colours step down to the grey Ruined palette in three frames, and a few chips fall off the edge.
 - ✅ 1.0-pre **Overwhelm:** the enemy chevrons around the card pulse inward together, then the card is crushed (squashed two pixels shorter) and greys out; the chevrons scatter.
 - ✅ 0.5 **One away from Overwhelm:** the chevrons beat slowly, like a heart, until the danger passes.
+- ✅ 1.0-pre **Burning** (per-card burns): the card goes up in dithered pixel flames that climb in steps from yellow to ember red, with sparks and falling ash; a ward draws a ring of pale blue pixels around its card and leaves a ⛨ seal.
 - ✅ 1.0-pre **Burying:** the card slides under its host, leaving a sliver of its edge visible for a moment, like a page tucked into a book.
 - ✅ 1.0-pre **Curse:** a wisp of violet dithered smoke curls out of the cursed card and settles as a small pixel hex eye in its corner, which stays while the Curse does. (This replaced the old soft glow, which broke the pixel-art rule.)
 - ✅ 1.0-pre (living terrain) ○ (effects on the board around them) **Grounds:** every Grounds card shows a four-frame pixel diorama of its terrain (Marsh reeds sway, Battlefield embers rise, a cart crosses the Crossroads, the Library's candle gutters, a Barrow wisp drifts, light walks the Shrine's roof). Still to come: Battlefield's scorched ring on the board, Crossroads drawing its paths out to its neighbours as it lands.
@@ -38,7 +39,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 1.0-pre **Ascension:** the five suit colours of the stack spiral upward as a pixel helix, then the card's border turns to gold leaf for good.
 - ✅ 0.5 (the tick) **Score changes:** the ◇ number ticks up digit by digit; big gains float a small "+6◇" above the card that earned it.
 - ✅ 0.4 (the banner) **Race bar:** the leader's marker leans forward; when someone reaches the target, a bell icon swings on the bar and the last-round banner unrolls from the top like a scroll.
-- ○ **Turn handover:** the active player's card in the player list slides out a few pixels and their crest catches a glint; bot turns show a small hourglass that turns over once per move.
+- ✅ 1.0-pre (the slide and glint) ○ (the hourglass) **Turn handover:** the active player's card in the player list slides out a few pixels and their crest catches a glint; bot turns show a small hourglass that turns over once per move.
 - ✅ 0.5 **The Genius thinking:** a candle beside its name, with the flame flickering faster the longer it thinks.
 - ✅ 1.0-pre **Deeds:** a wax seal stamps onto the toast when a deed is earned, then the scroll rolls itself up into the Deeds tab.
 - ✅ 1.0-pre **Victory:** the winner's Kingdom cards light up one by one in order of value, then a pixel banner with their crest unfurls over the board. Defeat is quieter: the board dims and the wind picks up.
@@ -55,6 +56,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 1.0-pre **Overwhelm:** a low drum roll that cuts off as the card is crushed; a deeper version when a Foundation falls.
 - ○ **One away from Overwhelm:** a faint heartbeat under the music while the danger lasts, only for your own cards.
 - ✅ 0.4 **Curse:** a whispered breath and a minor-key pluck on a lute.
+- ✅ 1.0-pre **Burning** (per-card burns): the card goes up in dithered pixel flames that climb in steps from yellow to ember red, with sparks and falling ash; a ward draws a ring of pale blue pixels around its card and leaves a ⛨ seal.
 - ✅ 1.0-pre **Burying:** a spade into earth for Bone and Foundation burials; a book closing for everything else.
 - ✅ 0.4 **Grounds:** Marsh: frogs and water; Battlefield: a distant horn; Crossroads: cart wheels on gravel.
 - ✅ 1.0-pre **The new Grounds:** Library: rustling pages and a reading-room bell; Barrow: a low earthen thud; Shrine: a soft rising chord.

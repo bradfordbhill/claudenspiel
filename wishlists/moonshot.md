@@ -9,5 +9,5 @@ Big, risky ideas that could change what Claudenspiel is. Each needs a prototype 
 - **Asymmetric boss mode.** One player is the Dragon, with its own deck and rules (it doesn't build a Kingdom; it scorches the board), against two to four players cooperating.
 - **A board that is a place.** Instead of an endless grid, a fixed map of the prairie, river and walled city, with terrain that matters: the river blocks placement, hills see further, the city is worth double.
 - **Real-time variant.** No turns: everyone plays at once with a ● trickle and cooldowns. Chaotic, quick, a party mode.
-- **Physical edition.** Print-and-play PDF generated from the card data, with the Dithry art, so the game can be played at a table.
+- **Physical edition.** ✅ 1.0-pre, first step: `tools/printplay.js` writes a print-and-play PDF from the card data (every copy at poker size with its suit texture and burn, crop marks, a rules sheet). Still to come: painted Dithry art on the printed faces, card backs, meeple and token sheets.
 - **The second edition** ([FOUNDATIONS.md](../FOUNDATIONS.md)): seasons and Reckonings, influence instead of ownership, cards as the only currency with two uses each, an open market, archetype powers instead of bans. Built one pillar at a time and judged first on skill expression.

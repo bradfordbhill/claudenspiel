@@ -2,7 +2,7 @@
 
 Claude's own fork of Kartenspiel: a long-running side project to grow the game into the best version it can be, with more cards, more mechanics, a new interface and new design, without being bound by the original's vision. Kartenspiel ([bradfordbhill/kartenspiel](https://github.com/bradfordbhill/kartenspiel)) stays exactly as it is; this repository is separate.
 
-Play it at **https://bradfordbhill.github.io/claudenspiel/**, or open `index.html` in a browser: single player against bots (greedy, tactician, warlord, Genius), pass-and-play, the sandbox and the card builder. Every game ends with its Chronicle: the score race turn by turn and the turning points. There is no online play yet.
+Play it at **https://bradfordbhill.github.io/claudenspiel/**, or open `index.html` in a browser: single player against bots (greedy, tactician, warlord, Genius), pass-and-play, the sandbox and the card builder. Every game ends with its Chronicle: the score race turn by turn and the turning points. There is no online play yet, but there is a [print-and-play PDF](print/claudenspiel-print-and-play.pdf) for a real table.
 
 ## The charter
 
@@ -40,6 +40,7 @@ for t in tests/*.js; do node "$t"; done
 node tools/sim2.js 2 0 200 /tmp/cs-p2.json     # bot self-play: players, first game, last game, output
 node tools/rewrite-data.js changes.json         # apply a batch of card changes to src/data.js, keeping its layout
 node tools/logo.js                              # redraw the logo (needs Playwright and the network)
+node tools/printplay.js                         # the print-and-play PDF (print/), every card and a rules sheet; needs Playwright
 node tools/anatomy.js 2 0 500 /tmp/a.json         # per-turn records of bot games, for FOUNDATIONS.md (FLAT, AUDITS, SEASONS, RELEASE try the experiments)
 ```
 
@@ -51,7 +52,7 @@ node tools/anatomy.js 2 0 500 /tmp/a.json         # per-turn records of bot game
 
 | Version | What changed |
 |---|---|
-| 1.0-pre | Library, Barrow and Shrine: a Grounds card for every suit (deck 128); cards in the Shrine's peace can't be contested or Cursed. Archetype mastery (ten levels, titles, strategy notes). Reckonings tested on a contestable board and left off (skill gap +18.2 against contest's +24.4). Ability sounds; undo shows the bot moves it takes back. Mausoleum +1◇ for every two buried cards elsewhere (4-player Cryptkeeper 0.65 → 1.00). Ruins crack and Overwhelms crush, each with its own sound. Contest (pay 8● to take a rival's adjacent card), on by default for 2–4 players: skill gap +10 → +24.4 (Genius 73% against a tactician). With it, a Cryptkeeper's buried cards follow it home. Death Ray 9● and 3◇. The Chronicle (each game's story, drawn at its end) and a victory sequence. Sounds and motion for contests and burials; hover lift and breathing legal spaces |
+| 1.0-pre | Per-card burns (on trial): every card burns for its own one-time effect, including wards and discounts, with pixel flames. Library, Barrow and Shrine: a Grounds card for every suit (deck 128); cards in the Shrine's peace can't be contested or Cursed. Archetype mastery (ten levels, titles, strategy notes). Reckonings tested on a contestable board and left off (skill gap +18.2 against contest's +24.4). Ability sounds; undo shows the bot moves it takes back. Mausoleum +1◇ for every two buried cards elsewhere (4-player Cryptkeeper 0.65 → 1.00). Ruins crack and Overwhelms crush, each with its own sound. Contest (pay 8● to take a rival's adjacent card), on by default for 2–4 players: skill gap +10 → +24.4 (Genius 73% against a tactician). With it, a Cryptkeeper's buried cards follow it home. Death Ray 9● and 3◇. The Chronicle (each game's story, drawn at its end) and a victory sequence. Sounds and motion for contests and burials; hover lift and breathing legal spaces |
 | 0.9 | Burn on trial (once a turn, discard a card for a suit effect); the Genius plans market picks and burns. Market: skill gap +10.9 (level with the base game); Burn: +7.0 (no gain) |
 | 0.8 | A sharper Genius: plans like a tactician, judges like one, looks ahead like a Genius (+10 points over a tactician, paired) |
 | 0.7 | You'll Regret That can be played from hand (3●: a card next to one of yours makes no ●); no dead cards left |

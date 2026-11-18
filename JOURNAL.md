@@ -2,6 +2,36 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 18 November 2026 · 1.0-pre, every card burns its own way; print and play
+
+**Why per-card burns.** FOUNDATIONS asked for every card to have two uses: build it for its lasting effect, or burn it once. 0.9 tried one burn per suit and it added no skill (+7.0 against the base game's +10), because six interchangeable effects are just more of the same option. This time every one of the 87 non-Foundation cards has its own burn (`KData.BURNS`), written from ten steps: ●, cards, ◇, ◇ per something on the board (your Leaf cards, Goblets anywhere, Ruined cards, your buried cards, your suits), a discount on the next card, a meeple, one more claim, war, a burial, and a new one, the **ward** (a card of yours can't be Ruined, Overwhelmed, contested or Cursed until your next turn). Each suit keeps its voice (Goblet ●, Tome cards, Leaf ◇, Sceptre claims and wards, Sword war, Bone burial), and the dearer the build, the richer the burn. Cards made in the card builder, and libraries saved before today, still burn by suit.
+
+**The first table was too generous.** Paired against the same deals without Burn (contest on, mixed greedy, tactician and raider bots, sim2 seeds 0+, 1,300-second runs):
+
+| | 2 players (607 games) | 3 players (348) |
+|---|---|---|
+| Without Burn | spread 0.31 · 6.20 rounds | spread 0.23 · 5.48 rounds |
+| First table | spread 0.17 · 5.53 rounds | spread 0.36 · 4.95 rounds |
+| **As shipped** | **spread 0.22 · 5.80 rounds** | spread 0.44 · 5.16 rounds |
+
+Burns ran at 10.9 a game at 2 players (nearly one a turn), and the most burned cards were the flat-◇ ones: Burrow 3◇, Topiary 4◇, Obelisk 4◇, Hilltop Relic 5◇. Building was losing to burning, and games lost two-thirds of a round. The shipped table halves those (Obelisk 2◇ and a burial, Topiary and Tithe 2◇, Watchtower and Hilltop Relic 3◇, Burrow and Acorn 1◇ and a few ●) and caps every "per" burn at 4◇ (Alchemy Lab 5◇). Now the most burned cards are the cheap draw-and-● ones (Errata, Procession, Scrying Pool, Fountain), which is the right place for them. "Claim again" also works before your claim now (a burn for *one more claim this turn*); bots still almost never use it, because a second claim must be on or next to the card just placed.
+
+**Skill (the yardstick).** Genius against a tactician in the same seat on the same deal, 2 players, contest on:
+
+| | Deals | Genius | Tactician | Gap |
+|---|---|---|---|---|
+| Without Burn | 187 | 73.3% | 47.1% | +26.2 |
+| First table | 187 (same deals) | | | +25.1 |
+| As shipped | 150 (same deals) | 78.7% | 47.3% | **+31.3** (without Burn on those deals: +28.7) |
+
+**Decision: Burn stays on trial, off by default, with the new table.** It doesn't cost skill (every reading is within noise, about ±8), it brings the 2-player archetypes closer, and it gives every card a second life, which is the point. It doesn't yet clearly add skill, and the 3-player reading (Warmonger 0.78, Cryptkeeper 1.21) is on too few games to trust in either direction. Before it can be on by default: 500+ paired 3-player games, and a claim-again burn that bots can actually use.
+
+**Feel.** A flame tag under every hand card shows its burn in short (`+8●`, `draw 3`, `1◇/Ruin`, `ward · +2●`); the button shows the long form and what a "per" burn is worth right now. Burning sets the card alight: dithered pixel flames climb out of the hand in steps from yellow to ember red, with sparks and falling ash. A ward draws a ring of pale blue pixels around its card and leaves a dashed frame and a ⛨ seal. The Library shows each card's burn under its preview. When the turn passes, the new player's card slides out a few pixels and its swatch catches a glint (UI wishlist: turn handover).
+
+**Print and play** (moonshot, first step). `tools/printplay.js` lays out every copy of every card (134 with the Foundations) at poker size, nine to an A4 page with crop marks, each with the game's own dithered suit texture and its flame box, then a one-page rules sheet. It's in `print/` and linked from Help. Writing the rules sheet was a good test of the rules themselves: the enemy-suit rule ("Sword, and the suit your archetype can't play") is the one a new player can't guess from the cards.
+
+**Next:** 3-player Burn on 500+ paired games; a claim-again burn that is usable (perhaps "claim any unclaimed card"); card backs and token sheets for the print edition.
+
 ## 17 November 2026 · 1.0-pre, the 3-player gap that wasn't; tucked pages and violet smoke
 
 **The 3-player check.** Last time's 3-player numbers (Cryptkeeper 1.22, Archbishop 0.80) came from about 240 appearances each, so I set up a paired test on fresh deals before changing any card: 257 3-player games (deals 60000+, contest on, mixed greedy, tactician and raider bots, 1,300-second runs), the same deals for each variant.
