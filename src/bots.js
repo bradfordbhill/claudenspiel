@@ -206,16 +206,24 @@ var KBots = (function () {
   // Burn (opts.burn): try burning each card in hand (a Bone under each card of the Kingdom, a Sceptre followed by its best
   // claim) and keep the best, if it beats what the card is worth kept. ● and cards in hand count by rough exchange rates
   // (6● bank for 1◇; a card in hand is worth about 0.6◇ of pace), since the score alone can't see them.
+  // A burn that buries or wards is tried on each card of the Kingdom (most valuable first for a ward); one that claims again
+  // is followed by its best claim.
+  function burnTries(st,p,u){ if(!E.burnNeedsCell(st,u)) return [{t:'burn',uid:u}]; let ks=E.kingdom(st,p);
+    if(E.burnSteps(st,u).some(x=>x.k==='ward')) ks=ks.filter(k=>!st.cards[E.top(st,k)].ruined).sort((a,b)=>E.cardValue(st,b,p)-E.cardValue(st,a,p));
+    return ks.slice(0,8).map(k=>({t:'burn',uid:u,k})); }
+  function reclaims(st,u){ return E.burnSteps(st,u).some(x=>x.k==='reclaim'); }
   let BURN_KEEP=+(typeof process!=='undefined'&&process.env&&process.env.CS_BURNKEEP!=null?process.env.CS_BURNKEEP:0.5);
   function burnCard(st,p,strat,stats){ if(!st.opts.burn||!st.turn||!st.turn.started||st.turn.burned||st.pending||st.res) return st;
     const pr=profile(st,p), ks=suitsFor(st,p,pr), pl=st.players[p]; let best=null,bv=0.3;
-    const worth=(s)=>evalState(st,s,p,strat)+(strat==='gsim'?0:0.15*((s.players[p].ap||0)-(pl.ap||0))+0.6*(s.players[p].hand.length-pl.hand.length+1));
+    // Per-card burns: a meeple, a discount and a ward are worth something the score can't see yet.
+    const wardV=(s)=>{ let v=0; if(s.wards) for(const u in s.wards) if(!(st.wards&&st.wards[u]!=null)){ const k=E.keys(s).find(x=>E.top(s,x)===u); if(k) v+=0.12*E.cardValue(s,k,p); } return v; };
+    const worth=(s)=>evalState(st,s,p,strat)+(strat==='gsim'?0:0.15*((s.players[p].ap||0)-(pl.ap||0))+0.6*(s.players[p].hand.length-pl.hand.length+1)+0.8*(s.players[p].meeples-pl.meeples)+0.12*((s.turn&&s.turn.cheap)||0)+wardV(s));
     for(const u of pl.hand){ const d=E.rawDef(st,u); if(d.type==='Foundation') continue; const kv=BURN_KEEP*keepValue(st,p,u,pr,ks);
-      const tries=d.suit==='Bone'?E.kingdom(st,p).slice(0,8).map(k=>({t:'burn',uid:u,k})):[{t:'burn',uid:u}];
+      const tries=burnTries(st,p,u);
       for(const a of tries){ let s=ap(st,a); if(!s) continue; if(s.pending) s=resolve(s,p,strat); if(!s||s.pending) continue;
-        if(d.suit==='Sceptre'){ const c=bestClaim(s,p,strat); if(!c) continue; s=c; }
+        if(reclaims(st,u)){ const c=bestClaim(s,p,strat); if(!c) continue; s=c; }
         const v=worth(s)-kv; if(v>bv){bv=v;best={s,d};} } }
-    if(!best) return st; stats.burned=stats.burned||{}; stats.burned[best.d.suit]=(stats.burned[best.d.suit]||0)+1; return best.s; }
+    if(!best) return st; stats.burned=stats.burned||{}; stats.burned[best.d.id]=(stats.burned[best.d.id]||0)+1; return best.s; }
   // Contest (opts.contest): take a rival's card when the swing beats what the ● would bank (8● ≈ 1.3◇).
   function contestCard(st,p,strat,stats){ let best=null,bv=strat==='gsim'?1:1.3;
     E.contestOptions(st,p).forEach(k=>{ const s=ap(st,{t:'contest',k}); if(!s) return; const v=evalState(st,s,p,strat); if(v>bv){bv=v;best=s;} });
@@ -317,7 +325,7 @@ var KBots = (function () {
       // Second-edition trials: each market card taken first, and each card burned first, are openings too.
       if(w.opts.market&&w.turn.toDraw>0) (w.market||[]).concat(['deck']).forEach(u=>add(ap(w,{t:'draw',from:u}),'D'+u));
       if(w.opts.burn&&!w.turn.burned) pl.hand.forEach(u=>{ const d=E.rawDef(w,u); if(d.type==='Foundation') return;
-        (d.suit==='Bone'?E.kingdom(w,p).slice(0,8).map(k=>({t:'burn',uid:u,k})):[{t:'burn',uid:u}]).forEach(a=>{ let s=ap(w,a); if(s&&s.pending) s=resolve(s,p,pol); if(s&&d.suit==='Sceptre') s=bestClaim(s,p,pol); add(s,'X'+u); }); }); }
+        burnTries(w,p,u).forEach(a=>{ let s=ap(w,a); if(s&&s.pending) s=resolve(s,p,pol); if(s&&reclaims(w,u)) s=bestClaim(s,p,pol); add(s,'X'+u); }); }); }
     out.sort((a,b)=>b.v-a.v); const seen={}, keep=[];
     for(const o of out){ if((seen[o.key]||0)>=2&&o.key!=='line') continue; seen[o.key]=(seen[o.key]||0)+1; keep.push(o); if(keep.length>=GENIUS.lines) break; }
     if(!keep.some(o=>o.key==='line')) keep.push(out.find(o=>o.key==='line'));

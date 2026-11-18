@@ -1,6 +1,12 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-burns', date: '18 November 2026', title: 'Every card burns its own way', notes: [
+    '<b>Burn</b> (a New game option, still on trial) now gives <b>every card its own burn</b> instead of one effect per suit. A flame tag under each card in your hand shows what burning it would do: Spice Caravan burns for 8●, Reconstructed Map draws 3, an Obelisk is buried under your own card and banks 4◇, Trebuchet banks 1◇ per Ruined card on the board.',
+    'Two new burn effects. A <b>ward</b> (dashed blue frame and ⛨) keeps a card of yours safe from Ruin, Overwhelm, contest and Curses until your next turn. A <b>discount</b> makes the next card you place this turn cheaper.',
+    'Burning a card sets it alight: dithered pixel flames climb out of your hand in steps, sparks drift up and a little ash falls. A ward draws a ring of pale blue pixels around its card.',
+    'The Library shows each card’s burn under its preview.'
+  ] },
   { v: 'cs-1.0-pre-tuck', date: '17 November 2026', title: 'Tucked pages and violet smoke', notes: [
     '<b>Burying</b> now shows the card going under: it drops onto its host, slides beneath it, and its edge peeks out below for a moment, like a page tucked into a book.',
     'A <b>Curse</b> no longer glows. Violet smoke curls up out of the card in dithered pixels and sinks into its lower-left corner, where a small <b>hex eye</b> stays for as long as the Curse does. Cursed cards keep a crisp violet frame.',

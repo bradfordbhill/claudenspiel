@@ -11,7 +11,7 @@ var KData = (function () {
       income: 0, text: '', place: ALL4.slice(), overwhelm: null,
       score: { kind: 'none' }, sees: { area: 'none' }, onPlay: [],
       curse: null, ability: null, perTurn: null, incomePerToken: 0, mods: {},
-      archetype: '', weakTo: '', art: '', note: ''
+      archetype: '', weakTo: '', art: '', note: '', burn: null
     };
     for (var k in o) d[k] = o[k];
     return d;
@@ -34,6 +34,7 @@ var KData = (function () {
   //   mods                  special rule flags the engine looks for (adjacentCost, multiClaim, reaction, ...)
   //   archetype, weakTo     Foundations only: the archetype it belongs to, and the suit that archetype can't play
   //   art                   image as a data URL ('' for none)
+  //   burn                  its one-time effect when burned from hand (see BURNS below); null burns by its suit
   var STARTER = [
    {
     "id": "mausoleum",
@@ -3583,6 +3584,107 @@ var KData = (function () {
    }
   ].map(c);
 
-  return { SUITS: SUITS, TYPES: TYPES, ALL4: ALL4, STARTER: STARTER, make: c };
+  // Per-card burns (Claudenspiel 1.0, second edition): once a turn a card in hand may be burned (discarded) for its own
+  // one-time effect instead of being built. Each suit keeps its voice (Goblet ●, Tome cards, Leaf ◇, Sceptre claims and
+  // protection, Sword war, Bone burial), and each card's burn pulls against its lasting use: the dearer the build, the
+  // richer the burn, and many burns read the board. Steps, run in order (Engine: burnSteps, runBurn):
+  //   coin n · draw n · bank n◇ · cheap n (next card placed this turn costs n● less) · meeple (+1 meeple for good)
+  //   per {of, suit, n, max}: bank n◇ for each of: 'mine' your cards of suit · 'board' cards of suit anywhere ·
+  //        'ruined' Ruined cards on the board · 'buried' buried cards in your Kingdom · 'suits' suits in your Kingdom
+  //   reclaim (claim again this turn) · sword (rivals' cards need one fewer enemy to be Overwhelmed this turn)
+  //   bury (it goes under a card of your Kingdom instead of the discard) · ward (a card of your Kingdom can't be
+  //   Ruined, Overwhelmed, contested or Cursed until your next turn)
+  var BURNS = {
+    'burial-rites': [{ k: 'bury' }, { k: 'bank', n: 1 }],
+    'embalm': [{ k: 'bury' }, { k: 'draw', n: 1 }],
+    'living-death': [{ k: 'per', of: 'buried', n: 1, max: 5 }],
+    'sarcophagus': [{ k: 'bury' }, { k: 'bank', n: 2 }],
+    'procession': [{ k: 'draw', n: 1 }, { k: 'coin', n: 3 }],
+    'obelisk': [{ k: 'bury' }, { k: 'bank', n: 4 }],
+    'last-will': [{ k: 'draw', n: 1 }, { k: 'cheap', n: 6 }],
+    'funeral-pyre': [{ k: 'bury' }, { k: 'coin', n: 2 }],
+    'crumbling-ossuary': [{ k: 'per', of: 'ruined', n: 1, max: 4 }],
+    'ravens-beak': [{ k: 'sword' }, { k: 'coin', n: 2 }],
+    'eye-of-newt': [{ k: 'coin', n: 5 }],
+    'flowers': [{ k: 'bury' }, { k: 'coin', n: 3 }],
+    'decay': [{ k: 'sword' }, { k: 'bank', n: 1 }],
+    'barrow': [{ k: 'bury' }, { k: 'bank', n: 1 }],
+    'gluttony': [{ k: 'coin', n: 4 }, { k: 'draw', n: 1 }],
+    'gundy-and-dundy': [{ k: 'coin', n: 6 }],
+    'choreography': [{ k: 'per', of: 'mine', suit: 'Goblet', n: 1, max: 4 }, { k: 'coin', n: 2 }],
+    'fairgrounds': [{ k: 'coin', n: 7 }],
+    'secrets-and-whispers': [{ k: 'draw', n: 1 }, { k: 'cheap', n: 4 }],
+    'den-of-sin': [{ k: 'per', of: 'board', suit: 'Goblet', n: 1, max: 6 }],
+    'ballroom': [{ k: 'draw', n: 2 }, { k: 'coin', n: 2 }],
+    'spice-caravan': [{ k: 'coin', n: 8 }],
+    'sleeping-giant': [{ k: 'meeple' }, { k: 'coin', n: 2 }],
+    'intoxicate': [{ k: 'coin', n: 5 }],
+    'fortune-teller': [{ k: 'draw', n: 1 }, { k: 'bank', n: 1 }],
+    'royal-seal': [{ k: 'reclaim' }],
+    'vineyard': [{ k: 'per', of: 'mine', suit: 'Leaf', n: 1, max: 4 }, { k: 'coin', n: 2 }],
+    'bread-and-circuses': [{ k: 'bank', n: 3 }],
+    'crossroads': [{ k: 'cheap', n: 6 }],
+    'acorn': [{ k: 'bank', n: 2 }],
+    'irrigation-canals': [{ k: 'per', of: 'mine', suit: 'Leaf', n: 1, max: 5 }],
+    'turn-the-soil': [{ k: 'draw', n: 2 }],
+    'burrow': [{ k: 'bank', n: 3 }],
+    'fountain': [{ k: 'bank', n: 2 }, { k: 'draw', n: 1 }],
+    'topiary': [{ k: 'bank', n: 4 }],
+    'volcanic-soil': [{ k: 'per', of: 'buried', n: 2, max: 6 }],
+    'wise-old-tree': [{ k: 'ward' }, { k: 'bank', n: 1 }],
+    'proliferation': [{ k: 'draw', n: 1 }, { k: 'bank', n: 2 }],
+    'overgrowth': [{ k: 'per', of: 'ruined', n: 2, max: 6 }],
+    'mildew': [{ k: 'sword' }, { k: 'bank', n: 1 }],
+    'brambles': [{ k: 'ward' }],
+    'destroying-angel': [{ k: 'sword' }, { k: 'coin', n: 3 }],
+    'marsh': [{ k: 'ward' }, { k: 'bank', n: 1 }],
+    'communion': [{ k: 'reclaim' }, { k: 'draw', n: 1 }],
+    'absolution': [{ k: 'ward' }, { k: 'bank', n: 1 }],
+    'convert': [{ k: 'reclaim' }],
+    'inquisition': [{ k: 'draw', n: 2 }],
+    'sanctuary': [{ k: 'ward' }, { k: 'coin', n: 3 }],
+    'lay-on-hands': [{ k: 'ward' }, { k: 'draw', n: 1 }],
+    'tithing-hall': [{ k: 'per', of: 'board', suit: 'Sceptre', n: 1, max: 6 }],
+    'tithe': [{ k: 'bank', n: 4 }],
+    'confessional': [{ k: 'meeple' }, { k: 'bank', n: 2 }],
+    'flying-buttresses': [{ k: 'ward' }, { k: 'bank', n: 2 }],
+    'exile': [{ k: 'reclaim' }],
+    'youll-regret-that': [{ k: 'ward' }, { k: 'draw', n: 1 }],
+    'repent': [{ k: 'draw', n: 1 }, { k: 'coin', n: 3 }],
+    'eye-for-an-eye': [{ k: 'bank', n: 3 }],
+    'shrine': [{ k: 'reclaim' }, { k: 'bank', n: 1 }],
+    'phalanx': [{ k: 'sword' }, { k: 'coin', n: 2 }],
+    'encampment': [{ k: 'ward' }, { k: 'coin', n: 2 }],
+    'halberd-strike': [{ k: 'sword' }, { k: 'coin', n: 2 }],
+    'portcullis': [{ k: 'sword' }, { k: 'draw', n: 1 }],
+    'trebuchet': [{ k: 'per', of: 'ruined', n: 1, max: 5 }],
+    'watchtower': [{ k: 'bank', n: 5 }],
+    'seizure': [{ k: 'draw', n: 2 }],
+    'rear-guard': [{ k: 'ward' }, { k: 'coin', n: 2 }],
+    'revenge': [{ k: 'sword' }, { k: 'coin', n: 3 }],
+    'tunnel': [{ k: 'sword' }, { k: 'draw', n: 1 }],
+    'usurp': [{ k: 'reclaim' }],
+    'artillery': [{ k: 'sword' }, { k: 'coin', n: 3 }],
+    'front-lines': [{ k: 'per', of: 'board', suit: 'Sword', n: 1, max: 5 }],
+    'standard-bearer': [{ k: 'ward' }, { k: 'bank', n: 1 }],
+    'battlefield': [{ k: 'sword' }, { k: 'cheap', n: 3 }],
+    'eureka': [{ k: 'draw', n: 2 }],
+    'hilltop-relic': [{ k: 'bank', n: 5 }],
+    'public-forum': [{ k: 'per', of: 'mine', suit: 'Tome', n: 2, max: 6 }],
+    'reconstructed-map': [{ k: 'draw', n: 3 }],
+    'watchmakers-shop': [{ k: 'draw', n: 2 }, { k: 'coin', n: 2 }],
+    'death-ray': [{ k: 'sword' }, { k: 'draw', n: 1 }],
+    'alchemy-lab': [{ k: 'per', of: 'suits', n: 1, max: 6 }],
+    'errata': [{ k: 'meeple' }, { k: 'draw', n: 1 }],
+    'university': [{ k: 'meeple' }, { k: 'draw', n: 1 }],
+    'overwhelming-evidence': [{ k: 'bank', n: 4 }, { k: 'draw', n: 1 }],
+    'deep-thought': [{ k: 'draw', n: 1 }, { k: 'coin', n: 3 }],
+    'scrying-pool': [{ k: 'draw', n: 2 }],
+    'post-office': [{ k: 'per', of: 'suits', n: 1, max: 5 }],
+    'library': [{ k: 'draw', n: 2 }]
+  };
+  STARTER.forEach(function (d) { d.burn = BURNS[d.id] || null; });
+
+  return { SUITS: SUITS, TYPES: TYPES, ALL4: ALL4, STARTER: STARTER, BURNS: BURNS, make: c };
 })();
 if (typeof module !== 'undefined') module.exports = KData;

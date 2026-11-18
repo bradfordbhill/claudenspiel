@@ -177,3 +177,14 @@ svg.chron .hc:hover { fill-opacity: .07; }
 .fx.strongbox::after { content: ''; position: absolute; left: 7px; top: 4px; width: 4px; height: 4px; background: #f3d27a; border: 1px solid #1a1410; }
 .fx.strongbox i { position: absolute; left: -2px; top: -7px; width: 20px; height: 5px; background: #6e4a2c; border: 2px solid #1a1410; transform-origin: 0 100%; }
 .fx.coin { width: 6px; height: 6px; background: #f3d27a; box-shadow: inset -2px -2px 0 #b8892e; }
+
+/* Per-card burns (1.0): the flame tag on hand cards, the burn line in the Library, the ward seal on the board. */
+.hcard .burntag { position: absolute; left: 3px; right: 3px; bottom: 3px; z-index: 2; background: #2a1410; color: #ffd27a; border: 1px solid #e8541c; font-size: 10px; line-height: 13px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; image-rendering: pixelated; }
+.hcard .burntag::before { content: '🔥'; font-size: 9px; margin-right: 2px; }
+.hcard.blocked .burntag { bottom: 3px; }
+.hcard .blocktag { bottom: 20px; }
+.burnline { margin: 6px 0 0; padding: 4px 6px; background: #2a1410; color: #ffd27a; border: 1px solid #e8541c; }
+.btn.burn { background: #3a1a12; color: #ffd27a; border-color: #e8541c; }
+.btn.burn:disabled { opacity: .55; }
+.card .ward { position: absolute; inset: 1px; pointer-events: none; outline: 2px dashed #9fd8ff; outline-offset: -3px; }
+.card .ward::after { content: '⛨'; position: absolute; left: 3px; bottom: 17px; width: 14px; height: 14px; line-height: 14px; text-align: center; font-size: 10px; color: #e8f6ff; background: #17324a; border: 1px solid #9fd8ff; }

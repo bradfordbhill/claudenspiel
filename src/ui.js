@@ -1,6 +1,9 @@
 /* Claudenspiel UI (forked from Kartenspiel's playtest UI). All game logic lives in KEngine; this file only renders state and dispatches actions. */
 (function () {
   var E = KEngine, D = KData;
+  // Where the last burned hand card was, so its flames rise from there (the hand re-renders before the effect runs).
+  var burnFrom = null;
+  function rectOfHand(u) { var b = document.querySelector('.hand [data-hand="' + u + '"]'), c = b && b.closest('.hcard'); return c ? c.getBoundingClientRect() : null; }
   // The same UI builds two apps: the playtest table (default) and the public site (KConfig.edition === 'online'),
   // which adds online play, a home page and profiles, and drops the card builder, sandbox and library editing.
   var ONLINE = typeof KConfig !== 'undefined' && KConfig.edition === 'online';
@@ -364,7 +367,7 @@
       if ((act.t === 'play' || act.t === 'sbPlace') && act.k && E.top(b, act.k)) { var lu = E.top(b, act.k), ld = E.rawDef(b, lu); ev.push({ t: 'land', k: act.k, suit: ld.suit, grounds: ld.type === 'Grounds' ? ld.id : null }); }
       if (act.t === 'claim') ev.push({ t: 'claim', k: act.k, p: a.cur });
       if (act.t === 'buyClaim') ev.push({ t: 'buy' });
-      if (act.t === 'burn' && b.turn && b.turn.burned) ev.push({ t: 'burn', suit: b.turn.burned, k: act.k || null });
+      if (act.t === 'burn' && b.turn && b.turn.burned) ev.push({ t: 'burn', suit: b.turn.burned, k: act.k || null, text: E.burnText(a, act.uid), gain: b.turn.burnGain || 0, ward: !!(act.k && E.warded(b, act.k)) });
       if (act.t === 'ability' && act.k && E.top(a, act.k)) ev.push({ t: 'ability', suit: E.suitOf(a, E.top(a, act.k)) });
       var banked = b.log.slice(a.log.length).filter(function (l) { return / banks \d◇ from unspent/.test(l); });
       if (banked.length) ev.push({ t: 'bank', p: a.cur, n: +(/banks (\d)/.exec(banked[0]) || [0, 1])[1] });
@@ -503,6 +506,27 @@
         kf[16].opacity = 0;
         d.animate(kf, { duration: 1300, delay: (delay || 0) + q * 28, easing: 'steps(16)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); }
     }
+    // A burn: the card goes up in dithered pixel flames that climb in steps, flicker from yellow to ember red and leave
+    // a few sparks drifting up and a little ash falling. No glow, only pixels.
+    function pyre(r) {
+      var cols = ['#fff3b0', '#ffd23f', '#ff9a1f', '#e8541c', '#a8251a', '#4a1a14'], cx = r.left + r.width / 2, by = r.top + r.height * 0.9, n = 64;
+      for (var q = 0; q < n; q++) { var d = piece('dust px', '', Math.round((cx + (((q * 37) % 23) - 11) / 23 * r.width * 0.85) / 2) * 2, by - (q % 7) * 6); if (q % 3 === 0) { d.style.width = '6px'; d.style.height = '6px'; }
+        var kf = [], ph = (q * 1.7) % 6.28, rise = r.height * (0.45 + ((q * 13) % 7) / 12), nf = 12;
+        for (var f = 0; f <= nf; f++) { var t = f / nf, x = Math.sin(ph + t * 9) * 4 * (1 - t), y = -rise * t, ci = Math.min(5, Math.floor(t * 6 + (q % 2)));
+          kf.push({ transform: 'translate(' + Math.round(x / 2) * 2 + 'px,' + Math.round(y / 2) * 2 + 'px)', background: cols[ci], opacity: f === 0 ? 0 : (f + q) % 4 === 0 ? 0.5 : 1 }); }
+        kf[nf].opacity = 0;
+        d.animate(kf, { duration: 650 + (q % 4) * 110, delay: (q % 16) * 22, easing: 'steps(' + nf + ')', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); }
+      for (var a = 0; a < 6; a++) { var e = piece('dust px', '', r.left + r.width * (0.2 + a * 0.12), r.top + r.height * 0.4); e.style.background = a % 2 ? '#7a7066' : '#a99f92';
+        e.animate([{ transform: 'translate(0,0)', opacity: 0 }, { transform: 'translate(0,0)', opacity: 1, offset: .2 }, { transform: 'translate(' + ((a - 3) * 3) + 'px,' + (r.height * 0.5) + 'px)', opacity: 0 }], { duration: 900, delay: 420 + a * 50, easing: 'steps(8)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(e); }
+    }
+    // A ward: a ring of pale blue pixels draws itself around the card, corner by corner, then the ward seal stays.
+    function wardRing(r, delay) {
+      var per = 2 * (r.width + r.height), n = 28;
+      for (var q = 0; q < n; q++) { var t = q / n * per, x, y;
+        if (t < r.width) { x = r.left + t; y = r.top; } else if (t < r.width + r.height) { x = r.right - 2; y = r.top + t - r.width; } else if (t < 2 * r.width + r.height) { x = r.right - (t - r.width - r.height); y = r.bottom - 2; } else { x = r.left; y = r.bottom - (t - 2 * r.width - r.height); }
+        var d = piece('dust px', '', Math.round(x), Math.round(y)); d.style.background = q % 3 ? '#9fd8ff' : '#e8f6ff';
+        d.animate([{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: 1, offset: .7 }, { opacity: 0 }], { duration: 700, delay: (delay || 0) + q * 18, easing: 'steps(5)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); }
+    }
     function sink(r, earth, delay) { for (var q = 0; q < 7; q++) { var d = piece('dust px', '', r.left + r.width * (0.15 + q * 0.11), r.top + r.height - 4); d.style.background = earth ? (q % 2 ? '#5a4632' : '#3b2d20') : (q % 2 ? '#efe6cf' : '#cbbf9e');
         d.animate([{ transform: 'translate(0,-' + (14 + (q % 3) * 6) + 'px)', opacity: 0 }, { transform: 'translate(0,-' + (8 + (q % 3) * 3) + 'px)', opacity: 1, offset: .3 }, { transform: 'translate(' + ((q - 3) * 2) + 'px,2px)', opacity: 0 }],
           { duration: 600, delay: (delay || 0) + q * 40, easing: 'steps(6)', fill: 'both' }).onfinish = (function (el) { return function () { el.remove(); }; })(d); } }
@@ -548,7 +572,8 @@
         if (e.t === 'land' && !calm) land(e.k);
         if (e.t === 'claim' && !calm) { var rcl = cellRect(e.k), st = cur() && cur().state; if (rcl) puff(rcl, (st && st.players[e.p] && st.players[e.p].color) || '#888', 80); }
         if (e.t === 'buy') { var jb = rectOf('[data-fx="jar"]'); if (jb && !calm) strongbox(jb); popup('Second claim', 'ap', jb || center(), calm ? 0 : 700); }
-        if (e.t === 'burn') popup('🔥 ' + BURN_TEXT[e.suit](), 'ap', cellRect(e.k) || center(), 0);
+        if (e.t === 'burn') { var rbf = burnFrom || center(); burnFrom = null; if (!calm) pyre(rbf); popup('🔥 ' + e.text.replace(/\.$/, ''), 'ap', rbf, calm ? 0 : 450);
+          if (e.ward) { var rw = cellRect(e.k); if (rw && !calm) wardRing(rw, 500); } }
         if (e.t === 'bank') { var jr = rectOf('[data-fx="jar"]'), pr = rectOf('[data-fx="pile-' + e.p + '"]'); if (jr) popup('+' + e.n + '◇ banked', 'vp', jr, 0); if (jr && pr && !calm) { pr.p = e.p; fly('vp', jr, pr, e.n * 3, 200); } }
         if (e.t === 'lastround') banner('🔔 The last round');
         if (e.t === 'end' && !calm) { glory(e.winner); if (e.anyHuman && !e.humanWon) dusk(); }
@@ -654,7 +679,8 @@
     h += '<div class="nm">' + esc(ruined ? E.rawDef(st, u).name : d.name) + '</div><div class="ty">' + esc(ruined ? (c.overwhelmed ? 'Overwhelmed' : 'Ruined') : d.type) + '</div>';
     if (stack.length > 1) h += '<span class="stackn" title="' + (stack.length - 1) + ' card(s) underneath">+' + (stack.length - 1) + '</span>';
     if (c.dtok > 0 && !ruined) h += '<span class="defb" title="' + c.dtok + ' Defense token' + (c.dtok > 1 ? 's' : '') + ': each one stops a Ruin or Curse">' + shieldStack(c.dtok) + (c.dtok > 4 ? '<b>' + c.dtok + '</b>' : '') + '</span>';
-    if (!ruined && (c.apBonus || c.vpBonus || c.decay || E.protectedStack(st, k))) h += '<span class="bonusb">' + (E.protectedStack(st, k) ? '⚑' : '') + (c.vpBonus ? '+' + c.vpBonus + '◇' : '') + (c.apBonus ? '+' + c.apBonus + '●' : '') + (c.decay ? ' ☠' + c.decay : '') + '</span>';
+    if (!ruined && (c.apBonus || c.vpBonus || c.decay || E.protectedStack(st, k))) h += '<span class="bonusb">' + (E.protectedStack(st, k) && !E.warded(st, k) ? '⚑' : '') + (c.vpBonus ? '+' + c.vpBonus + '◇' : '') + (c.apBonus ? '+' + c.apBonus + '●' : '') + (c.decay ? ' ☠' + c.decay : '') + '</span>';
+    if (!ruined && E.warded(st, k)) h += '<span class="ward" title="Warded until ' + esc(st.players[st.wards[u]] ? st.players[st.wards[u]].name : 'its owner') + '’s next turn: it can’t be Ruined, Overwhelmed, contested or Cursed"></span>';
     if (!ruined && !E.isGrounds(st, u) && E.shrinePeace(st, k)) h += '<span class="sanct" title="The Shrine’s peace: next to a Shrine, it can’t be contested or Cursed"></span>';
     if (E.isCursed(st, k) && !ruined && !E.isCovered(st, k)) h += '<span class="hex" title="Cursed"></span>';
     if (c.ascended && !ruined) h += '<span class="ascb" title="Ascended: invulnerable, every suit, +8◇ and +12●">Ascended</span>';
@@ -918,13 +944,17 @@
   }
 
   /* ---------------- inspector ---------------- */
-  // Burn (second edition, on trial): what a card of each suit gives when burned, and the button for the selected card.
-  var BURN_TEXT = { Goblet: function () { return '+' + E.BURN.Goblet + '●'; }, Tome: function () { return 'draw ' + E.BURN.Tome; }, Leaf: function () { return '+' + E.BURN.Leaf + '◇'; }, Sceptre: function () { return 'claim again'; }, Sword: function () { return 'rivals’ cards need one fewer enemy this turn'; }, Bone: function () { return 'bury it under your own card'; } };
+  // Burn (second edition): every card's own one-time effect, in short for the flame tag on hand cards, and the button.
+  var BURN_SHORT = { coin: function (x) { return '+' + x.n + '●'; }, draw: function (x) { return 'draw ' + x.n; }, bank: function (x) { return '+' + x.n + '◇'; }, cheap: function (x) { return '−' + x.n + '● next'; }, meeple: function () { return '+1 meeple'; },
+    per: function (x) { return x.n + '◇/' + ({ mine: 'your ' + x.suit, board: x.suit, ruined: 'Ruin', buried: 'buried', suits: 'suit' })[x.of]; }, reclaim: function () { return 'claim again'; }, sword: function () { return 'war'; }, bury: function () { return 'bury'; }, ward: function () { return 'ward'; } };
+  function burnShort(d) { return E.defBurn(d).map(function (x) { return BURN_SHORT[x.k] ? BURN_SHORT[x.k](x) : x.k; }).join(' · '); }
   function burnBtn(ctx) {
     var st = ctx.state, u = ctx.ui.hand; if (!st.opts.burn || !u || !myTurn(ctx) || !st.turn || !st.turn.started || st.turn.burned) return '';
     var d = E.rawDef(st, u); if (d.type === 'Foundation') return '';
-    var why = d.suit === 'Bone' ? (E.kingdom(st, st.cur).length ? null : 'You have no card to bury it under.') : E.burnBlock(st, st.cur, u);
-    return ' <button class="btn sm burn" data-act="burn"' + (why ? ' disabled title="' + esc(why) + '"' : ' title="Once a turn: discard this card for a one-time effect set by its suit"') + '>Burn: ' + esc(BURN_TEXT[d.suit] ? BURN_TEXT[d.suit]() : '') + '</button>';
+    var why = E.burnNeedsCell(st, u) ? (E.kingdom(st, st.cur).length ? E.burnBlock(st, st.cur, u, E.kingdom(st, st.cur)[0]) : 'You have no card of your own for it.') : E.burnBlock(st, st.cur, u);
+    if (why === 'A Ruined card can’t be warded.') why = null;
+    var g = E.burnGain(st, st.cur, u);
+    return ' <button class="btn sm burn" data-act="burn"' + (why ? ' disabled title="' + esc(why) + '"' : ' title="Once a turn: discard this card instead of building it. ' + esc(E.burnText(st, u)) + (g ? ' Right now that banks ' + g + '◇.' : '') + '"') + '>🔥 Burn: ' + esc(burnShort(d)) + (E.defBurn(d).some(function (x) { return x.k === 'per'; }) ? ' (' + g + '◇ now)' : '') + '</button>';
   }
   // Right-hand panel: the selected hand card, or the selected board card with its details and buttons.
   function inspector(ctx) {
@@ -952,7 +982,8 @@
     if (c.apBonus) info.push('Permanent bonus: +' + c.apBonus + '● per turn.');
     if (c.vpBonus) info.push('Permanent bonus: +' + c.vpBonus + '◇.');
     if (c.decay) info.push('Decay tokens: ' + c.decay + ' (no effect defined yet).');
-    if (E.protectedStack(st, k)) info.push('Protected by Standard Bearer: cannot be Ruined or Overwhelmed.');
+    if (E.warded(st, k)) info.push('Warded until ' + (st.players[st.wards[E.top(st, k)]] || { name: 'its owner' }).name + '’s next turn: cannot be Ruined, Overwhelmed, contested or Cursed.');
+    else if (E.protectedStack(st, k)) info.push('Protected by Standard Bearer: cannot be Ruined or Overwhelmed.');
     if (c.ascended) info.push('Ascended: invulnerable, counts as every suit, +8◇ and +12●, cannot change hands.');
     if (oc && oc.bonus) info.push('Overwhelm number raised by ' + oc.bonus + ' for same-suit cards buried underneath.');
     var inc = E.cardIncome(st, k); if (inc) info.push('Producing ' + inc + '● per turn.');
@@ -1198,7 +1229,7 @@
       '<label>Banking</label><label><input type="checkbox" data-set="banking"' + (setup.banking !== false ? ' checked' : '') + '> At the end of your turn, every 6● you didn’t spend becomes 1◇ (at most 2◇)</label>' +
       '<label>Second claim</label><label><input type="checkbox" data-set="buyClaim"' + (setup.buyClaim !== false ? ' checked' : '') + '> Once a turn, after claiming, pay 10● to claim once more</label>' +
       '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (contestOn() ? ' checked' : '') + '> Once a turn, pay 8● to take a rival’s card next to the one you just placed. A Cryptkeeper’s buried cards don’t go with it: they move under the Mausoleum. On by default for 2–4 players</label>' +
-      '<label>Burn</label><label><input type="checkbox" data-set="burn"' + (setup.burn ? ' checked' : '') + '> Second edition, on trial: once a turn, discard a card for a one-time effect set by its suit</label>' +
+      '<label>Burn</label><label><input type="checkbox" data-set="burn"' + (setup.burn ? ' checked' : '') + '> Second edition, on trial: once a turn, burn a card from your hand for its own one-time effect (shown on a flame tag under each card)</label>' +
       '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
       '</div></fieldset>';
     var dup = {}, bad = false; for (var j = 0; j < setup.n; j++) { if (dup[setup.players[j].arch]) bad = true; dup[setup.players[j].arch] = 1; }
@@ -1241,7 +1272,7 @@
     if (ui.autoEnding) return '<div class="prompt"><b>Out of ●.</b> Nothing left to play, claim or use, so your turn ends in a moment. <button class="btn sm" data-act="holdTurn">Wait, I’m not done</button></div>';
     if (ui.endAsked) { var lt = leftToDo(ctx); if (lt) return '<div class="prompt">You can still ' + lt.text + ' (' + E.funds(st.players[st.cur]) + '● left). End your turn anyway? <button class="btn sm def" data-act="endTurn">End turn</button><button class="btn sm" data-act="keepPlaying">Keep playing</button><button class="linkbtn small" data-act="noEndAsk">Don’t ask again</button></div>'; }
     if (ui.mode === 'contest') return '<div class="prompt">' + verb() + ' a rival’s card next to the one you just placed, to take it for ' + E.CONTEST_PRICE + '●. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
-    if (ui.mode === 'burnBone') return '<div class="prompt">' + verb() + ' a card of your Kingdom to bury ' + esc(E.rawDef(st, ui.burnUid).name) + ' under. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
+    if (ui.mode === 'burnBone') return '<div class="prompt">' + verb() + ' a card of your Kingdom ' + (E.burnSteps(st, ui.burnUid).some(function (x) { return x.k === 'bury'; }) ? 'to bury ' + esc(E.rawDef(st, ui.burnUid).name) + ' under' : 'to ward until your next turn (no Ruin, Overwhelm, contest or Curse)') + '. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
     if (ui.mode === 'reclaim') return '<div class="prompt">' + verb() + ' one of your claimed cards to take its meeple back. This ends your turn. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
     if (ui.mode === 'move') return '<div class="prompt">Referee move: click an empty space for the card from ' + esc(ui.moveFrom) + '. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
     if (ui.swap) return '<div class="prompt">Choose 2 cards to discard, then draw 1. <button class="btn sm def" data-act="doSwap"' + (ui.swap.length === 2 ? '' : ' disabled') + '>Discard 2, draw 1</button><button class="btn sm" data-act="cancelSwap">Cancel</button></div>';
@@ -1299,7 +1330,7 @@
       if (ui.hand === u) cls += ' sel'; if (blocked) cls += ' blocked'; if (ui.swap && ui.swap.indexOf(u) >= 0) cls += ' pick';
       if (!blocked && myTurn(ctx) && !st.pending && !st.res && canAfford(st, u)) cls += ' afford';
       var free = E.isFree(st, u); if (free) cls += ' free';
-      h += '<div class="' + cls + '"' + (blocked ? ' title="' + esc(blocked) + '"' : '') + '>' + defFace(Object.assign({}, d, { art: artOf(d.id) }), free ? { mid: true, cost: 0, tex: u } : { mid: true, tex: u }) + (blocked ? '<span class="blocktag">' + esc(blockShort(blocked)) + '</span>' : '') + (free ? '<span class="freetag">Free this turn</span>' : '') + '<button class="cellbtn" data-hand="' + u + '" aria-label="' + esc(d.name) + '"></button></div>';
+      h += '<div class="' + cls + '"' + (blocked ? ' title="' + esc(blocked) + '"' : '') + '>' + defFace(Object.assign({}, d, { art: artOf(d.id) }), free ? { mid: true, cost: 0, tex: u } : { mid: true, tex: u }) + (blocked ? '<span class="blocktag">' + esc(blockShort(blocked)) + '</span>' : '') + (free ? '<span class="freetag">Free this turn</span>' : '') + (st.opts.burn && d.type !== 'Foundation' ? '<span class="burntag" title="Burn: ' + esc(E.burnText(st, u)) + '">' + esc(burnShort(d)) + '</span>' : '') + '<button class="cellbtn" data-hand="' + u + '" aria-label="' + esc(d.name) + '"></button></div>';
     });
     if (pl.aside && pl.aside.length) h += '<span class="muted small" style="align-self:center">Set aside for next turn: ' + pl.aside.length + ' card' + (pl.aside.length > 1 ? 's' : '') + '</span>';
     if (!pl.hand.length) h += '<span class="muted">No cards in hand.</span>';
@@ -1492,7 +1523,7 @@
     });
     h += '</tbody></table>' + (rows.length ? '' : '<p class="pane muted">No cards match. Clear the filters or add a new card.</p>') + '</div>';
     var sel = L.sel && libById(L.sel);
-    h += '<div class="raised pane">' + (sel ? '<div class="panelhead">Preview</div>' + defFace(sel, { big: true }) + (ONLINE ? '' : '<div class="row" style="margin-top:6px"><button class="btn def" data-act="editCard" data-id="' + esc(sel.id) + '">Edit</button><button class="btn" data-act="dupCard" data-id="' + esc(sel.id) + '">Duplicate</button><button class="btn" data-act="delCard" data-id="' + esc(sel.id) + '">Delete…</button></div>') : '<p class="muted">Select a card to preview it.</p>') + '</div></div></div>';
+    h += '<div class="raised pane">' + (sel ? '<div class="panelhead">Preview</div>' + defFace(sel, { big: true }) + (sel.type !== 'Foundation' ? '<p class="small burnline">🔥 <b>Burn:</b> ' + esc(E.defBurnText(sel)) + '</p>' : '') + (ONLINE ? '' : '<div class="row" style="margin-top:6px"><button class="btn def" data-act="editCard" data-id="' + esc(sel.id) + '">Edit</button><button class="btn" data-act="dupCard" data-id="' + esc(sel.id) + '">Duplicate</button><button class="btn" data-act="delCard" data-id="' + esc(sel.id) + '">Delete…</button></div>') : '<p class="muted">Select a card to preview it.</p>') + '</div></div></div>';
     return h;
   }
   // Short tag for how much of a card the engine automates.
@@ -1687,6 +1718,7 @@
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
         '<li><b>A second claim:</b> once a turn, after claiming, press <b>Buy a claim</b> and pay 10● to claim once more.</li>' +
         '<li><b>Grounds:</b> terrain cards. You place them like a Structure, but nobody claims them and they never count as an enemy. <i>Marsh</i>: cards next to it need one more enemy to be Overwhelmed. <i>Battlefield</i>: one fewer. <i>Crossroads</i>: placing next to it costs 3● less. <i>Library</i>: placing a card next to it draws you a card, once a turn. <i>Barrow</i>: burying a card under a card next to it banks you 2◇. <i>Shrine</i>: cards next to it keep the Shrine’s peace (a gilded frame and ✠) and can’t be contested or Cursed.</li>' +
+        '<li><b>Burn</b> (a New game option, on trial): every card has two uses. Once a turn you may burn a card from your hand instead of building it, for the one-time effect on its flame tag: ● (Goblet’s voice), cards (Tome), ◇ (Leaf), a second claim or a <i>ward</i> (Sceptre), war (Sword: rivals’ cards need one fewer enemy to be Overwhelmed this turn) or a burial (Bone). Some burns read the board, such as 1◇ per Ruined card. A warded card (dashed blue frame, ⛨) can’t be Ruined, Overwhelmed, contested or Cursed until its owner’s next turn. The dearer the card, the richer its burn: an Obelisk or a Watchtower burns for 4–5◇.</li>' +
         '<li><b>Contest</b> (on by default for 2–4 players): once a turn, after placing a card, pay 8● of this turn’s ● to take a rival’s card next to it. Their meeple goes home and yours takes its place; it doesn’t use your claim. Foundations, Ascended and shared cards can’t be taken, and a Cryptkeeper’s buried cards move under its Mausoleum instead of changing hands.</li>' +
         '<li><b>The Chronicle:</b> when a game ends, it tells the story: everyone’s ◇ after every turn, where the Ruins, contests and the last round fell, and the turning points. Open it again with <b>Chronicle</b> above the board.</li>' +
         '<li>A 116-card deck with two or three copies of the staples, and reworked cards: Orchard, Observatory, Obelisk, Fountain, Revenge, Repent and Brambles.</li></ul>' +
@@ -2432,7 +2464,7 @@
       case 'startTurn': dispatch(ctx, { t: 'startTurn' }); return;
       case 'buyClaim': dispatch(ctx, { t: 'buyClaim' }); return;
       case 'contest': ctx.ui.mode = 'contest'; ctx.ui.hand = null; render(); return;
-      case 'burn': { var bh = ctx.ui.hand; if (!bh) return; if (E.rawDef(ctx.state, bh).suit === 'Bone') { ctx.ui.mode = 'burnBone'; ctx.ui.burnUid = bh; ctx.ui.hand = null; render(); return; } ctx.ui.hand = null; dispatch(ctx, { t: 'burn', uid: bh }); return; }
+      case 'burn': { var bh = ctx.ui.hand; if (!bh) return; burnFrom = rectOfHand(bh); if (E.burnNeedsCell(ctx.state, bh)) { ctx.ui.mode = 'burnBone'; ctx.ui.burnUid = bh; ctx.ui.hand = null; render(); return; } ctx.ui.hand = null; dispatch(ctx, { t: 'burn', uid: bh }); return; }
       case 'reclaimMode': ctx.ui.mode = 'reclaim'; render(); return;
       case 'cancelMode': ctx.ui.mode = null; render(); return;
       case 'endTurn':   // with cards you could still play or a card you could claim, ask once first

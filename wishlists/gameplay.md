@@ -29,11 +29,10 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ○ Upkeep: cards costing 15● or more cost 2● a turn, or they flip face down (no ◇) until paid.
 - ✅ 0.6 A market row (on trial): three face-up cards; each draw is one of them or the deck. 0.9: skill gap +10.9 with the Genius planning picks, level with the base game. Kept as a candidate for influence.
 - ✅ 0.9 Burn (on trial): once a turn, discard a card for its suit's one-time effect. Skill gap +7.0: no gain, since one effect per suit is just more interchangeable options.
-- ○ Per-card burns: each card gets its own one-time effect, chosen to pull against its lasting use (the real "two uses"). Waits for the card pass.
+- ✅ 1.0-pre Per-card burns: every card has its own one-time effect (`KData.BURNS`), from a vocabulary of ten steps (●, cards, ◇, ◇ per something on the board, a discount, a meeple, claim again, war, burial, ward). The dearer the card, the richer its burn. Still on trial; see the journal for the skill test.
 - ✅ 1.0-pre Influence, first shape: **contest**, on by default for 2–4 players (skill gap +24.4; it moves no archetype at 4 players).
 - ○ Hallowed ground (a card with buried cards can't be contested): measured, no effect on the Cryptkeeper; left off.
 - ✅ 1.0-pre Reckonings on a contestable board: skill gap +18.2 against contest's +24.4 (165 paired deals), so they are left off and the race stays.
-- ▶ Per-card burns: the next second-edition pillar.
 - ✅ 1.0-pre Measure the new Grounds properly: 3,227 games. Cryptkeeper 1.01 → 1.10 pooled (under the 1.15 bar, so the Library stays); the 4-player spread falls to 0.17.
 - ✅ 1.0-pre 3 players with the new Grounds: the gap didn't replicate. On 257 fresh paired deals the Cryptkeeper is 0.91 and the Archbishop 0.97 (spread 0.27); two Cathedral variants and a Mausoleum trim were tried and none helped clearly. No change.
 - ○ 3-player Philosopher (1.18 on 257 games): check on 500+ paired games before acting.

@@ -89,7 +89,7 @@ var KEngine = (function () {
   function isCovered(st, k) { var u = top(st, k); if (!u) return false; var d = rawDef(st, u); return d.type === 'Curse' && d.curse && d.curse.mode === 'top' && st.board[k].length > 1; }
   function isCursed(st, k) { return curseCardsUnder(st, k).length > 0 || isCovered(st, k); }
   // Standard Bearer buried in a stack protects it from Ruin and Overwhelm.
-  function protectedStack(st, k) { var s = st.board[k]; return !!s && s.slice(1).some(function (x) { var m = rawDef(st, x).mods || {}; return m.burialEffect && m.burialEffect.protect; }); }
+  function protectedStack(st, k) { var s = st.board[k]; return !!s && (!!(st.wards && st.wards[s[0]] != null) || s.slice(1).some(function (x) { var m = rawDef(st, x).mods || {}; return m.burialEffect && m.burialEffect.protect; })); }
   // Cards with a burialEffect (Flowers, Eye for an Eye, Standard Bearer) boost whatever they are buried under.
   function onBuried(st, u, k) {
     if (top(st, k)) barrowBank(st, u, k);
@@ -291,6 +291,7 @@ var KEngine = (function () {
     n4(k).forEach(function (x) { if (active(st, x)) { var m = def(st, top(st, x)).mods || {}; if (m.adjacentCost) extra += +m.adjacentCost; } });
     var total = Math.max(0, (+d.cost || 0) + extra + taxAt(st, k));   // Crossroads makes extra negative
     if (st.opts.adjDiscount && st.cur != null && n4(k).some(function (x) { return ownedBy(st, x, st.cur); })) total = Math.max(0, total - 3);
+    if (st.turn && st.turn.cheap) total = Math.max(0, total - st.turn.cheap);   // a burn's discount, for the next card placed
     return total;
   }
   // Every empty cell where the card may go, mapped to its cost. A cell is legal when it touches
@@ -325,7 +326,7 @@ var KEngine = (function () {
   // In order: protection, Defense tokens, Rear Guard swap, queue reactions, flip, Foundation payouts.
   function ruinAt(st, k, actor, how) {
     var u = top(st, k); if (!u) return; var c = st.cards[u]; if (c.ruined) return;
-    if (protectedStack(st, k)) { log(st, rawDef(st, u).name + ' is protected by a Standard Bearer buried under it.'); return; }
+    if (protectedStack(st, k)) { log(st, rawDef(st, u).name + (warded(st, k) ? ' is warded until its owner’s next turn.' : ' is protected by a Standard Bearer buried under it.')); return; }
     if (how === 'ruin' && c.dtok > 0) { c.dtok--; c.defUsed = (c.defUsed || 0) + 1; log(st, rawDef(st, u).name + '’s Defense token absorbs the Ruin (' + c.dtok + ' left).'); return; }
     if (how === 'ruin' && !st.opts.sandbox) {
       var gk = n8(k).filter(function (x) { var g = top(st, x); if (!g || !active(st, x)) return false; var gm = mods(st, g); var o = st.cards[g].claimants[0]; return gm.guard && o != null && c.claimants.indexOf(o) >= 0; })[0];
@@ -370,14 +371,57 @@ var KEngine = (function () {
   }
   // n = enemy-suit neighbours; th = how many it takes to Overwhelm (3 by default,
   // 8 for Foundations, which also count diagonals), adjusted by burials and Curses.
-  // Burn (opts.burn): what each suit gives when a card is burned from hand.
+  // Burn (opts.burn): once a turn, a card in hand may be discarded for its own one-time effect, def.burn (KData.BURNS
+  // lists every card's). A card without one (made in the card builder, or from a save older than 1.0) burns by its suit.
   var BURN = { Goblet: 5, Tome: 2, Leaf: 2 };
+  var SUIT_BURN = { Goblet: [{ k: 'coin', n: 5 }], Tome: [{ k: 'draw', n: 2 }], Leaf: [{ k: 'bank', n: 2 }], Sceptre: [{ k: 'reclaim' }], Sword: [{ k: 'sword' }], Bone: [{ k: 'bury' }] };
+  var ALL_SUITS = ['Sceptre', 'Goblet', 'Sword', 'Bone', 'Leaf', 'Tome'];
+  function defBurn(d) {
+    if (d.burn && d.burn.length) return d.burn;
+    var lib = typeof KData !== 'undefined' && KData.BURNS;   // a library saved before 1.0 has no burn field
+    return (lib && lib[d.id]) || SUIT_BURN[d.suit] || [{ k: 'coin', n: 3 }];
+  }
+  function burnSteps(st, uid) { return defBurn(rawDef(st, uid)); }
+  // Bury and ward point at a card of the burner's Kingdom (the action's k).
+  function burnNeedsCell(st, uid) { return burnSteps(st, uid).some(function (x) { return x.k === 'bury' || x.k === 'ward'; }); }
+  function burnCount(st, p, x) {
+    var ks = keys(st), mine = kingdom(st, p);
+    if (x.of === 'mine') return mine.filter(function (k) { var u = top(st, k); return !st.cards[u].ruined && hasSuit(st, u, x.suit); }).length;
+    if (x.of === 'board') return ks.filter(function (k) { var u = top(st, k); return u && !st.cards[u].ruined && hasSuit(st, u, x.suit); }).length;
+    if (x.of === 'ruined') return ks.filter(function (k) { var u = top(st, k); return u && st.cards[u].ruined; }).length;
+    if (x.of === 'buried') return mine.reduce(function (a, k) { return a + st.board[k].length - 1; }, 0);
+    if (x.of === 'suits') return ALL_SUITS.filter(function (su) { return mine.some(function (k) { var u = top(st, k); return !st.cards[u].ruined && hasSuit(st, u, su); }); }).length;
+    return 0;
+  }
+  // What a burn would bank in ◇ for player p right now (the 'per' and 'bank' steps), for the hand hint and the bots.
+  function burnGain(st, p, uid) { return burnSteps(st, uid).reduce(function (a, x) { return a + (x.k === 'bank' ? x.n : x.k === 'per' ? Math.min(x.max || 99, x.n * burnCount(st, p, x)) : 0); }, 0); }
+  var PER_WORDS = { mine: function (x) { return 'your ' + x.suit + ' card'; }, board: function (x) { return x.suit + ' card on the board'; }, ruined: function () { return 'Ruined card on the board'; }, buried: function () { return 'card buried in your Kingdom'; }, suits: function () { return 'suit in your Kingdom'; } };
+  function burnStepText(x) {
+    switch (x.k) {
+      case 'coin': return '+' + x.n + '●';
+      case 'draw': return 'draw ' + x.n;
+      case 'bank': return '+' + x.n + '◇';
+      case 'cheap': return 'your next card this turn costs ' + x.n + '● less';
+      case 'meeple': return '+1 meeple';
+      case 'per': return x.n + '◇ per ' + PER_WORDS[x.of](x) + (x.max ? ' (up to ' + x.max + '◇)' : '');
+      case 'reclaim': return 'claim again';
+      case 'sword': return 'rivals’ cards need one fewer enemy to be Overwhelmed this turn';
+      case 'bury': return 'bury it under a card of yours';
+      case 'ward': return 'ward a card of yours until your next turn';
+    }
+    return '';
+  }
+  function defBurnText(d) { var t = defBurn(d).map(burnStepText).join(', '); return t.charAt(0).toUpperCase() + t.slice(1) + '.'; }
+  function burnText(st, uid) { return defBurnText(rawDef(st, uid)); }
   function burnBlock(st, p, uid, k) {
-    var s = rawDef(st, uid).suit, pl = st.players[p];
-    if (s === 'Sceptre') { if (!st.turn.claimed) return 'Burn a Sceptre after your claim, to claim again.'; if (pl.meeples <= 0) return 'You have no meeples left.'; }
-    if (s === 'Bone') { if (k == null || kingdom(st, p).indexOf(k) < 0) return 'Choose a card of your Kingdom to bury it under.'; }
+    var pl = st.players[p], S = burnSteps(st, uid), has = function (n) { return S.some(function (x) { return x.k === n; }); };
+    if (has('reclaim')) { if (!st.turn.claimed) return 'Burn it after your claim, to claim again.'; if (pl.meeples <= 0 && !has('meeple')) return 'You have no meeples left.'; }
+    if (burnNeedsCell(st, uid) && (k == null || kingdom(st, p).indexOf(k) < 0)) return 'Choose a card of your Kingdom.';
+    if (has('ward') && k != null && st.cards[top(st, k)] && st.cards[top(st, k)].ruined) return 'A Ruined card can’t be warded.';
     return null;
   }
+  // A ward (from a burn) lasts until its giver's next turn: no Ruin, Overwhelm, contest or Curse.
+  function warded(st, k) { var u = top(st, k); return !!(u && st.wards && st.wards[u] != null); }
   function overwhelmCount(st, k) {
     var u = top(st, k); if (!u) return null;
     // Grounds are never Overwhelmed and never count as an enemy; their owShift moves the number for cards next to them.
@@ -388,7 +432,7 @@ var KEngine = (function () {
     var th = d.overwhelm != null && d.overwhelm !== '' ? +d.overwhelm : (fd ? 8 : 3), bonus = st.opts.burySuitOW ? onSuitBuried(st, k) : 0;
     n4(k).forEach(function (x) { var t = top(st, x); if (isGrounds(st, t) && active(st, x)) bonus += +((def(st, t).mods || {}).owShift || 0); });
     var minus = curseFx(st, k, 'owMinus') + curseFx(st, k, 'intoxicate');
-    if (st.turn && st.turn.burned === 'Sword' && st.cards[u].claimants.length && st.cards[u].claimants.indexOf(st.cur) < 0) minus++;
+    if (st.turn && st.turn.swordBurn && st.cards[u].claimants.length && st.cards[u].claimants.indexOf(st.cur) < 0) minus++;
     return { n: n, th: Math.max(1, th + bonus - minus), bonus: bonus, minus: minus };
   }
   // Overwhelm every card at or past its threshold. Repeats, since one Overwhelm can set off another.
@@ -559,7 +603,7 @@ var KEngine = (function () {
       if (kind === 'curse' && rawDef(st, res.src).curse && rawDef(st, res.src).curse.mode === 'top' && unburiable(st, u)) return false;
       if (kind === 'ruin') { if (c.ruined || protectedStack(st, k)) return false; if (step.oppOwned && (!c.claimants.length || c.claimants.indexOf(res.player) >= 0)) return false; if (step.ownerIs === 'ctx' && c.claimants.indexOf(res.ctx.ownerIs) < 0) return false; }
       if (kind === 'suit') { if (c.ruined) return false; }
-      if (kind === 'curse') { if (c.ruined || isFoundation(st, u) || isCovered(st, k) || d.type === 'Curse' || shrinePeace(st, k)) return false; }
+      if (kind === 'curse') { if (c.ruined || isFoundation(st, u) || isCovered(st, k) || d.type === 'Curse' || shrinePeace(st, k) || warded(st, k)) return false; }
       if (kind === 'uncurse') { if (!isCursed(st, k)) return false; }
       if (kind === 'unruin') { if (!c.ruined) return false; }
       if (kind === 'owned') { if (c.ruined || !c.claimants.length) return false; }
@@ -1105,6 +1149,7 @@ var KEngine = (function () {
   // Start of turn: tokens, set-aside cards back to hand, ● income (or seat-start ●), pay debt, draw.
   function startTurn(st) {
     var p = st.cur, pl = st.players[p];
+    if (st.wards) Object.keys(st.wards).forEach(function (u) { if (st.wards[u] === p) delete st.wards[u]; });
     // per-turn tokens (Acorn)
     kingdom(st, p).forEach(function (k) { var u = top(st, k), d = def(st, u); if (d.perTurn && d.perTurn.token && d.perTurn.when !== 'everyTurnEnd' && d.perTurn.when !== 'ownerTurnEnd' && active(st, k)) st.cards[u].tokens += +d.perTurn.token; });
     (pl.aside || []).splice(0).forEach(function (u) { pl.hand.push(u); st.cards[u].free = pl.turns; log(st, pl.name + ' takes back the card set aside: it is free to play this turn.'); });
@@ -1250,6 +1295,7 @@ var KEngine = (function () {
         var cost = legal[a.k] != null ? legal[a.k] : 0;
         if (!st.opts.sandbox && cost > funds(pl)) return err(st, 'Not enough ● (costs ' + cost + ', you have ' + funds(pl) + ').');
         if (!st.opts.sandbox) spend(pl, cost);
+        st.turn.cheap = 0;
         removeFromHand(st, p, uid);
         st.board[a.k] = [uid]; st.turn.lastKey = a.k; st.turn.played++;
         var d = rawDef(st, uid);
@@ -1385,6 +1431,7 @@ var KEngine = (function () {
         if (!tcc.claimants.length || tcc.claimants.indexOf(p) >= 0) return err(st, 'Contest a card a rival owns.');
         if (tcc.fixed || tcc.ascended) return err(st, 'That card’s claim cannot be taken.');
         if (shrinePeace(st, tk)) return err(st, 'The Shrine’s peace: a card next to a Shrine cannot be contested.');
+        if (warded(st, tk)) return err(st, 'That card is warded until its owner’s next turn.');
         if (hallowed(st, tk)) return err(st, 'Hallowed ground: a card with a card buried under it cannot be contested.');
         if (tcc.claimants.length > 1) return err(st, 'A shared card cannot be contested.');
         if ((tp.ap || 0) < CONTEST_PRICE) return err(st, 'Contesting costs ' + CONTEST_PRICE + '● of this turn’s ●.');
@@ -1402,8 +1449,8 @@ var KEngine = (function () {
         afterBoardChange(st, p); return st;
       }
 
-      // Burn (second-edition rule, on trial, opts.burn): once a turn, discard a card from hand for a one-time effect set by its
-      // suit, so every card has two uses: build it, or burn it. Bone is buried under a card of your Kingdom (a.k) instead.
+      // Burn (second edition, opts.burn): once a turn, discard a card from hand for its own one-time effect (burnSteps), so
+      // every card has two uses: build it, or burn it. Bury and ward need a card of your Kingdom (a.k).
       case 'burn': {
         if (!st.opts.burn) return err(st, 'Burning cards is switched off for this game.');
         if (st.pending || st.res) return err(st, 'Finish the current effect first.');
@@ -1412,14 +1459,25 @@ var KEngine = (function () {
         var bpl = st.players[p], bu = a.uid; if (bpl.hand.indexOf(bu) < 0) return err(st, 'That card is not in your hand.');
         if (isFoundation(st, bu)) return err(st, 'You cannot burn your Foundation.');
         var bs = rawDef(st, bu).suit, bn = rawDef(st, bu).name, why2 = burnBlock(st, p, bu, a.k); if (why2) return err(st, why2);
-        removeFromHand(st, p, bu); st.turn.burned = bs;
-        if (bs === 'Bone') { st.board[a.k].splice(1, 0, bu); log(st, bpl.name + ' burns ' + bn + ': buried under ' + rawDef(st, top(st, a.k)).name + '.'); onBuried(st, bu, a.k); afterBoardChange(st, p); return st; }
-        st.discard.push(bu);
-        if (bs === 'Goblet') { bpl.ap = (bpl.ap || 0) + BURN.Goblet; log(st, bpl.name + ' burns ' + bn + ' for ' + BURN.Goblet + '●.'); }
-        if (bs === 'Tome') { var bg = draw(st, p, BURN.Tome); log(st, bpl.name + ' burns ' + bn + ' and draws ' + bg + '.'); }
-        if (bs === 'Leaf') { bpl.tokens = (bpl.tokens || 0) + BURN.Leaf; log(st, bpl.name + ' burns ' + bn + ' for ' + BURN.Leaf + '◇.'); }
-        if (bs === 'Sceptre') { st.turn.claimed = false; log(st, bpl.name + ' burns ' + bn + ' to claim again.'); }
-        if (bs === 'Sword') { log(st, bpl.name + ' burns ' + bn + ': this turn, rivals’ cards need one fewer enemy to be Overwhelmed.'); afterBoardChange(st, p); }
+        var BS = burnSteps(st, bu), btxt = burnText(st, bu), bboard = false, bgain = 0;
+        removeFromHand(st, p, bu); st.turn.burned = bs; st.turn.burnedId = rawDef(st, bu).id;
+        if (!BS.some(function (x) { return x.k === 'bury'; })) st.discard.push(bu);
+        log(st, bpl.name + ' burns ' + bn + ': ' + btxt.charAt(0).toLowerCase() + btxt.slice(1));
+        BS.forEach(function (x) {
+          if (x.k === 'coin') bpl.ap = (bpl.ap || 0) + x.n;
+          if (x.k === 'draw') draw(st, p, x.n);
+          if (x.k === 'bank') bgain += x.n;
+          if (x.k === 'per') bgain += Math.min(x.max || 99, x.n * burnCount(st, p, x));
+          if (x.k === 'cheap') st.turn.cheap = (st.turn.cheap || 0) + x.n;
+          if (x.k === 'meeple') bpl.meeples++;
+          if (x.k === 'reclaim') st.turn.claimed = false;
+          if (x.k === 'sword') { st.turn.swordBurn = true; bboard = true; }
+          if (x.k === 'ward') { st.wards = st.wards || {}; st.wards[top(st, a.k)] = p; log(st, rawDef(st, top(st, a.k)).name + ' is warded until ' + bpl.name + '’s next turn.'); }
+          if (x.k === 'bury') { st.board[a.k].splice(1, 0, bu); log(st, bn + ' is buried under ' + rawDef(st, top(st, a.k)).name + '.'); onBuried(st, bu, a.k); bboard = true; }
+        });
+        if (bgain) { bpl.tokens = (bpl.tokens || 0) + bgain; log(st, bpl.name + ' banks ' + bgain + '◇.'); }
+        st.turn.burnGain = bgain;
+        if (bboard) afterBoardChange(st, p);
         return st;
       }
 
@@ -1556,7 +1614,7 @@ var KEngine = (function () {
     if (!st.opts.contest || !st.turn || !st.turn.started || st.turn.contested || !st.turn.lastKey || st.players[p].meeples <= 0 || (st.players[p].ap || 0) < CONTEST_PRICE) return [];
     return n4(st.turn.lastKey).filter(function (k) {
       var u = top(st, k); if (!u) return false; var c = st.cards[u];
-      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended && !hallowed(st, k) && !shrinePeace(st, k);
+      return !c.ruined && !unclaimable(st, u) && !isCovered(st, k) && c.claimants.length === 1 && c.claimants[0] !== p && !c.fixed && !c.ascended && !hallowed(st, k) && !shrinePeace(st, k) && !warded(st, k);
     });
   }
   // Hallowed ground (opts.hallowed, on trial): a card with a card buried under it can't be contested.
@@ -1575,7 +1633,7 @@ var KEngine = (function () {
   return {
     // Public API, used by ui.js, the tests and the tools.
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
-    burnBlock: burnBlock, BURN: BURN, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
+    burnBlock: burnBlock, BURN: BURN, burnSteps: burnSteps, burnText: burnText, defBurn: defBurn, defBurnText: defBurnText, burnStepText: burnStepText, burnNeedsCell: burnNeedsCell, burnGain: burnGain, warded: warded, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
     shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };
