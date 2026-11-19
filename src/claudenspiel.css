@@ -188,3 +188,57 @@ svg.chron .hc:hover { fill-opacity: .07; }
 .btn.burn:disabled { opacity: .55; }
 .card .ward { position: absolute; inset: 1px; pointer-events: none; outline: 2px dashed #9fd8ff; outline-offset: -3px; }
 .card .ward::after { content: '⛨'; position: absolute; left: 3px; bottom: 17px; width: 14px; height: 14px; line-height: 14px; text-align: center; font-size: 10px; color: #e8f6ff; background: #17324a; border: 1px solid #9fd8ff; }
+
+/* ----- the campaign: The Long Road to the City ----- */
+.campaign { max-width: 980px; margin: 0 auto; }
+.camphead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.camphead h2 { font-family: 'Jacquard 24', serif; font-weight: 400; font-size: 34px; color: var(--ink); margin: 0; }
+.campsum { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+.cmap { position: relative; width: 100%; aspect-ratio: 2 / 1; background-size: 100% 100%; image-rendering: pixelated; border: 2px solid #1a1020; box-shadow: 0 0 0 2px var(--title2); margin: 8px 0 12px; overflow: hidden; }
+.cact { position: absolute; left: 1.5%; top: 3%; color: #f6efd8; font-family: 'Jacquard 24', serif; font-size: clamp(16px, 3.4vw, 30px); text-shadow: 2px 2px 0 #1a1020; pointer-events: none; }
+.ccity { position: absolute; right: 1.5%; top: 3%; color: #f3d27a; font-size: clamp(9px, 1.4vw, 12px); text-shadow: 1px 1px 0 #1a1020; white-space: nowrap; pointer-events: none; }
+.cstop { position: absolute; transform: translate(-50%, -100%); padding: 0; border: 0; background: none; cursor: pointer; display: block; }
+.cstop svg.pix { width: 100%; height: auto; display: block; }
+.cstop:hover svg.pix, .cstop:focus-visible svg.pix, .cstop.sel svg.pix { filter: drop-shadow(0 -2px 0 #f3d27a) drop-shadow(0 2px 0 #f3d27a) drop-shadow(2px 0 0 #f3d27a) drop-shadow(-2px 0 0 #f3d27a); }
+.cstop.locked svg.pix { filter: grayscale(.85) brightness(.6); }
+.cstop.locked.sel svg.pix { filter: grayscale(.85) brightness(.6) drop-shadow(0 2px 0 #9a90b8); }
+.cplaque { position: absolute; left: 50%; top: 100%; transform: translate(-50%, 3px); display: inline-flex; align-items: center; gap: 3px; padding: 1px 4px; background: #f6efd8; color: #1a1020; border: 1px solid #1a1020; box-shadow: 1px 1px 0 #1a1020; font-size: 11px; white-space: nowrap; line-height: 1.2; }
+.cstop.sel .cplaque { background: #f3d27a; }
+.cplaque .cstars svg { width: 7px; height: 7px; }
+.cstars { display: inline-flex; gap: 2px; align-items: center; }
+.cwalker { position: absolute; transform: translate(-100%, -100%); width: 3.4%; pointer-events: none; animation: cs-bob 1s steps(2) infinite; }
+.cwalker svg { width: 100%; height: auto; display: block; }
+@keyframes cs-bob { 0%, 100% { margin-top: 0; } 50% { margin-top: -3px; } }
+.cbrief { display: flex; gap: 16px; padding: 12px 14px; align-items: flex-start; }
+.cbsprite { flex: 0 0 auto; padding: 8px; background: #2c2042; border: 2px solid #1a1020; }
+.cbtext { flex: 1; min-width: 0; }
+.cbtext h3 { font-family: 'Jacquard 24', serif; font-weight: 400; font-size: 28px; color: var(--ink); margin: 0 0 4px; }
+.clesson { margin: 2px 0 6px; }
+.cltag { display: inline-block; padding: 0 6px; background: var(--title1); color: #f6efd8; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.ctip { color: var(--ink); }
+.cstarlist { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 3px; }
+.cstarlist li { display: flex; align-items: center; gap: 6px; }
+.cstarlist li.got { font-weight: 700; }
+.cacts { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 8px; margin-top: 10px; }
+.cactcard { display: grid; gap: 3px; padding: 8px 10px; opacity: .75; }
+.cresult { text-align: center; padding: 8px 6px 10px; margin-bottom: 8px; border: 2px solid var(--lo); background: var(--field); }
+.cresult.won { border-color: var(--title2); box-shadow: inset 0 0 0 1px var(--title1); }
+.cresult > b { display: block; font-family: 'Jacquard 24', serif; font-weight: 400; font-size: 28px; color: var(--ink); }
+.cresult .cstars { gap: 10px; margin: 6px 0 4px; }
+.cresult .cstarlist { justify-items: center; }
+.cst.fresh { animation: cs-stamp .6s steps(5) both; }
+@keyframes cs-stamp { 0% { transform: scale(2.6); opacity: 0; } 60% { transform: scale(.85); opacity: 1; } 80% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+.campribbon { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 3px 8px; margin: 2px 0; background: #2c2042; color: #f6efd8; border: 1px solid #1a1020; font-size: 12px; cursor: help; }
+.campribbon .crname { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: #f3d27a; }
+.campribbon .crname svg { height: 14px; width: auto; }
+.campribbon .crstars { display: inline-flex; align-items: center; gap: 4px; color: #d8d0e0; }
+.campribbon .crstars svg { width: 9px; height: 9px; }
+.campribbon .crteach { flex-basis: 100%; color: #f6efd8; padding: 2px 0 1px; border-top: 1px dashed #5a4a78; }
+@media (max-width: 640px) {
+  .cbrief { flex-direction: column; gap: 8px; }
+  .cbsprite svg { width: 48px; height: auto; }
+  .cplaque { font-size: 9px; padding: 0 2px; }
+  .cplaque .cstars { display: none; }
+  .campribbon .crstars { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .cwalker, .cst.fresh { animation: none; } }

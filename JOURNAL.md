@@ -2,6 +2,36 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 19 November 2026 · 1.0-pre, the Long Road to the City
+
+**Why a campaign now.** Everything so far has been for people who already know the game. The rules have grown (banking, burying, two claims, Ascension, contest), and a new player meets them all at once on the New game page. The progression wishlist's first unfinished item was Act I of a campaign that teaches one rule at each stop, so that is this release.
+
+**The design.** Six stops on a road across the prairie, each against greedy bots, each turning one rule on and keeping the earlier ones, so the last stop is the full default game (contest on; Burn and the market stay off while they're on trial). You play a different archetype at every stop, so by the gate you've tried all six.
+
+| Stop | Lesson | You | Rival(s) | Target | Par | Challenge |
+|---|---|---|---|---|---|---|
+| 1 Crossroads Inn | Build and claim | Gardener | Hedonist | 30◇ | round 4 | own 6+ cards |
+| 2 Mill at Hollow Brook | Banking | Hedonist | Cryptkeeper | 36◇ | 5 | bank 2◇ twice |
+| 3 Shepherd's Barrow | Burying, Defense | Cryptkeeper | Archbishop | 40◇ | 5 | 7+ buried |
+| 4 Ford of Reeds | Second claim, Ascension | Philosopher | Warmonger | 44◇ | 5 | 5+ suits |
+| 5 Burnt Watchtower | War | Warmonger | Archbishop | 48◇ | 6 | Ruin or Overwhelm 3 |
+| 6 Toll Gate | Contest, three seats | Archbishop | Warmonger, Gardener | 52◇ | 6 | win, losing at most 1 card |
+
+Three stars a stop: win, win by par, and the challenge. The engine now counts each player's lost cards (Ruined, Overwhelmed or contested away) for the last one.
+
+**Measured, then tuned.** A greedy bot in the player's seat stands in for a newcomer (60 games a stop; a tactician scored the same). My first draft guessed pars of 7–8 rounds and was wrong: these games end in round 4–6. And two matchups were far too hard for early stops: Hedonist against a Gardener won 25–30%, and Warmonger against a Philosopher 20%. Every pairing was tried (50 games each) and the friendliest ones that still teach the lesson kept:
+
+| | Inn | Mill | Barrow | Ford | Watchtower | Gate |
+|---|---|---|---|---|---|---|
+| First draft | 65% | 25% | 55% | 65% | 30% | 25% |
+| **As shipped** | **62%** | **60%** | **52%** | **48%** | **40%** | **27%** (par 33%) |
+
+Ford and Watchtower swapped places so the curve only climbs. Pars sit at the median winning round, so the second star asks for a good game, not a perfect one. The challenges are set where a bot that isn't trying reaches them in 8–50% of games; a player who is trying should do better. The Barrow's first challenge (5 buried) came free in half of all games, so it is 7 now, the Cryptkeeper's mastery goal.
+
+**The look.** The map is a 240 × 120 pixel painting made in the page: a dusk sky in dithered bands, far hills, wind-combed grass with wildflowers, a brook by the mill, a river at the ford with stepping stones, and the walled city on the horizon with lit windows and an open gate. The road is packed earth with ruts; the stretch you've walked is worn pale. Each stop is a pixel landmark (an inn with a hanging sign, a windmill, a grassy barrow with a stone door, reeds at the ford, a charred tower with embers, a striped toll bar) with a plaque of its stars, and a meeple with a bundle on a stick bobs at the stop you've reached. In a campaign game a dusk-violet strip above the board names the stop, its lesson and its stars, and in round 1 spells out the new rule. At the end the Chronicle opens on the stop's stars, new ones stamping in, with a button on to the next stop. The title screen has a Campaign banner.
+
+**Next:** Act II (tactician and warlord bots, rule twists like "no Sword cards in the deck"); the 3-player Burn test on 500+ paired games; card backs for the print edition.
+
 ## 18 November 2026 · 1.0-pre, every card burns its own way; print and play
 
 **Why per-card burns.** FOUNDATIONS asked for every card to have two uses: build it for its lasting effect, or burn it once. 0.9 tried one burn per suit and it added no skill (+7.0 against the base game's +10), because six interchangeable effects are just more of the same option. This time every one of the 87 non-Foundation cards has its own burn (`KData.BURNS`), written from ten steps: ●, cards, ◇, ◇ per something on the board (your Leaf cards, Goblets anywhere, Ruined cards, your buried cards, your suits), a discount on the next card, a meeple, one more claim, war, a burial, and a new one, the **ward** (a card of yours can't be Ruined, Overwhelmed, contested or Cursed until your next turn). Each suit keeps its voice (Goblet ●, Tome cards, Leaf ◇, Sceptre claims and wards, Sword war, Bone burial), and the dearer the build, the richer the burn. Cards made in the card builder, and libraries saved before today, still burn by suit.

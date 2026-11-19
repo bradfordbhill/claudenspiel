@@ -1,6 +1,12 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-road', date: '19 November 2026', title: 'The Long Road to the City', notes: [
+    'A <b>campaign</b>: the Campaign tab (and a new banner on the title screen) opens a map of the prairie, painted in dithered pixels, with a road winding past six stops toward the walled city.',
+    'Act I teaches the game one rule at a time against greedy bots: build and claim at the <b>Crossroads Inn</b>, banking at the <b>Mill at Hollow Brook</b>, burying at the <b>Shepherd’s Barrow</b>, two claims and Ascension at the <b>Ford of Reeds</b>, war at the <b>Burnt Watchtower</b>, and contest at the <b>Toll Gate</b>, the full game against two rivals. You play a different archetype at each.',
+    'Every stop has <b>three stars</b>: win, win by its par round, and a challenge (bank 2◇ twice, bury seven, win having lost at most one card…). Win a stop to open the next; your little meeple walks the road as you go.',
+    'Stars stamp in on the Chronicle at the end of a campaign game, with a button straight to the next stop.'
+  ] },
   { v: 'cs-1.0-pre-burns', date: '18 November 2026', title: 'Every card burns its own way', notes: [
     '<b>Burn</b> (a New game option, still on trial) now gives <b>every card its own burn</b> instead of one effect per suit. A flame tag under each card in your hand shows what burning it would do: Spice Caravan burns for 8●, Reconstructed Map draws 3, an Obelisk is buried under your own card and banks 2◇, Trebuchet banks 1◇ per Ruined card on the board.',
     'Two new burn effects. A <b>ward</b> (dashed blue frame and ⛨) keeps a card of yours safe from Ruin, Overwhelm, contest and Curses until your next turn. A <b>discount</b> makes the next card you place this turn cheaper.',

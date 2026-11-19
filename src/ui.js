@@ -192,6 +192,76 @@
         (d.progress ? '<span class="small muted">' + arch.map(function (a) { return (book.wins && book.wins[a] ? '✓ ' : '○ ') + a; }).join(' · ') + '</span>' : '') + '</div>'; }).join('');
     return '<div class="page scroll"><div class="pane deeds"><h2>The Book of Deeds</h2><p>' + n + ' of ' + KDeeds.LIST.length + ' deeds earned, in ' + (book.games || 0) + ' finished game' + (book.games === 1 ? '' : 's') + '. Deeds are earned by the people at the table, not the bots, and kept in this browser.</p><div class="deedgrid">' + items + '</div>' + masteryHTML(book) + '</div></div>';
   }
+  /* ----- the campaign: The Long Road to the City (src/campaign.js), kept in this browser as cs.campaign ----- */
+  var CC = typeof CSCampaign !== 'undefined' ? CSCampaign : null;
+  function campBook() { return lsGet('cs.campaign') || {}; }
+  function starsHTML(arr, px, fresh) { return '<span class="cstars">' + arr.map(function (on, i) { return '<span class="cst' + (fresh && fresh[i] ? ' fresh' : '') + '" style="animation-delay:' + (0.5 + i * 0.35) + 's">' + CC.star(on, px) + '</span>'; }).join('') + '</span>'; }
+  function campaignPage() {
+    var book = campBook(), cur0 = CC.current(book), sel = CC.stop(app.campSel) || CC.stop(cur0), ci = CC.index(cur0), allWon = CC.STOPS.every(function (s) { var r = book.stops && book.stops[s.id]; return r && r.stars[0]; });
+    var reached = allWon ? CC.STOPS.length + 1 : ci + 1;
+    var h = '<div class="page scroll"><div class="pane campaign"><div class="camphead"><h2>The Long Road to the City</h2><span class="campsum">' + CC.star(true, 2) + ' ' + CC.total(book) + ' of ' + CC.STOPS.length * 3 + '</span></div>' +
+      '<p class="small muted">Six stops across the prairie, each against greedy bots and each with one new rule to learn. The rules switch on one at a time, so by the Toll Gate you play the whole game. Win a stop to open the next; every stop has three stars.</p>';
+    h += '<div class="cmap" style="background-image:url(' + CC.mapURL(reached) + ')"><span class="cact">Act I · The Prairie</span>';
+    CC.STOPS.forEach(function (s, i) {
+      var open = CC.unlocked(book, s.id), r = book.stops && book.stops[s.id], st = r ? r.stars : [false, false, false];
+      h += '<button class="cstop' + (open ? '' : ' locked') + (sel.id === s.id ? ' sel' : '') + (r && r.stars[0] ? ' won' : '') + '" data-act="campPick" data-stop="' + s.id + '" style="left:' + (s.x / CC.W * 100) + '%;top:' + (s.y / CC.H * 100) + '%;width:' + (CC.spriteW(s.sprite) / CC.W * 100) + '%" title="' + esc(s.name) + (open ? '' : ' (locked)') + '">' +
+        CC.sprite(s.sprite, 1) + '<span class="cplaque"><b>' + (i + 1) + '</b>' + (open ? starsHTML(st, 1) : '🔒') + '</span></button>';
+    });
+    var ws = allWon ? { x: 226, y: 40 } : CC.stop(cur0);
+    h += '<span class="cwalker" style="left:' + ((ws.x + (allWon ? 0 : -7)) / CC.W * 100) + '%;top:' + ((ws.y + 4) / CC.H * 100) + '%">' + CC.walker(1, COLORS[0]) + '</span>';
+    h += '<span class="ccity">' + (allWon ? 'The City' : 'The City · Acts II–III') + '</span></div>';
+    // the briefing for the chosen stop
+    var si = CC.index(sel.id), open = CC.unlocked(book, sel.id), rec = book.stops && book.stops[sel.id], stars = rec ? rec.stars : [false, false, false];
+    var foe = sel.rivals.map(function (r) { var f = archetypes().filter(function (c) { return c.archetype === r[1]; })[0]; return '<b>' + esc(r[0]) + '</b>, a greedy ' + esc(r[1]) + (f ? ' (' + esc(f.name) + ')' : ''); }).join(' and ');
+    var mine = archetypes().filter(function (c) { return c.archetype === sel.arch; })[0];
+    h += '<div class="cbrief raised"><div class="cbsprite">' + CC.sprite(sel.sprite, 4) + '</div><div class="cbtext"><div class="small muted">Act I · Stop ' + (si + 1) + ' of ' + CC.STOPS.length + '</div><h3>' + esc(sel.name) + '</h3>' +
+      '<div class="clesson"><span class="cltag">Lesson</span> <b>' + esc(sel.lesson) + '</b></div><p>' + esc(sel.teach) + '</p>' +
+      '<p class="small">You play the <b>' + esc(sel.arch) + '</b>' + (mine ? ' (' + esc(mine.name) + ', weak to ' + esc(mine.weakTo) + ')' : '') + ' against ' + foe + '. Target ' + sel.target + '◇.</p>' +
+      '<p class="small ctip">❧ ' + esc(sel.tip) + '</p>' +
+      '<ul class="cstarlist">' + [['Win', stars[0]], ['Win by the end of round ' + sel.par, stars[1]], [sel.star3.text, stars[2]]].map(function (x) { return '<li>' + CC.star(x[1], 2) + ' ' + esc(x[0]) + '</li>'; }).join('') + '</ul>' +
+      (rec ? '<p class="small muted">' + rec.tries + ' attempt' + (rec.tries === 1 ? '' : 's') + ', ' + rec.wins + ' won.</p>' : '') +
+      '<div class="row">' + (open ? '<button class="btn def big" data-act="campGo" data-stop="' + sel.id + '">' + (rec && rec.stars[0] ? 'Play it again' : 'Set out') + '</button>' : '<span class="muted">🔒 Win ' + esc(CC.STOPS[si - 1].name) + ' to open this stop.</span>') + '</div></div></div>';
+    h += '<div class="cacts">' + CC.ACTS.slice(1).map(function (a) { return '<div class="cactcard sunken"><b>Act ' + a.n + ' · ' + esc(a.name) + '</b><span class="small muted">' + esc(a.note) + '</span></div>'; }).join('') + '</div>';
+    return h + '</div></div>';
+  }
+  function startStop(id) {
+    var s = CC.stop(id); if (!s || !CC.unlocked(campBook(), id)) return;
+    if (app.game && app.game.state.winner == null && !app.campConfirm) { app.campConfirm = id; app.modal = function () { return modal('Leave the game?', '<p>A game is running. Setting out on the road replaces it.</p>', '<button class="btn" data-act="closeModal">Stay</button><button class="btn def" data-act="campGo" data-stop="' + id + '">Set out</button>'); }; render(); return; }
+    app.campConfirm = null;
+    ensureSetup(); var nm = (setup.players[0].name || '').trim(), o = CC.setup(id, nm && !/^Player \d$/.test(nm) && nm !== 'You' ? nm : 'Traveller'); o.seed = window.ksSeed; o.players.forEach(function (q, i) { q.color = COLORS[i]; });
+    var st = E.newGame(app.lib, o); st.players.forEach(function (pl, i) { if (i > 0) pl.bot = 'greedy'; });
+    st.campaign = { act: 1, stop: id };
+    app.modal = null; app.game = newCtx(st, 'game'); lsSet('cs.game', st); app.page = 'game'; render();
+    toast('Act I · ' + s.name + '. Lesson: ' + s.lesson + '.');
+  }
+  // A campaign game has ended: record its stars (once).
+  function campaignEnd(st) {
+    if (!CC || !st.campaign) return;
+    var p = 0;   // the traveller always takes the first seat
+    var got = CC.stars(st, p); if (!got) return;
+    var book = campBook(), fresh = CC.record(book, st.campaign.stop, got); lsSet('cs.campaign', book);
+    app.campResult = { log: st.log.length, stop: st.campaign.stop, got: got, fresh: fresh };
+    if (fresh[0]) { var nx = CC.next(st.campaign.stop); setTimeout(function () { SFX.play('deed'); toast(nx ? '🛤 The road opens: ' + CC.stop(nx).name + '.' : '🏰 Act I complete: the city gate stands open.'); }, 900); }
+  }
+  // The campaign part of the Chronicle: the stop, its three stars (new ones stamp in), and where to go next.
+  function campaignBlock(st) {
+    if (!CC || !st.campaign) return null;
+    var s = CC.stop(st.campaign.stop), r = app.campResult && app.campResult.log === st.log.length ? app.campResult : null;
+    var p = 0;
+    var got = r ? r.got : (CC.stars(st, p) || [false, false, false]), nx = CC.next(s.id), won = got[0];
+    var html = '<div class="cresult' + (won ? ' won' : '') + '"><div class="small muted">Act I · Stop ' + (CC.index(s.id) + 1) + '</div><b>' + esc(s.name) + '</b>' + starsHTML(got, 4, r && r.fresh) +
+      '<ul class="cstarlist small">' + [['Win', got[0]], ['Win by the end of round ' + s.par, got[1]], [s.star3.text, got[2]]].map(function (x) { return '<li class="' + (x[1] ? 'got' : '') + '">' + CC.star(x[1], 2) + ' ' + esc(x[0]) + '</li>'; }).join('') + '</ul>' +
+      (won ? (nx ? '<p class="small">The road goes on to <b>' + esc(CC.stop(nx).name) + '</b>: ' + esc(CC.stop(nx).lesson.toLowerCase()) + '.</p>' : '<p class="small">Act I is done. The city gate stands open; Acts II and III are still being built.</p>') : '<p class="small">The road waits. Try the stop again with a fresh shuffle.</p>') + '</div>';
+    var btns = '<button class="btn" data-act="campMap" data-stop="' + s.id + '">Map</button>' + (won && nx ? '<button class="btn" data-act="rematch">Play again</button><button class="btn def" data-act="campGo" data-stop="' + nx + '">On to the next stop</button>' : '<button class="btn def" data-act="rematch">Try again</button>');
+    return { html: html, btns: btns };
+  }
+  // A strip above the board in a campaign game: the stop, its lesson and the stars to play for.
+  function campaignRibbon(ctx) {
+    var st = ctx.state; if (!CC || !st.campaign || ctx.kind !== 'game') return '';
+    var s = CC.stop(st.campaign.stop); if (!s) return '';
+    return '<div class="campribbon" title="' + esc(s.teach) + '"><span class="crname">' + CC.sprite(s.sprite, 1) + ' ' + (CC.index(s.id) + 1) + ' · ' + esc(s.name) + '</span><span class="crlesson">Lesson: <b>' + esc(s.lesson) + '</b></span>' +
+      '<span class="crstars">' + CC.star(false, 1) + ' Win ' + CC.star(false, 1) + ' by round ' + s.par + ' ' + CC.star(false, 1) + ' ' + esc(s.star3.text) + '</span>' + (st.round === 1 && st.winner == null ? '<span class="crteach">' + esc(s.teach) + '</span>' : '') + '</div>';
+  }
   function toast(m) { app.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { app.toast = null; render(); }, 4000); }
 
   /* ---------------- contexts (game / sandbox) ---------------- */
@@ -209,7 +279,7 @@
     ctx.err = null; ctx.hist.push(ctx.state); if (ctx.hist.length > 80) ctx.hist.shift();
     var ended = ctx.kind === 'game' && ctx.state.winner == null && r.winner != null;
     ctx.state = r;
-    if (ended) { earnDeeds(r); setTimeout(function () { if (app.game === ctx && app.page === 'game' && !app.modal && ctx.state.winner != null) chronicleModal(ctx); }, prefs.motion === 'off' ? 300 : prefs.motion === 'calm' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) ? 1500 : 4800); }
+    if (ended) { campaignEnd(r); earnDeeds(r); setTimeout(function () { if (app.game === ctx && app.page === 'game' && !app.modal && ctx.state.winner != null) chronicleModal(ctx); }, prefs.motion === 'off' ? 300 : prefs.motion === 'calm' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) ? 1500 : 4800); }
     if (ctx.kind === 'sandbox' && ctx.ui.autoCheck && /^sb(Place|Suit|Move|Remove|Bury|Unbury)$/.test(a.t)) { var r2 = E.apply(ctx.state, { t: 'sbCheck', quiet: true }); if (!r2.error) ctx.state = r2; }
     uiAfter(ctx, a);
     lsSet(ctx.kind === 'game' ? 'cs.game' : 'cs.sandbox', ctx.state);
@@ -1126,7 +1196,7 @@
     var focusSel = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-focus-key');
     var hs = $('.bottom .hand, .mhand .hand'), hsl = hs ? hs.scrollLeft : 0;
     var tabs = ONLINE ? [['home', 'Home'], ['new', 'Play locally'], ['game', 'Local game'], ['online', 'Online'], ['profile', 'Profile'], ['library', 'Cards'], ['help', 'Help']]
-      : [['new', 'New game'], ['game', 'Game'], ['sandbox', 'Sandbox'], ['library', 'Library'], ['builder', 'Card builder'], ['deeds', 'Deeds'], ['help', 'Help']];
+      : [['new', 'New game'], ['campaign', 'Campaign'], ['game', 'Game'], ['sandbox', 'Sandbox'], ['library', 'Library'], ['builder', 'Card builder'], ['deeds', 'Deeds'], ['help', 'Help']];
     var h = '<div class="win raised' + (isMobile() && inGame() ? ' mwin' : '') + '"><div class="titlebar">' + crest() + '<span>' + (ONLINE ? 'Claudenspiel' : 'Claudenspiel — the workshop') + '</span><span class="grow"></span><span class="small" style="font-weight:400">' + esc(ONLINE ? (N.user ? (N.guest ? 'Playing as ' + N.user + ' (guest)' : 'Signed in as ' + N.user) : '') : 'Library: ' + app.libSource + ', ' + app.lib.length + ' cards') + '</span></div>';
     h += '<div class="menubar" role="tablist">' + tabs.map(function (t) { var dis = t[0] === 'game' && !app.game; return '<button class="tab' + (app.page === t[0] ? ' on' : '') + '" role="tab" data-page="' + t[0] + '"' + (dis ? ' disabled style="opacity:.5"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div>';
     h += '<div class="content">' + pageHTML() + '</div>';
@@ -1187,6 +1257,7 @@
       case 'help': return helpPage();
       case 'notes': return notesPage();
       case 'deeds': return deedsPage();
+      case 'campaign': return ONLINE ? homePage() : campaignPage();
       default: return ONLINE ? homePage() : newGamePage();
     }
   }
@@ -1261,7 +1332,7 @@
       (ctx.online ? '' : '<details class="small" data-keep="ref"' + (app.open.ref ? ' open' : '') + '><summary>Referee</summary><div class="col" style="margin-top:4px"><div class="row">● <button class="btn sm" data-act="apAdj" data-d="-1">−</button><button class="btn sm" data-act="apAdj" data-d="1">+</button> ◇ tokens <button class="btn sm" data-act="tokAdj" data-d="-1">−</button><button class="btn sm" data-act="tokAdj" data-d="1">+</button></div>' +
       '<select data-sel="giveId" style="max-width:100%">' + cardOptions(st, ui.giveId) + '</select><button class="btn sm" data-act="give">Give to ' + esc(pl.name) + '’s hand</button></div></details>') + '</div>';
     h += '<div class="raised" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:3px"><div class="panelhead" style="margin:0 0 3px">Log</div><div class="log sunken">' + logPanel(st) + '</div></div></div>';
-    h += '<div class="center">' + (ctx.online ? onlineBar(ctx) : '') + boardBar(ctx) + promptBar(ctx) + '<div class="boardwrap sunken">' + boardHTML(ctx).html + '</div></div>';
+    h += '<div class="center">' + (ctx.online ? onlineBar(ctx) : '') + boardBar(ctx) + campaignRibbon(ctx) + promptBar(ctx) + '<div class="boardwrap sunken">' + boardHTML(ctx).html + '</div></div>';
     h += '<div class="right raised pane">' + inspector(ctx) + '</div>';
     h += '<div class="bottom raised">' + handHTML(ctx) + '</div>';
     return h + '</div></div>';
@@ -1427,7 +1498,7 @@
     var byR = {}; c.forEach(function (e) { if (e.r > 0) byR[e.r] = e.t; }); Object.keys(byR).forEach(function (r) { h += '<tr><td>' + r + '</td>' + byR[r].map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; });
     return h + '</table></details></div>';
   }
-  function chronicleModal(ctx) { app.modal = function () { var st = ctx.state; return modal('The Chronicle', masteryGained(st) + chronicleHTML(st), '<button class="btn" data-act="closeModal">Close</button>' + (ctx.online ? '' : '<button class="btn def" data-act="rematch">Rematch</button>')); }; render(); }
+  function chronicleModal(ctx) { app.modal = function () { var st = ctx.state, cb = campaignBlock(st); return modal('The Chronicle', (cb ? cb.html : '') + masteryGained(st) + chronicleHTML(st), '<button class="btn" data-act="closeModal">Close</button>' + (ctx.online ? '' : cb ? cb.btns : '<button class="btn def" data-act="rematch">Rematch</button>')); }; render(); }
   function modal(title, body, btns) { return '<div class="modalbg"><div class="modal raised" role="dialog" aria-label="' + esc(title) + '"><div class="titlebar">' + crest() + '<span>' + esc(title) + '</span></div><div class="body">' + body + '</div><div class="btns">' + (btns || '') + '</div></div></div>'; }
   // Dialogs: app.modal for one-off ones; otherwise revealed hands, "pass the device" between turns,
   // and engine prompts that aren't answered by clicking the board.
@@ -1721,6 +1792,10 @@
         '<li>Play more cards next to your cards, then <b>claim</b> one with a meeple.</li>' +
         '<li>Press <b>End turn</b>. Every 6● you didn’t spend banks 1◇ (at most 2). Reaching <b>52◇</b> starts the <b>last round</b>: everyone gets the same number of turns, then the highest total wins.</li></ol>' +
         '<p class="muted">The hint line above the board suggests a next step while you learn.</p>' },
+      { id: 'campaign', title: 'The campaign', only: 'table', html: '<p><button class="linkbtn" data-page="campaign">The Long Road to the City</button> teaches the game one rule at a time. Act I crosses the prairie in six stops, each against greedy bots: build and claim at the Crossroads Inn, banking at the Mill, burying at the Barrow, two claims and Ascension at the Ford, war at the Watchtower, and contest at the Toll Gate, where you play the full game against two rivals. You play a different archetype at each stop.</p><ul>' +
+        '<li>Win a stop to open the next. Each stop has three stars: win, win by its par round, and a challenge in the spirit of its lesson. Stars are kept in this browser and never lost.</li>' +
+        '<li>A strip above the board names the stop, its lesson and its stars; in the first round it also spells out the new rule.</li>' +
+        '<li>Acts II (the river towns) and III (the city, against the Genius) are still to come.</li></ul>' },
       { id: 'claudenspiel', title: 'What Claudenspiel changes', html: '<p>Claudenspiel is Claude’s own fork of Kartenspiel. Its rules differ:</p><ul>' +
         '<li><b>The last round:</b> reaching the target starts it. Everyone gets the same number of turns, then the highest total wins; a tie goes to whoever got there first. With three or more players, earlier seats start with a few ◇, since later seats see the score to beat: 6◇ and 4◇ for the first two of three players, 9◇, 6◇ and 3◇ for the first three of four.</li>' +
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
@@ -2102,7 +2177,7 @@
       '<button class="btn' + (ov === 'quick' ? ' on' : '') + '" data-act="ovQuick" title="Quickview overlay">◇●</button><button class="btn' + (ov === 'war' ? ' on' : '') + '" data-act="ovWar" title="War overlay">War</button>' +
       (ctx.online ? '' : '<button class="btn" data-act="undo"' + (ctx.hist.length ? '' : ' disabled') + '>Undo</button>') +
       '<button class="btn def" data-act="endTurn"' + (canEnd ? '' : ' disabled') + '>End turn</button></div>';
-    h += (ctx.online ? onlineBar(ctx) : '') + promptBar(ctx);
+    h += (ctx.online ? onlineBar(ctx) : '') + campaignRibbon(ctx) + promptBar(ctx);
     h += '<div class="boardwrap sunken">' + boardHTML(ctx).html + '</div>';
     h += '<div class="mhand raised">' + handHTML(ctx) + '</div>';
     var sheet = app.sheet;
@@ -2117,7 +2192,7 @@
   // The Menu sheet: the pages (the tab bar is hidden on phones during a game), then the board toolbar.
   function menuSheet(ctx) {
     var tabs = (ONLINE ? [['home', 'Home'], ['new', 'Play locally'], ['online', 'Online'], ['profile', 'Profile'], ['library', 'Cards'], ['help', 'Help']]
-      : [['new', 'New game'], ['sandbox', 'Sandbox'], ['library', 'Library'], ['builder', 'Card builder'], ['help', 'Help']]).concat([['notes', 'Patch notes']]);
+      : [['new', 'New game'], ['campaign', 'Campaign'], ['sandbox', 'Sandbox'], ['library', 'Library'], ['builder', 'Card builder'], ['help', 'Help']]).concat([['notes', 'Patch notes']]);
     return '<div class="panelhead">Go to</div><div class="row">' + tabs.map(function (t) { return '<button class="btn" data-page="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
       (document.fullscreenEnabled && !isStandalone() ? '<div class="row" style="margin-top:6px"><button class="btn" data-act="fullscreen">' + (document.fullscreenElement ? 'Leave full screen' : 'Full screen') + '</button></div>' : '') +
       '<div class="panelhead" style="margin-top:8px">Board</div>' + boardBar(ctx) +
@@ -2459,7 +2534,7 @@
       case 'rematch': {   // the same players, archetypes, seats and rules, with a fresh shuffle
         var old = ctx.state, rp = old.players.map(function (q) { return { name: q.name, arch: q.arch, color: q.color }; }), ro = {};
         for (var ok in old.opts) ro[ok] = old.opts[ok]; ro.players = rp; ro.seed = window.ksSeed;
-        var rs = E.newGame(app.lib, ro); rs.players.forEach(function (q, i) { if (old.players[i].bot) q.bot = old.players[i].bot; });
+        var rs = E.newGame(app.lib, ro); rs.players.forEach(function (q, i) { if (old.players[i].bot) q.bot = old.players[i].bot; }); if (old.campaign) rs.campaign = clone(old.campaign);
         app.modal = null; app.game = newCtx(rs, 'game'); lsSet('cs.game', rs); render(); toast('Rematch: same players and rules, new shuffle.'); return;
       }
       case 'soloSetup': case 'hotseatSetup': {   // home page shortcuts: preset the seats, then the New game page
@@ -2469,6 +2544,9 @@
           sp.kind = kind; });
         app.page = 'new'; render(); return;
       }
+      case 'campPick': app.campSel = t.getAttribute('data-stop'); render(); return;
+      case 'campGo': startStop(t.getAttribute('data-stop')); return;
+      case 'campMap': app.modal = null; app.campSel = t.getAttribute('data-stop') || app.campSel; app.page = 'campaign'; render(); return;
       case 'resume': { var sv = lsGet('cs.game'); if (sv) { app.game = newCtx(sv, 'game'); app.page = 'game'; render(); } return; }
       case 'startTurn': dispatch(ctx, { t: 'startTurn' }); return;
       case 'buyClaim': dispatch(ctx, { t: 'buyClaim' }); return;
@@ -2782,7 +2860,7 @@
     if (ONLINE || typeof CSTitle === 'undefined') return;
     var saved = lsGet('cs.game'), items = [];
     if (app.game || (saved && saved.players && saved.winner == null)) items.push({ id: 'continue', label: 'Continue', suit: 'Sceptre', hint: 'your game in progress' });
-    items.push({ id: 'new', label: 'New game', suit: 'Sword', hint: 'bots or friends' }, { id: 'sandbox', label: 'Sandbox', suit: 'Leaf', hint: 'build freely' },
+    items.push({ id: 'campaign', label: 'Campaign', suit: 'Sceptre', hint: 'the long road' }, { id: 'new', label: 'New game', suit: 'Sword', hint: 'bots or friends' }, { id: 'sandbox', label: 'Sandbox', suit: 'Leaf', hint: 'build freely' },
       { id: 'library', label: 'Library', suit: 'Goblet', hint: 'every card' }, { id: 'deeds', label: 'Deeds', suit: 'Bone', hint: 'deeds and mastery' }, { id: 'help', label: 'Help', suit: 'Tome', hint: 'how to play' });
     CSTitle.show({ items: items, motion: prefs.motion || 'full', skip: !!lsGet('cs.notitle'),
       onSkipToggle: function (v) { lsSet('cs.notitle', v); },

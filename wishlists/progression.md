@@ -8,10 +8,10 @@ How players grow with Claudenspiel. The rule: progress widens what you can do an
 - ○ Mastery cosmetics: a meeple style or card back per archetype at level 10.
 
 ## A campaign against bots: The Long Road to the City
-- ▶ Act I (6 stops), the prairie: against greedy bots, one rule taught at each stop.
+- ✅ 1.0-pre Act I (6 stops), the prairie: against greedy bots, one rule switched on at each stop (build and claim, banking, burying, two claims and Ascension, war, contest), a different archetype at each, a pixel map of the road. Difficulty measured with bots: 62% → 27% (par 33% at the 3-seat finale).
 - ○ Act II, the river towns: tactician and warlord bots, with rule twists ("no Sword cards in the deck", "start with a Ruined card").
 - ○ Act III, the city: the Genius, as named rivals with fixed archetypes (The Abbess, a Genius Archbishop).
-- ○ Stars per stop (win; win within 6 rounds; win without losing a card).
+- ✅ 1.0-pre Stars per stop: win; win by the stop's par round (the median winning round); a challenge in the spirit of the lesson. The engine counts each player's lost cards.
 
 ## Collection
 - ○ Folios: themed packs of 12–15 new cards (the Grounds folio, a River folio) unlocked by the campaign, mixed into solo games and offered as table options.

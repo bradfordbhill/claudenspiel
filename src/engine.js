@@ -344,6 +344,7 @@ var KEngine = (function () {
     // The Ruin itself: flip the card and send its meeples home.
     var wasFoundation = isFoundation(st, u), owner = c.claimants[0];
     c.ruined = true; if (how === 'overwhelm') c.overwhelmed = true;
+    ownersBefore.forEach(function (o) { if (st.players[o]) st.players[o].lost = (st.players[o].lost || 0) + 1; });   // for the campaign's "lose no card"
     returnMeeples(st, u);
     log(st, rawDef(st, u).name + ' at ' + k + ' is ' + (how === 'overwhelm' ? 'Overwhelmed' : 'Ruined') + (actor != null ? ' by ' + st.players[actor].name : '') + '.');
     if (actor != null && st.players[actor] && !st.players[actor].out) {
@@ -1438,6 +1439,7 @@ var KEngine = (function () {
         if ((tp.ap || 0) < CONTEST_PRICE) return err(st, 'Contesting costs ' + CONTEST_PRICE + '● of this turn’s ●.');
         if (tp.meeples <= 0) return err(st, 'You have no meeples left.');
         var loser = tcc.claimants[0]; tp.ap -= CONTEST_PRICE; st.turn.contested = true;
+        if (st.players[loser]) st.players[loser].lost = (st.players[loser].lost || 0) + 1;
         returnMeeples(st, tu2); tcc.claimants = [p]; tp.meeples--;
         log(st, tp.name + ' pays ' + CONTEST_PRICE + '● and contests ' + rawDef(st, tu2).name + ': ' + st.players[loser].name + '’s meeple goes home.');
         // The dead follow their keeper: a Cryptkeeper's buried cards don't change hands with the card above them.
