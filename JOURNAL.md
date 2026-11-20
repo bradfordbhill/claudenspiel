@@ -2,6 +2,40 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 20 November 2026 · 1.0-pre, the River Towns (campaign Act II)
+
+**Why.** Act I ends at the Toll Gate with the full game against greedy bots, and then the road stopped. A player who has walked it knows every rule but has never met a bot that plans or one that fights. Act II is the bridge from "I know the rules" to "I can beat a tactician": the full game at every stop, tacticians and warlords as rivals, and at each town one **custom**, a rule twist that holds only there. Customs are also how the campaign shows off the variants still on trial (market, Burn) without asking anyone to read a New game form.
+
+**The towns.**
+
+| Stop | Custom | You | Rival(s) | Par | Challenge |
+|---|---|---|---|---|---|
+| 1 Saltmarsh Wharf | Short of hands: 5 meeples | Archbishop | tactician Cryptkeeper | 7 | win with a meeple unused |
+| 2 Ferrybridge | Market day: a row of 3 | Hedonist | tactician Gardener | 6 | 5+ Goblets |
+| 3 Weir at Gallows Bend | Ember night: Burn | Cryptkeeper | warlord Philosopher | 5 | win, losing at most 2 cards |
+| 4 Lantern Abbey | Pax Dei: no Sword cards | Philosopher | tactician Archbishop, tactician Gardener | 4 | 5+ suits |
+| 5 Tanners' Row | Spring flood: hand 5, draw 3 | Gardener | warlord Warmonger, tactician Philosopher | 5 | garden of 6+ |
+| 6 Bridge of Kings | Market and Burn, 4 seats | Warmonger | warlord Cryptkeeper, tactician Archbishop, tactician Hedonist | 5 | Ruin or Overwhelm 4+ |
+
+**Measured** with `tools/campsim.js` (new): a **tactician** stands in for the player now, since someone who finished Act I is past greedy play. 40–60 games a stop.
+
+| | Wharf | Ferry | Weir | Abbey | Tanners | Kings |
+|---|---|---|---|---|---|---|
+| Win | 48% | 44% | 40% | 44% (par 33) | 25% (par 33) | 32% (par 25) |
+| Challenge | 14% | 18% | 40% | 16% | not run (a garden of 6 is the top quarter of games) | 18% |
+
+**What the numbers changed.**
+- *Pax Dei was first the Warmonger's stop* ("a warlord at peace": win by building). It won 7% at 3 players and 16–24% even at 2. Taking a Warmonger's swords is a joke at its expense, not a lesson. The Philosopher, whose enemy suit is Sword, plays the Abbey now (44%), and the Warmonger gets the Bridge of Kings, where four Kingdoms are four places to raid.
+- *The Gardener struggles wherever war is heavy*: 14% at the 4-seat Bridge and 25% at Tanners' Row whatever rivals I tried (10–30%). It stays at Tanners' as the act's hardest stop. The flood's extra cards help the warlords more than the garden.
+- *Six suits at the Bridge came 0 times in 50*; the Abbey's Overwhelm-2 came 0 times too. Both replaced. The Wharf's "win without taking back a meeple" came free with nearly every win (44% of games against 48% wins), so it asks for a meeple to spare now (14%).
+- Pars are the median winning round, as in Act I: the Wharf's games run long (7) with few meeples, the Abbey's short (4) with no Ruins to slow anyone.
+
+Win rates don't climb as neatly as Act I's: the 3- and 4-seat stops sit above their par share while Tanners' sits under it. I'd rather keep the lessons in a sensible order (few hands, the market, burning, peace, flood, everything) than reorder towns to chase a ±7% curve.
+
+**The look.** Act II has its own map: the river valley by moonlight, fields in dithered strips of meadow, wheat and orchard, scattered trees and fireflies, a broad river along the bottom with the moon's broken reflection, the towpath (worn pale where you've walked), and the city close on the right with a cathedral spire and a lit gate. A barge drifts downriver in steps. New pixel landmarks: a sailing boat at the wharf, a rope ferry, a mill wheel at the weir, the abbey with its lit belfry, tanners' racks of dyed hides, and the bridge with two towers. The ribbon over the board turns night blue, names the custom instead of the lesson, and numbers stops by act (II.3). The Campaign page has a tab per act with its own star count.
+
+**Next:** Act III, the city, against the Genius as named rivals; a hand-off from the Toll Gate's Chronicle straight onto the river map; the 3-player Burn test (Weir and Bridge now put Burn in front of players, which makes that test more pressing).
+
 ## 19 November 2026 · 1.0-pre, the Long Road to the City
 
 **Why a campaign now.** Everything so far has been for people who already know the game. The rules have grown (banking, burying, two claims, Ascension, contest), and a new player meets them all at once on the New game page. The progression wishlist's first unfinished item was Act I of a campaign that teaches one rule at each stop, so that is this release.

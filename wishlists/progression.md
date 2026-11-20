@@ -9,7 +9,8 @@ How players grow with Claudenspiel. The rule: progress widens what you can do an
 
 ## A campaign against bots: The Long Road to the City
 - ✅ 1.0-pre Act I (6 stops), the prairie: against greedy bots, one rule switched on at each stop (build and claim, banking, burying, two claims and Ascension, war, contest), a different archetype at each, a pixel map of the road. Difficulty measured with bots: 62% → 27% (par 33% at the 3-seat finale).
-- ○ Act II, the river towns: tactician and warlord bots, with rule twists ("no Sword cards in the deck", "start with a Ruined card").
+- ✅ 1.0-pre Act II, the river towns: the full game against tactician and warlord bots, each town with a custom (5 meeples, the market, Burn, no Sword cards, hand 5 and draw 3, a four-seat finale with market and Burn), a moonlit river map. Measured with a tactician as the player: 48% → 25–32%.
+- ○ Act II twist still unused: start with a Ruined card on the board.
 - ○ Act III, the city: the Genius, as named rivals with fixed archetypes (The Abbess, a Genius Archbishop).
 - ✅ 1.0-pre Stars per stop: win; win by the stop's par round (the median winning round); a challenge in the spirit of the lesson. The engine counts each player's lost cards.
 

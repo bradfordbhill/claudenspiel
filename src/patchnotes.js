@@ -1,6 +1,12 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-river', date: '20 November 2026', title: 'The River Towns', notes: [
+    '<b>Act II</b> of the campaign opens once you win the Toll Gate: a new map of the river valley by moonlight, with the towpath running from town to town, fireflies over the fields, a barge drifting downstream and the city close now on the right.',
+    'Six towns, the full game at every one, against <b>tactician</b> and <b>warlord</b> bots instead of greedy ones. Each town keeps a <b>custom</b>: only 5 meeples at <b>Saltmarsh Wharf</b>, a market row at <b>Ferrybridge</b>, burning at <b>the Weir at Gallows Bend</b>, no Sword cards at all at <b>Lantern Abbey</b>, three cards a turn at <b>Tanners’ Row</b>, and everything at once, four to a table, on <b>the Bridge of Kings</b>.',
+    'New challenges for the third star: win with a meeple to spare, five Goblets, five suits with no Swords in the deck, a garden of six, four Ruins at a full table.',
+    'The Campaign page has a tab for each act, with its own star count.'
+  ] },
   { v: 'cs-1.0-pre-road', date: '19 November 2026', title: 'The Long Road to the City', notes: [
     'A <b>campaign</b>: the Campaign tab (and a new banner on the title screen) opens a map of the prairie, painted in dithered pixels, with a road winding past six stops toward the walled city.',
     'Act I teaches the game one rule at a time against greedy bots: build and claim at the <b>Crossroads Inn</b>, banking at the <b>Mill at Hollow Brook</b>, burying at the <b>Shepherd’s Barrow</b>, two claims and Ascension at the <b>Ford of Reeds</b>, war at the <b>Burnt Watchtower</b>, and contest at the <b>Toll Gate</b>, the full game against two rivals. You play a different archetype at each.',

@@ -242,3 +242,19 @@ svg.chron .hc:hover { fill-opacity: .07; }
   .campribbon .crstars { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .cwalker, .cst.fresh { animation: none; } }
+/* Act II, the river towns: act tabs, the town's custom, a barge drifting downriver, a moonlit ribbon */
+.cacttabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.cacttab { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 2px solid #1a1020; background: var(--field); color: var(--ink); cursor: pointer; font: inherit; box-shadow: 2px 2px 0 #1a1020; }
+.cacttab.on { background: #2c2042; color: #f3d27a; }
+.cacttab.locked { opacity: .6; }
+.cacttab svg { width: 9px; height: 9px; }
+.cltag.custom { background: #24507a; }
+.cmap.act2 { box-shadow: 0 0 0 2px #24507a; }
+.cmap.act2 .cact { color: #dce6f6; }
+.cbarge { position: absolute; top: 85%; left: -6%; width: 5%; pointer-events: none; animation: cs-barge 90s steps(180) -35s infinite; }
+.cbarge svg { width: 100%; height: auto; display: block; }
+@keyframes cs-barge { 0% { left: -6%; } 100% { left: 102%; } }
+.cmoon { position: absolute; left: 13%; top: 3%; width: 8%; height: 16%; pointer-events: none; }
+.campribbon.act2 { background: #14203a; border-color: #0c1424; }
+.campribbon.act2 .crteach { border-top-color: #34507a; }
+@media (prefers-reduced-motion: reduce) { .cbarge { animation: none; display: none; } }
