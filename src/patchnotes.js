@@ -1,6 +1,12 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-city', date: '21 November 2026', title: 'The City at Dawn', notes: [
+    '<b>Act III</b>, the last act of the campaign, opens once you win the Bridge of Kings. A new map: the city at dawn, the sun coming up over the roofs beside the cathedral, rows of red tile and slate, chimney smoke, doves crossing the sky, and the street climbing from the gate to the <b>Margrave’s Hall</b> on its hill.',
+    'Every quarter is held by a named champion who plays as the <b>Genius</b>, the strongest bot: <b>Mistress Florin</b> the moneychanger, <b>Archivist Mechthild</b>, <b>Guildmaster Thorvald</b>, <b>the Abbess</b> and <b>Sir Ulrich the Red</b>, each with a pixel portrait. At the Hall three of them sit down against you at once.',
+    'New customs: <b>guest-right</b> (you start with a gift of ◇), <b>hallowed ground</b> (a card with a card buried under it can’t be contested), <b>the audit</b> (suit majorities pay 4◇ every second round), <b>Lent</b> (no Goblet cards), and <b>the tourney</b> (twice the Swords).',
+    'Walk the whole road and the Margrave gives you the seat by the fire.'
+  ] },
   { v: 'cs-1.0-pre-river', date: '20 November 2026', title: 'The River Towns', notes: [
     '<b>Act II</b> of the campaign opens once you win the Toll Gate: a new map of the river valley by moonlight, with the towpath running from town to town, fireflies over the fields, a barge drifting downstream and the city close now on the right.',
     'Six towns, the full game at every one, against <b>tactician</b> and <b>warlord</b> bots instead of greedy ones. Each town keeps a <b>custom</b>: only 5 meeples at <b>Saltmarsh Wharf</b>, a market row at <b>Ferrybridge</b>, burning at <b>the Weir at Gallows Bend</b>, no Sword cards at all at <b>Lantern Abbey</b>, three cards a turn at <b>Tanners’ Row</b>, and everything at once, four to a table, on <b>the Bridge of Kings</b>.',

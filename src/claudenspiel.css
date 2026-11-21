@@ -258,3 +258,27 @@ svg.chron .hc:hover { fill-opacity: .07; }
 .campribbon.act2 { background: #14203a; border-color: #0c1424; }
 .campribbon.act2 .crteach { border-top-color: #34507a; }
 @media (prefers-reduced-motion: reduce) { .cbarge { animation: none; display: none; } }
+/* Act III, the city at dawn */
+.cltag.custom.a3 { background: #8a3a4a; }
+.cmap.act3 { box-shadow: 0 0 0 2px #b0505a; }
+.cmap.act3 .cact { color: #fff2c8; text-shadow: 1px 1px 0 #4a2c52; }
+.cdoves { position: absolute; top: 12%; left: -5%; width: 4%; pointer-events: none; animation: cs-doves 38s steps(120) -12s infinite; }
+.cdoves svg { width: 100%; height: auto; display: block; }
+@keyframes cs-doves { 0% { left: -5%; top: 14%; } 50% { top: 8%; } 100% { left: 103%; top: 12%; } }
+.ccrown { position: absolute; left: 92%; top: 22%; font-size: clamp(12px, 2.4vw, 22px); pointer-events: none; animation: cs-crown 2.4s ease-in-out infinite; }
+@keyframes cs-crown { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.campribbon.act3 { background: #4a2438; border-color: #2a1020; }
+.campribbon.act3 .crname { color: #f8cc7a; }
+.campribbon.act3 .crteach { border-top-color: #8a4a5a; }
+.cepilogue { border-left: 3px solid #f3c030; }
+.cresult .cepi { color: var(--ink); font-style: italic; }
+html[data-motion="off"] .cdoves, html[data-motion="off"] .ccrown { animation: none; }
+html[data-motion="off"] .cdoves { display: none; }
+@media (prefers-reduced-motion: reduce) { .cdoves { animation: none; display: none; } .ccrown { animation: none; } }
+.cfoes { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0; }
+.cfoe { display: flex; align-items: center; gap: 8px; margin: 0; padding: 4px 10px 4px 4px; background: #2a1e3e; color: #f6efd8; border: 2px solid #1a1020; box-shadow: 2px 2px 0 #1a1020; }
+.cfoe figcaption { display: flex; flex-direction: column; line-height: 1.25; }
+.cfoe figcaption .muted { color: #d8b8c8; }
+.cfoe .cportrait { background: #f0a060; border: 2px solid #1a1020; image-rendering: pixelated; }
+.crfoes { display: inline-flex; gap: 2px; }
+.crfoes svg { height: 14px; width: auto; background: #f0a060; }

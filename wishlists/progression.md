@@ -11,7 +11,7 @@ How players grow with Claudenspiel. The rule: progress widens what you can do an
 - ✅ 1.0-pre Act I (6 stops), the prairie: against greedy bots, one rule switched on at each stop (build and claim, banking, burying, two claims and Ascension, war, contest), a different archetype at each, a pixel map of the road. Difficulty measured with bots: 62% → 27% (par 33% at the 3-seat finale).
 - ✅ 1.0-pre Act II, the river towns: the full game against tactician and warlord bots, each town with a custom (5 meeples, the market, Burn, no Sword cards, hand 5 and draw 3, a four-seat finale with market and Burn), a moonlit river map. Measured with a tactician as the player: 48% → 25–32%.
 - ○ Act II twist still unused: start with a Ruined card on the board.
-- ○ Act III, the city: the Genius, as named rivals with fixed archetypes (The Abbess, a Genius Archbishop).
+- ✅ 1.0-pre Act III, the city at dawn: six quarters held by named Genius champions with pixel portraits, customs from the rules on trial (guest-right, hallowed ground, the audit, Lent, the tourney), a three-Genius finale; difficulty set by a ◇ gift per stop, measured 23–38%.
 - ✅ 1.0-pre Stars per stop: win; win by the stop's par round (the median winning round); a challenge in the spirit of the lesson. The engine counts each player's lost cards.
 
 ## Collection

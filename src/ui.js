@@ -204,33 +204,36 @@
     var allWon = CC.actDone(book, act), curIn = CC.actOf(cur0) === act ? CC.inAct(cur0) : (allWon ? stops.length : -1);
     var reached = allWon ? stops.length + 1 : curIn + 1;
     var h = '<div class="page scroll"><div class="pane campaign"><div class="camphead"><h2>The Long Road to the City</h2><span class="campsum">' + CC.star(true, 2) + ' ' + CC.total(book) + ' of ' + CC.STOPS.length * 3 + '</span></div>';
-    h += '<div class="cacttabs" role="tablist">' + [1, 2].map(function (n) { var a = CC.ACTS[n - 1], open = n === 1 || CC.unlocked(book, CC.actStops(n)[0].id);
+    h += '<div class="cacttabs" role="tablist">' + [1, 2, 3].map(function (n) { var a = CC.ACTS[n - 1], open = n === 1 || CC.unlocked(book, CC.actStops(n)[0].id);
       return '<button role="tab" class="cacttab' + (n === act ? ' on' : '') + (open ? '' : ' locked') + '" data-act="campAct" data-n="' + n + '" aria-selected="' + (n === act) + '">Act ' + a.n + ' · ' + esc(a.name) + ' <span class="small">' + (open ? CC.star(true, 1) + ' ' + CC.actStars(book, n) + '/' + CC.actStops(n).length * 3 : '🔒') + '</span></button>'; }).join('') + '</div>';
     h += act === 1 ? '<p class="small muted">Six stops across the prairie, each against greedy bots and each with one new rule to learn. The rules switch on one at a time, so by the Toll Gate you play the whole game. Win a stop to open the next; every stop has three stars.</p>'
-      : '<p class="small muted">Six towns down the river, playing the whole game against tacticians, who plan, and warlords, who Ruin. Every town keeps a custom of its own, a rule that holds only there. Act II opens once the Toll Gate is won.</p>';
+      : act === 2 ? '<p class="small muted">Six towns down the river, playing the whole game against tacticians, who plan, and warlords, who Ruin. Every town keeps a custom of its own, a rule that holds only there. Act II opens once the Toll Gate is won.</p>'
+      : '<p class="small muted">The city at dawn. Each of its six quarters is held by a champion who plays as the Genius, the bot that imagines the cards it can’t see and plans every move, and each quarter keeps a custom. At the top of the hill the Margrave’s hall, and the end of the road. Act III opens once the Bridge of Kings is won.</p>';
     h += '<div class="cmap act' + act + '" style="background-image:url(' + CC.mapURL(reached, act) + ')"><span class="cact">Act ' + A.n + ' · ' + esc(A.name) + '</span>';
     stops.forEach(function (s, i) {
       var open = CC.unlocked(book, s.id), r = book.stops && book.stops[s.id], st = r ? r.stars : [false, false, false];
       h += '<button class="cstop' + (open ? '' : ' locked') + (sel.id === s.id ? ' sel' : '') + (r && r.stars[0] ? ' won' : '') + '" data-act="campPick" data-stop="' + s.id + '" style="left:' + (s.x / CC.W * 100) + '%;top:' + (s.y / CC.H * 100) + '%;width:' + (CC.spriteW(s.sprite) / CC.W * 100) + '%" title="' + esc(s.name) + (open ? '' : ' (locked)') + '">' +
         CC.sprite(s.sprite, 1) + '<span class="cplaque"><b>' + (i + 1) + '</b>' + (open ? starsHTML(st, 1) : '🔒') + '</span></button>';
     });
-    if (curIn >= 0) { var ws = allWon ? (act === 2 ? { x: 224, y: 48 } : { x: 226, y: 40 }) : stops[curIn];
+    if (curIn >= 0) { var ws = allWon ? (act === 3 ? { x: 228, y: 44 } : act === 2 ? { x: 224, y: 48 } : { x: 226, y: 40 }) : stops[curIn];
       h += '<span class="cwalker" style="left:' + ((ws.x + (allWon ? 0 : -7)) / CC.W * 100) + '%;top:' + ((ws.y + 4) / CC.H * 100) + '%">' + CC.walker(1, COLORS[0]) + '</span>'; }
     if (act === 2) h += '<span class="cbarge">' + CC.sprite('barge', 1) + '</span>';
-    h += '<span class="ccity">' + (act === 1 ? (allWon ? 'On to the river' : 'The City · Acts II–III') : allWon ? 'The City gate' : 'The City · Act III') + '</span></div>';
+    if (act === 3) h += '<span class="cdoves">' + CC.sprite('doves', 1) + '</span>' + (allWon ? '<span class="ccrown">👑</span>' : '');
+    h += '<span class="ccity">' + (act === 1 ? (allWon ? 'On to the river' : 'The City · Acts II–III') : act === 2 ? (allWon ? 'The City gate' : 'The City · Act III') : allWon ? 'The road’s end' : 'The Margrave’s hill') + '</span></div>';
     // the briefing for the chosen stop
     var si = CC.inAct(sel.id), gi = CC.index(sel.id), open = CC.unlocked(book, sel.id), rec = book.stops && book.stops[sel.id], stars = rec ? rec.stars : [false, false, false];
-    var foe = sel.rivals.map(function (r) { var f = archetypes().filter(function (c) { return c.archetype === r[1]; })[0]; return '<b>' + esc(r[0]) + '</b>, a ' + esc(r[2] || 'greedy') + ' ' + esc(r[1]) + (f ? ' (' + esc(f.name) + ')' : ''); });
+    var foe = sel.rivals.map(function (r) { var f = archetypes().filter(function (c) { return c.archetype === r[1]; })[0]; return '<b>' + esc(r[0]) + '</b>, a ' + esc(r[2] === 'genius' ? 'Genius' : r[2] || 'greedy') + ' ' + esc(r[1]) + (f ? ' (' + esc(f.name) + ')' : ''); });
     foe = foe.length > 1 ? foe.slice(0, -1).join(', ') + ' and ' + foe[foe.length - 1] : foe[0];
     var mine = archetypes().filter(function (c) { return c.archetype === sel.arch; })[0];
     h += '<div class="cbrief raised"><div class="cbsprite">' + CC.sprite(sel.sprite, 4) + '</div><div class="cbtext"><div class="small muted">Act ' + ROMAN[sel.act] + ' · Stop ' + (si + 1) + ' of ' + stops.length + '</div><h3>' + esc(sel.name) + '</h3>' +
-      '<div class="clesson"><span class="cltag">Lesson</span> <b>' + esc(sel.lesson) + '</b>' + (sel.custom ? ' <span class="cltag custom">Custom</span> <b>' + esc(sel.custom) + '</b>' : '') + '</div><p>' + esc(sel.teach) + '</p>' +
-      '<p class="small">You play the <b>' + esc(sel.arch) + '</b>' + (mine ? ' (' + esc(mine.name) + ', weak to ' + esc(mine.weakTo) + ')' : '') + ' against ' + foe + '. Target ' + sel.target + '◇.</p>' +
+      '<div class="clesson"><span class="cltag">Lesson</span> <b>' + esc(sel.lesson) + '</b>' + (sel.custom ? ' <span class="cltag custom' + (sel.act === 3 ? ' a3' : '') + '">Custom</span> <b>' + esc(sel.custom) + '</b>' : '') + '</div><p>' + esc(sel.teach) + '</p>' +
+      '<p class="small">You play the <b>' + esc(sel.arch) + '</b>' + (mine ? ' (' + esc(mine.name) + ', weak to ' + esc(mine.weakTo) + ')' : '') + ' against ' + foe + '. Target ' + sel.target + '◇.' + (sel.welcome ? ' By the city’s guest-right you start with <b>' + sel.welcome + '◇</b>.' : '') + '</p>' +
+      (sel.act === 3 ? '<div class="cfoes">' + sel.rivals.filter(function (r) { return CC.portrait(r[0], 1); }).map(function (r) { return '<figure class="cfoe">' + CC.portrait(r[0], 5) + '<figcaption><b>' + esc(r[0]) + '</b><span class="small muted">Genius ' + esc(r[1]) + '</span></figcaption></figure>'; }).join('') + '</div>' : '') +
       '<p class="small ctip">❧ ' + esc(sel.tip) + '</p>' +
       '<ul class="cstarlist">' + [['Win', stars[0]], ['Win by the end of round ' + sel.par, stars[1]], [sel.star3.text, stars[2]]].map(function (x) { return '<li>' + CC.star(x[1], 2) + ' ' + esc(x[0]) + '</li>'; }).join('') + '</ul>' +
       (rec ? '<p class="small muted">' + rec.tries + ' attempt' + (rec.tries === 1 ? '' : 's') + ', ' + rec.wins + ' won.</p>' : '') +
       '<div class="row">' + (open ? '<button class="btn def big" data-act="campGo" data-stop="' + sel.id + '">' + (rec && rec.stars[0] ? 'Play it again' : 'Set out') + '</button>' : '<span class="muted">🔒 Win ' + esc(CC.STOPS[gi - 1].name) + ' to open this stop.</span>') + '</div></div></div>';
-    h += '<div class="cacts">' + CC.ACTS.slice(2).map(function (a) { return '<div class="cactcard sunken"><b>Act ' + a.n + ' · ' + esc(a.name) + '</b><span class="small muted">' + esc(a.note) + '</span></div>'; }).join('') + '</div>';
+    if (CC.actDone(book, 3)) h += '<div class="cacts"><div class="cactcard sunken cepilogue"><b>👑 The road is walked</b><span class="small muted">' + esc(CC.EPILOGUE) + ' ' + CC.total(book) + ' of ' + CC.STOPS.length * 3 + ' stars.</span></div></div>';
     return h + '</div></div>';
   }
   function startStop(id) {
@@ -250,7 +253,7 @@
     var got = CC.stars(st, p); if (!got) return;
     var book = campBook(), fresh = CC.record(book, st.campaign.stop, got); lsSet('cs.campaign', book);
     app.campResult = { log: st.log.length, stop: st.campaign.stop, got: got, fresh: fresh };
-    if (fresh[0]) { var nx = CC.next(st.campaign.stop); setTimeout(function () { SFX.play('deed'); toast(nx ? (CC.actOf(nx) !== CC.actOf(st.campaign.stop) ? '⛵ Act ' + ROMAN[CC.actOf(st.campaign.stop)] + ' complete. The river towns open: ' : '🛤 The road opens: ') + CC.stop(nx).name + '.' : '🏰 Act II complete: the city stands before you.'); }, 900); }
+    if (fresh[0]) { var nx = CC.next(st.campaign.stop); setTimeout(function () { SFX.play('deed'); toast(nx ? (CC.actOf(nx) !== CC.actOf(st.campaign.stop) ? (CC.actOf(nx) === 3 ? '🏰 Act II complete. The city gate opens: ' : '⛵ Act I complete. The river towns open: ') : '🛤 The road opens: ') + CC.stop(nx).name + '.' : '👑 Act III complete. The Long Road to the City is walked.'); }, 900); }
   }
   // The campaign part of the Chronicle: the stop, its three stars (new ones stamp in), and where to go next.
   function campaignBlock(st) {
@@ -260,7 +263,7 @@
     var got = r ? r.got : (CC.stars(st, p) || [false, false, false]), nx = CC.next(s.id), won = got[0];
     var html = '<div class="cresult' + (won ? ' won' : '') + '"><div class="small muted">Act ' + ROMAN[s.act] + ' · Stop ' + (CC.inAct(s.id) + 1) + '</div><b>' + esc(s.name) + '</b>' + starsHTML(got, 4, r && r.fresh) +
       '<ul class="cstarlist small">' + [['Win', got[0]], ['Win by the end of round ' + s.par, got[1]], [s.star3.text, got[2]]].map(function (x) { return '<li class="' + (x[1] ? 'got' : '') + '">' + CC.star(x[1], 2) + ' ' + esc(x[0]) + '</li>'; }).join('') + '</ul>' +
-      (won ? (nx ? '<p class="small">The road goes on to <b>' + esc(CC.stop(nx).name) + '</b>' + (CC.actOf(nx) !== s.act ? ', the first of the river towns' : '') + ': ' + esc(CC.stop(nx).lesson.toLowerCase()) + '.</p>' : '<p class="small">Act II is done. The city stands before you; Act III is still being built.</p>') : '<p class="small">The road waits. Try the stop again with a fresh shuffle.</p>') + '</div>';
+      (won ? (nx ? '<p class="small">The road goes on to <b>' + esc(CC.stop(nx).name) + '</b>' + (CC.actOf(nx) !== s.act ? (CC.actOf(nx) === 3 ? ', just inside the city gate' : ', the first of the river towns') : '') + ': ' + esc(CC.stop(nx).lesson.toLowerCase()) + '.</p>' : '<p class="small cepi">👑 ' + esc(CC.EPILOGUE) + '</p>') : '<p class="small">The road waits. Try the stop again with a fresh shuffle.</p>') + '</div>';
     var btns = '<button class="btn" data-act="campMap" data-stop="' + s.id + '">Map</button>' + (won && nx ? '<button class="btn" data-act="rematch">Play again</button><button class="btn def" data-act="campGo" data-stop="' + nx + '">On to the next stop</button>' : '<button class="btn def" data-act="rematch">Try again</button>');
     return { html: html, btns: btns };
   }
@@ -268,7 +271,7 @@
   function campaignRibbon(ctx) {
     var st = ctx.state; if (!CC || !st.campaign || ctx.kind !== 'game') return '';
     var s = CC.stop(st.campaign.stop); if (!s) return '';
-    return '<div class="campribbon act' + s.act + '" title="' + esc(s.teach) + '"><span class="crname">' + CC.sprite(s.sprite, 1) + ' ' + ROMAN[s.act] + '.' + (CC.inAct(s.id) + 1) + ' · ' + esc(s.name) + '</span><span class="crlesson">' + (s.custom ? 'Custom: <b>' + esc(s.custom) + '</b>' : 'Lesson: <b>' + esc(s.lesson) + '</b>') + '</span>' +
+    return '<div class="campribbon act' + s.act + '" title="' + esc(s.teach) + '"><span class="crname">' + CC.sprite(s.sprite, 1) + ' ' + ROMAN[s.act] + '.' + (CC.inAct(s.id) + 1) + ' · ' + esc(s.name) + '</span>' + (s.act === 3 ? '<span class="crfoes">' + s.rivals.map(function (r) { return CC.portrait(r[0], 1); }).join('') + '</span>' : '') + '<span class="crlesson">' + (s.custom ? 'Custom: <b>' + esc(s.custom) + '</b>' : 'Lesson: <b>' + esc(s.lesson) + '</b>') + '</span>' +
       '<span class="crstars">' + CC.star(false, 1) + ' Win ' + CC.star(false, 1) + ' by round ' + s.par + ' ' + CC.star(false, 1) + ' ' + esc(s.star3.text) + '</span>' + (st.round === 1 && st.winner == null ? '<span class="crteach">' + esc(s.teach) + '</span>' : '') + '</div>';
   }
   function toast(m) { app.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { app.toast = null; render(); }, 4000); }
@@ -1801,7 +1804,7 @@
         '<li>Play more cards next to your cards, then <b>claim</b> one with a meeple.</li>' +
         '<li>Press <b>End turn</b>. Every 6● you didn’t spend banks 1◇ (at most 2). Reaching <b>52◇</b> starts the <b>last round</b>: everyone gets the same number of turns, then the highest total wins.</li></ol>' +
         '<p class="muted">The hint line above the board suggests a next step while you learn.</p>' },
-      { id: 'campaign', title: 'The campaign', only: 'table', html: '<p><button class="linkbtn" data-page="campaign">The Long Road to the City</button> teaches the game one rule at a time. Act I crosses the prairie in six stops, each against greedy bots: build and claim at the Crossroads Inn, banking at the Mill, burying at the Barrow, two claims and Ascension at the Ford, war at the Watchtower, and contest at the Toll Gate, where you play the full game against two rivals. You play a different archetype at each stop.</p><ul>' +
+      { id: 'campaign', title: 'The campaign', only: 'table', html: '<p><button class="linkbtn" data-page="campaign">The Long Road to the City</button> teaches the game one rule at a time. Act I crosses the prairie in six stops, each against greedy bots: build and claim at the Crossroads Inn, banking at the Mill, burying at the Barrow, two claims and Ascension at the Ford, war at the Watchtower, and contest at the Toll Gate, where you play the full game against two rivals. Act II goes down the river: six towns against tacticians and warlords, each with a custom of its own (few meeples, the market, Burn, no Swords, a flood of cards). Act III climbs through the city at dawn, where each quarter is held by a named champion playing as the Genius, up to the Margrave’s hall. You play a different archetype at each stop of an act.</p><ul>' +
         '<li>Win a stop to open the next. Each stop has three stars: win, win by its par round, and a challenge in the spirit of its lesson. Stars are kept in this browser and never lost.</li>' +
         '<li>A strip above the board names the stop, its lesson and its stars; in the first round it also spells out the new rule.</li>' +
         '<li><b>Act II, the river towns</b>, opens once the Toll Gate is won. Every town plays the full game against tacticians (who plan) and warlords (who Ruin), and keeps a <b>custom</b> of its own: few meeples at Saltmarsh Wharf, a market row at Ferrybridge, burning at the Weir, no Sword cards at Lantern Abbey, a third card a turn at Tanners’ Row, and all of it at once, four players, on the Bridge of Kings.</li>' +
@@ -2555,7 +2558,7 @@
         app.page = 'new'; render(); return;
       }
       case 'campPick': app.campSel = t.getAttribute('data-stop'); render(); return;
-      case 'campAct': { var an = +t.getAttribute('data-n'); if (an === 1 || CC.unlocked(campBook(), CC.actStops(an)[0].id)) { app.campAct = an; app.campSel = null; } else toast('🔒 Win the Toll Gate to open the river towns.'); render(); return; }
+      case 'campAct': { var an = +t.getAttribute('data-n'); if (an === 1 || CC.unlocked(campBook(), CC.actStops(an)[0].id)) { app.campAct = an; app.campSel = null; } else toast(an === 3 ? '🔒 Win the Bridge of Kings to enter the city.' : '🔒 Win the Toll Gate to open the river towns.'); render(); return; }
       case 'campGo': startStop(t.getAttribute('data-stop')); return;
       case 'campMap': app.modal = null; app.campSel = t.getAttribute('data-stop') || app.campSel; app.campAct = CC.actOf(app.campSel); app.page = 'campaign'; render(); return;
       case 'resume': { var sv = lsGet('cs.game'); if (sv) { app.game = newCtx(sv, 'game'); app.page = 'game'; render(); } return; }

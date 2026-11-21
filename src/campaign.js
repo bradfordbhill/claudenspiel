@@ -84,18 +84,58 @@ var CSCampaign = (function () {
       star3: { text: 'Ruin or Overwhelm 4 or more cards', met: function (g) { return g.destroyed >= 4; } },
       rules: full({ market: 3, burn: true }) }
   ];
+  // Act III, the city at dawn: every quarter is held by a named champion who plays as the Genius (the strongest
+  // bot, which imagines the cards it can't see and plans its turn). Each quarter keeps a custom, mostly the rules still
+  // on trial elsewhere. `welcome` is the ◇ the traveller starts with (the city's guest-right); `moreSuits` multiplies
+  // those suits' copies in the deck.
+  var ACT3 = [
+    { id: 'hawkers', act: 3, name: 'The Hawkers’ Gate', x: 20, y: 94, sprite: 'hawkers', arch: 'Philosopher', rivals: [['Mistress Florin', 'Hedonist', 'genius']], target: 52, par: 5,
+      lesson: 'The Genius', custom: 'Guest-right', teach: 'Custom of the city: guest-right. A traveller at the gate starts with a gift of ◇. You need it: Mistress Florin plays as the Genius. Before every move she imagines the cards she can’t see, tries each line of play and keeps the best. She never peeks.',
+      tip: 'The Genius plans for the cards you might hold, so a lead is safest built where she can’t reach it. Every new suit in your Kingdom is 5◇ to the Observatory: the market gate sells every kind.',
+      star3: { text: 'Win by 10◇ or more', met: function (g) { return g.won && g.margin >= 10; } },
+      rules: null, welcome: 8 },
+    { id: 'scriptorium', act: 3, name: 'The Scriptorium', x: 54, y: 72, sprite: 'scriptorium', arch: 'Cryptkeeper', rivals: [['Archivist Mechthild', 'Philosopher', 'genius']], target: 52, par: 5,
+      lesson: 'What is buried is kept', custom: 'Hallowed ground', teach: 'Custom of the scriptorium: hallowed ground. A card with a card buried under it can’t be contested. The archivist plays as the Genius, and she reads a board as well as a book.',
+      tip: 'Bury early under the cards you mean to keep: a stack is safe from contest from the first burial, and two of a suit give it a Defense token.',
+      star3: { text: 'Finish with 8 or more cards buried in your Kingdom', met: function (g) { return g.buried >= 8; } },
+      rules: null, extra: { hallowed: true }, welcome: 10 },
+    { id: 'guildhall', act: 3, name: 'The Guildhall', x: 90, y: 92, sprite: 'guildhall', arch: 'Hedonist', rivals: [['Guildmaster Thorvald', 'Gardener', 'genius'], ['Journeyman Pip', 'Warmonger', 'tactician']], target: 52, par: 5,
+      lesson: 'Counting the suits', custom: 'The audit', teach: 'Custom of the guilds: the audit. After every second round, whoever owns the most cards of a suit banks 4◇ for it (ties pay no one). The guildmaster plays as the Genius; his journeyman is a tactician.',
+      tip: 'Goblets are yours to count. Two cards of a suit nobody else wants can be worth 4◇ an audit.',
+      star3: { text: 'Finish with 4 or more Goblet cards in your Kingdom', met: function (g) { return (g.suitCount.Goblet || 0) >= 4; } },
+      rules: null, extra: { audits: 2 }, welcome: 12 },
+    { id: 'close', act: 3, name: 'The Cathedral Close', x: 126, y: 70, sprite: 'close', arch: 'Gardener', rivals: [['The Abbess', 'Archbishop', 'genius']], target: 52, par: 6,
+      lesson: 'Holding a garden', custom: 'Lent', teach: 'Custom of the close: Lent. No Goblet cards are dealt, so the Gardener’s enemy suit is gone and the land is quiet. The Abbess plays as the Genius, and her Cathedral counts every Sceptre card on the board.',
+      tip: 'With no Goblets the only threats are Swords. Keep the garden in one piece, and claim the Sceptre cards she would rather have.',
+      star3: { text: 'Finish with a garden (largest region) of 7 or more cards', met: function (g) { return g.region >= 7; } },
+      rules: null, noSuits: ['Goblet'], welcome: 6 },
+    { id: 'tourney', act: 3, name: 'The Tourney Field', x: 162, y: 92, sprite: 'tourney', arch: 'Archbishop', rivals: [['Sir Ulrich the Red', 'Warmonger', 'genius'], ['Herald Sabine', 'Cryptkeeper', 'tactician']], target: 52, par: 5,
+      lesson: 'Holding the line', custom: 'Tourney', teach: 'Custom of the field: the tourney. Twice as many Sword cards are shuffled in. Sir Ulrich plays as the Genius and Ruins with a plan; the herald is a tactician.',
+      tip: 'Two buried cards of a suit give a stack a Defense token, which stops a Ruin. A Shrine, and a Marsh, keep their neighbours safe.',
+      star3: { text: 'Win having lost at most two cards', met: function (g) { return g.won && g.lost <= 2; } },
+      rules: null, moreSuits: { Sword: 2 }, welcome: 14 },
+    { id: 'throne', act: 3, name: 'The Margrave’s Hall', x: 196, y: 64, sprite: 'throne', arch: 'Warmonger', rivals: [['The Abbess', 'Archbishop', 'genius'], ['Mistress Florin', 'Hedonist', 'genius'], ['Archivist Mechthild', 'Philosopher', 'genius']], target: 52, par: 5,
+      lesson: 'The last game', custom: 'The Margrave’s court', teach: 'The end of the road. Three champions you have met, all playing as the Genius, and the market row and burning both in play. You hold the first seat and its handicap.',
+      tip: 'Bone is your enemy suit and none of them plays it. Three Kingdoms to raid: every Ruin pays your Warcamp.',
+      star3: { text: 'Ruin or Overwhelm 4 or more cards', met: function (g) { return g.destroyed >= 4; } },
+      rules: null, extra: { market: 3, burn: true } }
+  ];
+  ACT3.forEach(function (s) { var o = {}; for (var k in s.extra || {}) o[k] = s.extra[k]; if (s.welcome) o.seatTokens = [s.welcome].concat(s.rivals.map(function (r, i) { return s.rivals.length === 2 && i === 0 ? 4 : 0; })); s.rules = full(o); });   // later seats keep the usual handicap (3 seats: 4, 0)
   STOPS.forEach(function (s) { s.act = 1; s.rivals.forEach(function (r) { r[2] = r[2] || 'greedy'; }); });
-  var ACT1 = STOPS.slice(); STOPS = STOPS.concat(ACT2);
+  var ACT1 = STOPS.slice(); STOPS = STOPS.concat(ACT2, ACT3);
   // The deck for a stop: the library with any suits the stop's custom bans taken out.
   function defs(id, lib) {
-    var s = stop(id); if (!s || !s.noSuits) return lib;
-    return lib.map(function (d) { if (d.type !== 'Foundation' && s.noSuits.indexOf(d.suit) >= 0) { var c = {}; for (var k in d) c[k] = d[k]; c.copies = 0; return c; } return d; });
+    var s = stop(id); if (!s || (!s.noSuits && !s.moreSuits)) return lib;
+    return lib.map(function (d) { if (d.type === 'Foundation') return d;
+      var no = s.noSuits && s.noSuits.indexOf(d.suit) >= 0, more = s.moreSuits && s.moreSuits[d.suit]; if (!no && !more) return d;
+      var c = {}; for (var k in d) c[k] = d[k]; c.copies = no ? 0 : (+d.copies || 0) * more; return c; });
   }
   var ACTS = [
     { n: 'I', name: 'The Prairie', stops: ACT1.map(function (s) { return s.id; }), open: true },
     { n: 'II', name: 'The River Towns', stops: ACT2.map(function (s) { return s.id; }), open: true },
-    { n: 'III', name: 'The City', note: 'The Genius, as named rivals. Coming later on the road.', open: false }
+    { n: 'III', name: 'The City', stops: ACT3.map(function (s) { return s.id; }), open: true }
   ];
+  var EPILOGUE = 'The Margrave rises from his chair and gives you the seat by the fire. Six towns, six quarters and a prairie behind you: the Long Road to the City ends here, and every table in it knows your name.';
   var COLORS = ['#c0392b', '#2471a3', '#1e8449', '#b9770e', '#7d3c98'];
   function stop(id) { for (var i = 0; i < STOPS.length; i++) if (STOPS[i].id === id) return STOPS[i]; return null; }
   function index(id) { for (var i = 0; i < STOPS.length; i++) if (STOPS[i].id === id) return i; return -1; }
@@ -131,7 +171,7 @@ var CSCampaign = (function () {
   function current(book) { for (var i = 0; i < STOPS.length; i++) { var r = book && book.stops && book.stops[STOPS[i].id]; if (!r || !r.stars[0]) return STOPS[i].id; } return STOPS[STOPS.length - 1].id; }
   // The act a stop belongs to, the stops of an act, and a stop's place in its act (0-based).
   function actOf(id) { var s = stop(id); return s ? s.act : 1; }
-  function actStops(n) { return n === 2 ? ACT2 : ACT1; }
+  function actStops(n) { return n === 3 ? ACT3 : n === 2 ? ACT2 : ACT1; }
   function inAct(id) { var s = stop(id); return s ? actStops(s.act).indexOf(s) : -1; }
   function actStars(book, n) { return actStops(n).reduce(function (a, s) { return a + starCount(book, s.id); }, 0); }
   function actDone(book, n) { return actStops(n).every(function (s) { var r = book && book.stops && book.stops[s.id]; return r && r.stars[0]; }); }
@@ -148,7 +188,7 @@ var CSCampaign = (function () {
     city: hex('#241a30'), cityL: hex('#352842'), win: hex('#f3d27a'), flower: hex('#e8d070'), flower2: hex('#d07090') };
   function rng(seed) { return function () { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
   // The road as a list of points through every stop, from the left edge to the city gate.
-  function roadPts(act) { var p = [[0, act === 2 ? 96 : 104]]; (act === 2 ? ACT2 : ACT1).forEach(function (s) { p.push([s.x, s.y + 4]); }); p.push(act === 2 ? [224, 52] : [226, 40]); return p; }
+  function roadPts(act) { var p = [[0, act === 3 ? 112 : act === 2 ? 96 : 104]]; actStops(act).forEach(function (s) { p.push([s.x, s.y + 4]); }); p.push(act === 3 ? [228, 48] : act === 2 ? [224, 52] : [226, 40]); return p; }
   // Each point along the road, every half pixel, with how far along it is (0..1 per segment index).
   function roadTrace(act) {
     var pts = roadPts(act), out = [];
@@ -163,6 +203,7 @@ var CSCampaign = (function () {
   function mapURL(reached, act) {
     if (typeof document === 'undefined') return '';
     if (act === 2) return riverURL(reached);
+    if (act === 3) return cityURL(reached);
     if (mapCache[reached]) return mapCache[reached];
     var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     var g = cv.getContext('2d'), img = g.createImageData(W, H), d = img.data, R = rng(7);
@@ -245,11 +286,85 @@ var CSCampaign = (function () {
     g.putImageData(img, 0, 0);
     return (riverCache[reached] = cv.toDataURL());
   }
+  // Act III's map: the city at dawn. The sun comes up behind the cathedral; roofs of red tile and slate climb in rows
+  // toward the Margrave's hall on its hill; the street winds between them over cobbles, opening into a little square
+  // at every quarter. Dawn light catches the west faces of the towers and a few windows are still lit from the night.
+  var N3 = { sky: ['#2a1e3e', '#4a2c52', '#7a3a5a', '#b0505a', '#d8745a', '#f0a060', '#f8cc7a'].map(hex), sun: hex('#fff2c8'), sunD: hex('#f8d890'),
+    far: hex('#5a3456'), farL: hex('#a0566a'), rim: hex('#e8906a'), hill: hex('#4a3a4a'), hillL: hex('#6a4a52'),
+    tile: hex('#9a4a3a'), tileD: hex('#6a3028'), tileL: hex('#c46a4a'), slate: hex('#4a4a62'), slateD: hex('#34344a'), slateL: hex('#6e6a88'),
+    wall: hex('#c8b498'), wallD: hex('#9a8670'), wallS: hex('#6a5a50'), beam: hex('#5a3a28'), win: hex('#f3d27a'), winD: hex('#3a2a34'),
+    cob: hex('#8a8070'), cobD: hex('#665e54'), cobL: hex('#aaa090'), walk: hex('#efe2c4'), smoke: hex('#d8c8c8'), green: hex('#4a6a3a'), greenL: hex('#6a8a48') };
+  var cityCache = {};
+  function cityURL(reached) {
+    if (cityCache[reached]) return cityCache[reached];
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var g = cv.getContext('2d'), img = g.createImageData(W, H), d = img.data, R = rng(23), HZ3 = 38;
+    function put(x, y, c) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= W || y >= H) return; var i = (y * W + x) * 4; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255; }
+    function rect(x0, y0, x1, y1, c) { for (var y = y0; y < y1; y++) for (var x = x0; x < x1; x++) put(x, y, c); }
+    // the dawn sky, violet overhead to gold at the rooftops, the last stars fading in the west
+    for (var y = 0; y < HZ3; y++) for (var x = 0; x < W; x++) { var f = Math.pow(y / HZ3, 0.85) * (N3.sky.length - 1), lo = Math.floor(f); put(x, y, N3.sky[Math.min(N3.sky.length - 1, lo + (f - lo > th(x, y) ? 1 : 0))]); }
+    for (var s = 0; s < 18; s++) { var sx = R() * 70 | 0, sy = R() * 12 | 0; put(sx, sy, hex('#c8b8d8')); }
+    // the sun, half risen over the roofs beside the cathedral, with a dithered glow
+    var sx0 = 84, sy0 = 33;
+    for (var y = 4; y < HZ3 + 2; y++) for (var x = sx0 - 44; x < sx0 + 44; x++) { var r = Math.hypot(x - sx0, (y - sy0) * 1.3);
+      if (r < 9) put(x, y, r < 7 ? N3.sun : N3.sunD); else if (r < 30 && th(x, y) < (30 - r) / 40) put(x, y, N3.sky[6]); }
+    // long clouds, tapered, lit from below
+    [[14, 10, 40], [150, 8, 56], [52, 18, 30], [176, 17, 34]].forEach(function (c) {
+      for (var x = c[0]; x < c[0] + c[2]; x++) { var t = (x - c[0]) / c[2], th2 = Math.sin(t * Math.PI) * 2.2;
+        for (var y = Math.round(c[1] - th2); y <= c[1]; y++) put(x, y, y === c[1] ? N3.rim : th(x, y) < .6 ? N3.farL : N3.sky[3]); } });
+    // the far skyline: gabled roofs and a few thin spires in silhouette, rim-lit on the side facing the sun
+    var sky = [], gx = 0; while (gx < W) { var gw = 5 + (R() * 7 | 0), gh = 2 + (R() * 4 | 0), base = 3 + (R() * 3 | 0);
+      for (var i = 0; i < gw && gx + i < W; i++) sky[gx + i] = { h: base + Math.round(gh * (1 - Math.abs(i - (gw - 1) / 2) / ((gw + 1) / 2))), lit: (gx + i < sx0) === (i < gw / 2) };
+      if (R() < .22) { var sp = gx + (gw >> 1); if (sp < W) sky[sp].h += 6 + (R() * 6 | 0); }
+      gx += gw; }
+    for (var x = 0; x < W; x++) { var top = HZ3 + 2 - sky[x].h; for (var y = top; y < HZ3 + 6; y++) put(x, y, y === top && sky[x].lit ? N3.rim : N3.far); if (th(x, 0) < .08 && sky[x].h > 4) put(x, top + 3, N3.win); }
+    // the cathedral against the sun: nave, two west towers and a great spire
+    rect(112, 22, 146, HZ3 + 6, N3.far); rect(110, 14, 116, HZ3, N3.far); rect(142, 14, 148, HZ3, N3.far);
+    for (var r = 0; r < 4; r++) { rect(110 + r, 14 - r - 1, 116 - r, 14 - r, N3.far); rect(142 + r, 14 - r - 1, 148 - r, 14 - r, N3.far); }
+    for (var y = 0; y < 18; y++) rect(129 - (y >> 2), 4 + y, 131 + (y >> 2), 5 + y, N3.far); put(130, 2, N3.far); put(130, 3, N3.far); put(129, 2, N3.far); put(131, 2, N3.far);
+    for (var y = 14; y < HZ3; y++) put(110, y, N3.rim); for (var y = 6; y < 22; y++) put(129 - ((y - 4) >> 2), y, N3.rim); put(125, 28, N3.win); put(135, 28, N3.win); put(130, 26, N3.sun);
+    // the Margrave's hall on its hill, top right: a keep, towers and a banner
+    for (var x = 186; x < W; x++) { var hy = 44 - Math.round(10 * Math.sin((x - 186) / 54 * Math.PI * .9)); for (var y = hy; y < 70; y++) put(x, y, (y - hy) / 10 > th(x, y) ? N3.hill : N3.hillL); }
+    rect(206, 18, 232, 40, N3.slateD); rect(212, 8, 224, 40, N3.slateD); rect(202, 14, 208, 40, N3.slateD); rect(230, 16, 236, 40, N3.slateD);
+    for (var x = 212; x < 224; x += 3) rect(x, 6, x + 2, 8, N3.slateD); for (var x = 202; x < 208; x += 2) put(x, 13, N3.slateD); for (var x = 230; x < 236; x += 2) put(x, 15, N3.slateD);
+    for (var y = 8; y < 40; y++) put(212, y, N3.rim); for (var y = 14; y < 40; y++) put(202, y, N3.rim);
+    rect(218, 0, 219, 6, N3.beam); rect(219, 0, 225, 3, hex('#b8343a')); put(225, 1, hex('#b8343a')); put(222, 1, N3.win);
+    [[215, 14], [220, 14], [215, 22], [220, 22], [209, 26], [226, 26], [204, 20], [233, 22]].forEach(function (w) { put(w[0], w[1], N3.win); put(w[0], w[1] + 1, N3.winD); });
+    // the ground between the houses: cobbles
+    for (var y = HZ3 + 6; y < H; y++) for (var x = 0; x < W; x++) { if (d[(y * W + x) * 4 + 3] && x >= 186 && y < 70) continue; var cx = (x + ((y >> 1) & 1) * 2) % 4, cy = y % 2; put(x, y, cx === 0 || cy === 0 ? N3.cobD : (x * 7 + y * 13) % 11 === 0 ? N3.cobL : N3.cob); }
+    // rows of houses, back to front, each with a gable or a slate roof; the street and the squares are cut out after
+    var tr = roadTrace(3), squares = actStops(3).map(function (st) { return [st.x + 8, st.y + 6]; });
+    function nearRoad(x, y, m) { for (var i = 0; i < tr.length; i += 3) if (Math.abs(tr[i].x - x) < m && Math.abs(tr[i].y - y) < m) return true; for (var j = 0; j < squares.length; j++) if (Math.abs(squares[j][0] - x) < 14 && Math.abs(squares[j][1] - y) < 9) return true; return false; }
+    function house(x0, base, w, h, slate) {
+      var roof = slate ? N3.slate : N3.tile, roofD = slate ? N3.slateD : N3.tileD, roofL = slate ? N3.slateL : N3.tileL, rh = Math.ceil(w / 2);
+      rect(x0, base - h, x0 + w, base, N3.wall); for (var y = base - h; y < base; y++) put(x0 + w - 1, y, N3.wallD);
+      for (var r = 0; r < rh; r++) for (var x = x0 + r - 1; x <= x0 + w - r; x++) put(x, base - h - r - 1, x === x0 + r - 1 ? roofL : x === x0 + w - r ? roofD : (r + x) % 3 === 0 ? roofD : roof);
+      if (R() < .6) { var chx = x0 + 1 + (R() * (w - 3) | 0); rect(chx, base - h - rh - 1, chx + 2, base - h - 1, N3.wallS); if (R() < .5) for (var k = 0; k < 7; k++) if (th(chx + k, base - h - rh - 3 - k) < .7 - k * .07) put(chx + Math.round(Math.sin(k * .9) + k * .3), base - h - rh - 2 - k, N3.smoke); }
+      for (var wx = x0 + 1; wx < x0 + w - 2; wx += 3) for (var wy = base - h + 1; wy < base - 2; wy += 3) put(wx, wy, R() < .22 ? N3.win : N3.winD);
+      if (h > 4) { put(x0 + (w >> 1), base - 1, N3.beam); put(x0 + (w >> 1), base - 2, N3.beam); }
+      if (!slate && w > 7 && R() < .5) for (var y = base - h; y < base; y++) put(x0 + (w >> 1) - 2, y, N3.beam);
+    }
+    [[52, 4, 3], [62, 5, 3], [74, 6, 4], [88, 7, 5], [104, 8, 6], [120, 9, 6]].forEach(function (row, ri) {
+      var y = row[0], x = (ri * 5) % 7 - 4;
+      while (x < W) { var w = row[1] + (R() * row[1] | 0), h = row[2] + (R() * 3 | 0);
+        if (!nearRoad(x + w / 2, y - h / 2, 5 + ri) && !(x + w > 184 && y < 70)) house(x, y, w, h, R() < .35);
+        x += w + (R() < .25 ? 3 : 1); } });
+    // a few trees in yards
+    for (var t = 0; t < 14; t++) { var tx = R() * 180 | 0, ty = 48 + (R() * 66 | 0); if (nearRoad(tx, ty, 6)) continue; rect(tx - 1, ty - 2, tx + 2, ty, N3.green); put(tx, ty - 3, N3.greenL); put(tx, ty, N3.beam); }
+    // the squares, then the street: wider cobbles with a kerb; the stretch already walked is worn pale
+    squares.forEach(function (q) { for (var y = -6; y <= 6; y++) for (var x = -12; x <= 12; x++) if (x * x / 144 + y * y / 36 <= 1) put(q[0] + x, q[1] + y, (x * x / 144 + y * y / 36 > .8) ? N3.cobD : ((q[0] + x + q[1] + y) % 4 ? N3.cobL : N3.cob)); });
+    tr.forEach(function (p) { for (var oy = -2; oy <= 2; oy++) for (var ox = -2; ox <= 2; ox++) put(p.x + ox, p.y + oy, Math.abs(ox) === 2 || Math.abs(oy) === 2 ? N3.cobD : ((Math.round(p.x) + ox + Math.round(p.y) + oy) % 3 ? N3.cobL : N3.cob)); });
+    tr.forEach(function (p) { if (p.seg <= reached) { put(p.x, p.y, N3.walk); put(p.x + 1, p.y, N3.walk); } else if (Math.floor(p.seg * 40) % 3 === 0) put(p.x, p.y, N3.walk); });
+    // the inner face of the city wall along the bottom left, where the traveller came in
+    rect(0, 106, 12, H, N3.wallS); for (var x = 0; x < 12; x += 3) rect(x, 104, x + 2, 106, N3.wallS);
+    g.putImageData(img, 0, 0);
+    return (cityCache[reached] = cv.toDataURL());
+  }
   // Pixel landmarks, one character per pixel ('.' is clear).
   var SP = {
     k: '#1a1020', w: '#d8c8a0', W: '#a89068', r: '#8a3a2a', R: '#b8543a', y: '#f3d27a', b: '#6a4a2a', B: '#8a6438', s: '#8a8a94', S: '#b4b4bc', g: '#4a6a38', G: '#6a8a48',
     x: '#4a4048', X: '#6a5e66', o: '#e8783a', O: '#f3c060', l: '#d8c8a0', e: '#5a8a4a', c: '#c8c0b0', v: '#d8d0e0', m: '#3a3042',
-    u: '#2a4070', U: '#6a8ac0', p: '#8a5aa8', t: '#3a8a8a'
+    u: '#2a4070', U: '#6a8ac0', p: '#8a5aa8', t: '#3a8a8a', f: '#e0b090', F: '#b8845a', h: '#6a4228', n: '#f0ece0', d: '#24202e'
   };
   var SPRITES = {
     inn: ['......kk..........', '.....kRRk.........', '....kRRRRk..kk....', '...kRRrRRRkkWWk...', '..kRRrRRRRRkWWk...', '.kRRRRRRrRRRk.....', 'kkkkkkkkkkkkkk....', '.kwwwwwwwwwwk..k..',
@@ -270,8 +385,28 @@ var CSCampaign = (function () {
       '...kSbSkSSbbSSk.', 'gggkkkkkkkkkkkkg'],
     tanners: ['k.....k.....k.', 'kkkkkkkkkkkkkk', 'k.rr..k.pp..k.', 'k.rr..k.pp..k.', 'k.RR..k.tt..k.', 'k.....k.tt..k.', 'k.....k.....k.', 'gggggggggggggg'],
     barge: ['....k.....', '....kWk...', '....kWWk..', 'kkkkkkkkkk', '.kBBByBBk.', '..kkkkkk..'],
-    kings: ['.r...........r..', '.kk.........kk..', 'kSSk.......kSSk.', 'kSyk.......kSyk.', 'kSSkkkkkkkkkSSk.', 'kSSSSSSSSSSSSSk.', 'kSSkSSSkSSSkSSk.', 'kSk.kSk.kSk.kSk.', 'kSk.kSk.kSk.kSk.', 'uUuuuUuuuuUuuuUu']
+    kings: ['.r...........r..', '.kk.........kk..', 'kSSk.......kSSk.', 'kSyk.......kSyk.', 'kSSkkkkkkkkkSSk.', 'kSSSSSSSSSSSSSk.', 'kSSkSSSkSSSkSSk.', 'kSk.kSk.kSk.kSk.', 'kSk.kSk.kSk.kSk.', 'uUuuuUuuuuUuuuUu'],
+    hawkers: ['.kk........kk...', 'kSSk......kSSk..', 'kSyk......kSyk..', 'kSSkkkkkkkkSSk..', 'kSSSSSSSSSSSSk..', 'kSSSkk..kkSSSk..', 'kSSk......kSSkuw', 'kSSk......kSSkuw', 'kSSk......kSSkbb', 'ssssssssssssssss'],
+    scriptorium: ['......kk......', '.....kXXk.....', '....kXXXXk....', '...kXxXXXXk...', '..kXXXXXxXXk..', '..kkkkkkkkkk..', '..kSSSSSSSSk..', '..kSkySSkySk..', '..kSkySSkySk..', '..kSSSSSSSSk..', '..kSSSbbSSSk..', 'sskkkkkkkkkkss'],
+    guildhall: ['.......kk.......', '......kyyk......', '......kkkk......', '....kkRRRRkk....', '...kRRRRRRRRk...', '..kRRrRRRRrRRk..', '.kkkkkkkkkkkkkk.', '.kwbwwbwwbwwbwk.', '.kbyybwbbwbyybk.', '.kwyywbwwbwyywk.', '.kwwwwwbbwwwwwk.', 'sskkkkkkkkkkkkss'],
+    close: ['.k.........k....', 'kSk.......kSk...', 'kSk.......kSk...', 'kSSk.....kSSk...', 'kSySk.k.kSySk...', 'kSSSkkSkkSSSk...', 'kSSSSSySSSSSk...', 'kSSSSyppySSSk...', 'kSySSyppySSySk..', 'kSSSSSySSSSSk...', 'kSSSSkbbkSSSk...', 'gggkkkkkkkkkkggg'],
+    tourney: ['...r........u...', '...k........k...', '..kRk......kUk..', '.kRwRk....kUwUk.', '.kRwRk....kUwUk.', 'kRwRwRk..kUwUwUk', 'kRwkwRk..kUwkwUk', 'b.b.b.b.b.b.b.b.', 'BBBBBBBBBBBBBBBB', 'GgGgGgGgGgGgGgGg'],
+    throne: ['..rr....rr....rr..', '..k.....k.....k...', '.kSk...kSk...kSk..', 'kSSSk.kSSSk.kSSSk.', 'kSySk.kSySk.kSySk.', 'kSSSkkkSSSkkkSSSk.', 'kSSSSSSSSSSSSSSSk.', 'kSySSSSyySSSSSySk.', 'kSSSSSkkkkSSSSSSk.', 'kSSSSkbbbbkSSSSSk.', 'kSSSSkbybbkSSSSSk.', 'sskkkkkkkkkkkkkkss'],
+    doves: ['k.k......', '.k...k.k.', '......k..']
   };
+  // Portraits of the city's champions, one per Genius rival (10 × 11 pixels).
+  var PORTRAITS = {
+    'Mistress Florin': ['...kkkk...', '..kppypk..', 'kkppppppkk', '.kkkkkkkk.', '.kffffffk.', '.kfkffkfk.', '.kffffffk.', '.kffrrffk.', '..kffffk..', 'kppkkkkppk', 'pppyppyppp'],
+    'Archivist Mechthild': ['...kkkk...', '..kuuuuk..', '.kuuuuuuk.', '.kuffffuk.', 'kuffffffuk', 'kuccffccuk', 'kuffffffuk', 'kuffrrffuk', '.kuffffuk.', 'kuuukkuuuk', 'uuuuccuuuu'],
+    'Guildmaster Thorvald': ['..kkkkk...', '.kGGGGGk..', 'kGGgGGGGk.', 'kkkkkkkkkk', '.kffffffk.', '.kfkffkfk.', '.kffffffk.', '.khhhhhhk.', '.khhrrhhk.', '..khhhhk..', 'gggkhhkggg'],
+    'The Abbess': ['...dddd...', '..dddddd..', '.ddnnnndd.', '.dnffffnd.', 'ddnkffkndd', 'ddnffffndd', 'ddnfrrfndd', 'ddnnffnndd', 'ddnnnnnndd', 'dddnyynddd', 'ddddyydddd'],
+    'Sir Ulrich the Red': ['....RR....', '...RRr....', '..kSSSSk..', '.kSSSSSSk.', '.kSSSSSSk.', '.kkkkkkkk.', '.kSsSSsSk.', '.kSSSSSSk.', '..kSSSSk..', 'kRRkSSkRRk', 'RRRRRRRRRR']
+  };
+  function portrait(name, px) {
+    var rows = PORTRAITS[name]; if (!rows) return '';
+    var r = ''; rows.forEach(function (row, y) { for (var x = 0; x < row.length; x++) { var c = SP[row[x]]; if (c) r += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + c + '"/>'; } });
+    return '<svg class="pix cportrait" width="' + 10 * px + '" height="' + 11 * px + '" viewBox="0 0 10 11" shape-rendering="crispEdges" aria-hidden="true">' + r + '</svg>';
+  }
   function sprite(name, px) {
     var rows = SPRITES[name], w = rows[0].length, h = rows.length, r = '';
     rows.forEach(function (row, y) { for (var x = 0; x < w; x++) { var c = SP[row[x]]; if (c) r += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + c + '"/>'; } });
@@ -290,7 +425,7 @@ var CSCampaign = (function () {
     return '<svg class="pix cstar' + (on ? ' on' : '') + '" width="' + 7 * px + '" height="' + 7 * px + '" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-label="' + (on ? 'star' : 'no star') + '">' + r + '</svg>';
   }
 
-  return { STOPS: STOPS, ACT1: ACT1, ACT2: ACT2, ACTS: ACTS, BASE: BASE, defs: defs, bots: bots, W: W, H: H, stop: stop, index: index, setup: setup, stars: stars, record: record, starCount: starCount, total: total,
-    unlocked: unlocked, current: current, next: next, actOf: actOf, actStops: actStops, inAct: inAct, actStars: actStars, actDone: actDone, mapURL: mapURL, sprite: sprite, spriteW: function (n) { return SPRITES[n][0].length; }, walker: walker, star: star };
+  return { STOPS: STOPS, ACT1: ACT1, ACT2: ACT2, ACT3: ACT3, EPILOGUE: EPILOGUE, ACTS: ACTS, BASE: BASE, defs: defs, bots: bots, W: W, H: H, stop: stop, index: index, setup: setup, stars: stars, record: record, starCount: starCount, total: total,
+    unlocked: unlocked, current: current, next: next, actOf: actOf, actStops: actStops, inAct: inAct, actStars: actStars, actDone: actDone, mapURL: mapURL, sprite: sprite, spriteW: function (n) { return SPRITES[n][0].length; }, walker: walker, star: star, portrait: portrait };
 })();
 if (typeof module !== 'undefined') module.exports = CSCampaign;

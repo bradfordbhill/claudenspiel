@@ -2,6 +2,39 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 21 November 2026 · 1.0-pre, the City at Dawn (campaign Act III)
+
+**Why.** Act II ends with a player who can beat tacticians and warlords. The one opponent the campaign never put in front of them is the Genius, the bot that imagines hidden cards and plans whole turns, and the strongest thing in the game. Act III is the road's last climb: the full game against the Genius, given names and faces so that losing to it is a story rather than a number. It also finishes the job Act II started of showing off rules on trial, using the three that hadn't appeared anywhere (hallowed ground, audits, the seat handicap reused as a gift).
+
+**The quarters.**
+
+| Stop | Custom | You | Rival(s) | Gift | Par | Challenge |
+|---|---|---|---|---|---|---|
+| 1 The Hawkers' Gate | Guest-right | Philosopher | Mistress Florin (Genius Hedonist) | 8◇ | 5 | win by 10◇+ |
+| 2 The Scriptorium | Hallowed ground | Cryptkeeper | Archivist Mechthild (Genius Philosopher) | 10◇ | 5 | 8+ buried |
+| 3 The Guildhall | The audit | Hedonist | Guildmaster Thorvald (Genius Gardener), Journeyman Pip (tactician Warmonger) | 12◇ | 5 | 4+ Goblets |
+| 4 The Cathedral Close | Lent: no Goblets | Gardener | The Abbess (Genius Archbishop) | 6◇ | 6 | garden of 7+ |
+| 5 The Tourney Field | Tourney: twice the Swords | Archbishop | Sir Ulrich the Red (Genius Warmonger), Herald Sabine (tactician Cryptkeeper) | 14◇ | 5 | win, losing at most 2 |
+| 6 The Margrave's Hall | Market and Burn | Warmonger | The Abbess, Mistress Florin, Archivist Mechthild (all Genius) | (seat 1: 9◇) | 5 | Ruin or Overwhelm 4+ |
+
+**The gift is the difficulty dial.** Measured with `tools/campsim.js`, a tactician standing in for the player (40 games a stop, 24 at the Hall, about 45 s a game with one Genius and 110 s with three). Against a Genius, a tactician without help loses badly, and the gift (seat tokens for the traveller only; later seats keep their usual handicap) moves the rate about 2–3 points per ◇:
+
+| | Gate | Scriptorium | Guildhall | Close | Tourney | Hall |
+|---|---|---|---|---|---|---|
+| First draft | 33% (8◇) | 20% (6◇) | 18% (none, par 33) | 38% (6◇) | 13% (none, par 33) | **25%** (par 25) |
+| As shipped | 33% | ~30% (38% at 12◇) | **30%** (12◇) | 38% | **23%** (14◇) | 25% |
+
+The Scriptorium ships at 10◇, between the measured 6◇ and 12◇. The Hall needs no gift: a Warmonger at a table of three builders, with market and Burn, wins its fair quarter, which makes a fitting finale (raid everyone).
+
+**Challenges set by the facts, not by guesses.** My first drafts asked for six suits at the Gate (0 of 40 games), 10 buried at the Scriptorium (5%), six Goblets at the Guildhall (0%) and a garden of 8 at the Close (5%). Each now sits near the top quarter of the tactician's games. The simulator reports buried cards and winning margins now.
+
+**The look.** The third map: the city at dawn. Violet sky turning gold at the rooftops, the last stars in the west, the sun half risen beside the cathedral's spire, tapered clouds lit from below, a far skyline of gables and thin spires rim-lit on the sun's side, the Margrave's hall dark on its hill with a red banner. In front, six rows of houses (red tile and slate, gables and chimneys with curling smoke, a few windows still lit from the night), cobbled streets, a small square at each quarter, and doves crossing the sky. Each champion has a 10 × 11 pixel portrait (a moneychanger's purple hat and coins, the archivist's hood and spectacles, the guildmaster's beard, the Abbess's wimple and gold cross, Sir Ulrich's plumed helm), shown in the briefing and, small, on the ribbon above the board, which turns rose for Act III. Win the Hall and the map gets a crown and the Campaign page an epilogue.
+
+**Open questions.**
+- The curve isn't monotone (33, 30, 30, 38, 23, 25); the Close is the easy breather before the tourney. Real players' results should decide whether that matters.
+- A Genius game is slow on a phone (three Geniuses at the Hall think for a while). Watch for complaints before touching its budget.
+- Next: mastery cosmetics, a folio of new cards unlocked by finishing the road, and the 3-player Burn test still waiting.
+
 ## 20 November 2026 · 1.0-pre, the River Towns (campaign Act II)
 
 **Why.** Act I ends at the Toll Gate with the full game against greedy bots, and then the road stopped. A player who has walked it knows every rule but has never met a bot that plans or one that fights. Act II is the bridge from "I know the rules" to "I can beat a tactician": the full game at every stop, tacticians and warlords as rivals, and at each town one **custom**, a rule twist that holds only there. Customs are also how the campaign shows off the variants still on trial (market, Burn) without asking anyone to read a New game form.
