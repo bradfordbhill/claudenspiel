@@ -22,6 +22,8 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ○ Warcamp 5◇/10◇ was tried: it overshoots at 4 players (more Ruins at bigger tables). Any War buff must not grow with table size.
 - ✅ 1.0-pre Death Ray 9● and 3◇ (was 2◇ for 12●, the worst printed value).
 - ○ Re-run the Genius-only balance study after every balance release.
+- ▶ The Warmonger with the Pilgrim's Folio: about 0.83 against 0.98 without at 3 players, in all five folio runs. Try Watchfire feeding the Warcamp's Reserves, or a Sword line card.
+- ○ Wayside Inn (1.25) and the Philosopher with the own-cards Cartographer (1.20–1.24): watch at 3–4 players.
 
 ## Economy (● barely matters today: one claim a turn is the real limit, and about half of all ● goes unspent)
 - ✅ 0.2 A second claim: once a turn, pay 10● (this turn's ●, not Reserves) to claim once more.
@@ -53,10 +55,9 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 0.4 The bots lay Grounds on purpose (Marsh 25 → 51 plays per 100 games, Battlefield 12 → 37).
 - ✅ 1.0-pre More Grounds, one per suit: Library (Tome: building beside it draws a card, once a turn), Barrow (Bone: a burial beside it banks 2◇ for the burier), Shrine (Sceptre: cards beside it can't be contested or Cursed). Deck 128.
 - ✅ 0.7 You'll Regret That: a normal play too (3●: a card next to one of yours produces no ●), so no card is ever dead in hand.
-- ○ Cartographer (Tome Structure, 9●): look at the top 3 cards of the deck and put them back in any order.
+- ✅ 1.0-pre The Pilgrim's Folio: Feast Day and the Ossuary Bell from this list, and ten more built around the **line** (the unbroken run of cards through a card in its row or column): Pilgrim's Way, Cartographer, Hedgerow, Wayside Inn, Watchfire, Chapter House, Levy, Vigil, Harvest Moon, Pilgrim's Tale.
 - ○ Pilgrim's Road (Sceptre Blessing, 6●): a card of yours can't be Ruined until your next turn, and claiming next to it costs no meeple.
-- ○ Feast Day (Goblet Action, 6●): everyone draws 1; you draw 2 and bank 1◇ for each Goblet card on the board.
-- ○ Ossuary Bell (Bone Structure, 8●): whenever any card is buried anywhere, bank 1◇.
+- ○ A line card that reaches past gaps (a Bridge: the line goes on across one empty space).
 - ○ A seventh suit. Candidates: Coin (trade and debts) or Star (prophecy: cards that score at game end). Needs a seventh archetype.
 
 ## Interaction

@@ -2,6 +2,67 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 22 November 2026 · 1.0-pre, the Pilgrim's Folio
+
+**Why.** The progression list has promised folios (themed packs of new cards that the campaign opens) since 0.3, and the gameplay list had a pile of card ideas (Feast Day, the Ossuary Bell) with nowhere to live. The campaign also needed a reward that changes what you can *do* rather than how you look: finishing Act I should open the game up, not hand out a hat. And the deck had one spatial idea left untouched. Kartenspiel scores neighbours, regions, a column to the north and a chain to the east, but never the thing Carcassonne built a whole game on: the road.
+
+**The folio.** Twelve cards, two a suit, kept out of the card library (`KData.FOLIO`, shuffled in by `withFolio` when the game's `folio` option is on), so a browser's saved library never has to be migrated. Its word is the **line**: the unbroken run of cards through a card in its row or its column, itself included, Grounds and Ruins counting; a card's longest line is the longer of the two.
+
+| Card | Suit | Cost | Rule |
+|---|---|---|---|
+| Pilgrim's Way ×2 | Sceptre | 12● +3● | 1◇ per card in its longest line, up to 7◇ |
+| Chapter House | Sceptre | 12● +4● | 2◇ per Sceptre card around it, corners included |
+| Wayside Inn ×2 | Goblet | 9● +3● | 3◇ per player with a card next to it (you count) |
+| Feast Day | Goblet | 6●, Action | everyone draws; you draw again and bank 1◇ per two Goblets on the board (up to 4◇) |
+| Watchfire ×2 | Sword | 8● +3● | 3◇ per Ruined card around it |
+| Levy ×2 | Sword | 3●, Action | 2● per Sword card in your Kingdom (up to 10●) |
+| Ossuary Bell | Bone | 8● +2● | 2◇; whenever anyone buries a card, its owner banks 1◇ |
+| Vigil ×2 | Bone | 3●, Action | draw 1, then bury a card from hand under your Foundation |
+| Hedgerow ×2 | Leaf | 4● +1● | 2◇ per other Leaf card in its row and column lines, up to 8◇ |
+| Harvest Moon | Leaf | 6●, Action | bank 1◇ per two cards in your largest region (up to 5◇) |
+| Cartographer ×2 | Tome | 9● +3● | 2◇ per suit among the cards you own in its longest line, up to 10◇ |
+| Pilgrim's Tale ×2 | Tome | 3●, Action | draw 1, +1 per Tome card in your Kingdom (up to 3) |
+
+The Wayside Inn is my favourite: the only card in the game that wants rivals beside it, which turns a border into a place to build rather than a front. Watchfire gives war something to leave behind. Harvest Moon banks a garden's worth before the raiders arrive.
+
+**What the bots said, and what it changed.** Six rounds of `tools/sim2.js` with `FOLIO=1` (new), 300 games each at 2 and 3 players, 4,191 games in all with the baselines. The rest of the deck stayed as it was.
+
+| | Pilgrim's Way | Cartographer | Wayside Inn | Watchfire | Ossuary Bell |
+|---|---|---|---|---|---|
+| First draft | 9●, up to 9◇: **7.6–8.1◇**, card win index **1.35–1.50** | 9●, all suits in the line, up to 12◇: **9.4–9.5◇**, **1.20–1.49**, the most valuable card in the deck | 8●: 4.4–5.2◇ | 2◇ a Ruin: 2.5◇, 0.81–0.84 | 2◇ |
+| Capped | up to 7◇: 6.7–7.0◇, still 1.30–1.40 | 12●, up to 10◇: still 9.0◇ and 1.52 at 3 players. A cap can't fix a card that reaches it every game | | 3◇: 4.0–4.1◇ | |
+| Shipped | **12●**: 6.5–6.8◇, 1.33–1.46, level with Reconstructed Map (12●, 8◇, 1.29) | **own cards only**, back to 9●: 5.7–6.7◇, 1.25–1.29 | 9●, +3● (it read 1.31–1.56) | 3◇: 4.1–4.9◇, 1.04–1.24 | tried at 3◇; Cryptkeeper climbed to 1.24–1.34 at 3 players, so back to 2◇ |
+
+*Lines are long.* Before writing the deed I measured the longest line a player owns at the end of a game: median 7, top 9 (30 seats, tacticians). That's why the first Pilgrim's Way and Cartographer were so strong: a 3-player board has five suits in almost every long line. Counting only your own cards makes Cartographer a card you build toward (a road of your own, in many colours) rather than one you drop into the middle of the board. It is also the Philosopher's natural ally, which is the right archetype to help.
+
+*Vigil was draw 2, bury 1*: strictly better than Embalm for everyone but the Cryptkeeper, and for the Cryptkeeper 3◇ underground plus filtering for 3●. With the Bell at 3◇ the Cryptkeeper read 1.24–1.34 at 3 players in two runs. Vigil now draws one card.
+
+**Archetype spread, paired confirmation** (deals 900–1199, same seats and archetypes, the shipped folio against none):
+
+| | Archbishop | Hedonist | Warmonger | Cryptkeeper | Gardener | Philosopher | Spread |
+|---|---|---|---|---|---|---|---|
+| 2 players, no folio | 1.04 | 0.86 | 1.00 | 1.00 | 1.16 | 0.94 | 0.30 |
+| 2 players, folio | 0.96 | 0.94 | 0.80 | 1.00 | 1.06 | 1.24 | 0.44 |
+| 3 players, no folio | 1.04 | 0.70 | 1.00 | 1.30 | 0.92 | 1.04 | 0.60 |
+| 3 players, folio | 0.96 | 1.08 | 0.76 | 1.16 | 0.84 | 1.20 | 0.44 |
+
+Spread is mostly noise at 300 games: the same base game read 0.28 on deals 0–299 and 0.60 on these. The folio neither clearly widens nor narrows it. One signal does hold in every run: **the Warmonger is lower with the folio**, about 0.83 against 0.98 without at 3 players (five folio runs: 0.78, 0.84, 0.86, 0.90, 0.76). The folio's builders (long lines, an Inn on every border) score faster than war can take them apart. That is the next thing to fix, measured first. Candidates: Watchfire also paying the Warcamp's Reserves, or a Sword line card that Ruins along its line. The Philosopher reads high (1.20–1.24) with the own-cards Cartographer and needs watching too.
+
+Per-card win indices swing a lot from run to run (the Bell read 0.64 in one and 1.55 in another), so I only acted on signals that held in every run: Pilgrim's Way and the first Cartographer high every time, Watchfire low twice, the Cryptkeeper up whenever the Bell was 3◇.
+
+**The rest.**
+- *Unlocking.* Win every stop of Act I and the folio opens, announced by the toast that opens the river towns. Then it is on by default under a new **Folios** heading in New game, and in the sandbox. Before that, the New game page shows it locked, and the Library shows the cards (Cards → The Pilgrim's Folio) with a banner saying how to open them. Campaign games never use it, so their measured difficulty holds.
+- *The waymark.* A 9 × 8 pixel road running up to a gold horizon, drawn in CSS, follows a folio card's name in the hand, the Library and on the board.
+- *Lines on the board.* Selecting Pilgrim's Way or Cartographer lights its longest line, and Hedgerow lights both its lines (new `sees` areas, `line` and `cross`); the Inn, Watchfire and Chapter House light their neighbours.
+- *A deed:* **The Long Road**, finish owning a card whose line is 10 or longer (above the top of the measured range, so it takes intent).
+- Help has a folio page, and its campaign section finally describes Act III.
+
+**Open questions.**
+- The Warmonger with the folio (above).
+- Wayside Inn might still be strong at 3–4 players (more rivals to sit beside); 1.25 in the last runs at 9●. Watch it.
+- The folio isn't on the print-and-play sheets yet.
+- Next folios: a River folio for Act II and a City folio for Act III (ideas in the progression list).
+
 ## 21 November 2026 · 1.0-pre, the City at Dawn (campaign Act III)
 
 **Why.** Act II ends with a player who can beat tacticians and warlords. The one opponent the campaign never put in front of them is the Genius, the bot that imagines hidden cards and plans whole turns, and the strongest thing in the game. Act III is the road's last climb: the full game against the Genius, given names and faces so that losing to it is a story rather than a number. It also finishes the job Act II started of showing off rules on trial, using the three that hadn't appeared anywhere (hallowed ground, audits, the seat handicap reused as a gift).

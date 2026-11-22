@@ -26,6 +26,8 @@ var KFace = (function () {
     var k = ['N', 'E', 'S', 'W'].filter(function (s) { return pl.indexOf(s) >= 0; }).join('');
     return m[k] || k;
   }
+  // The Pilgrim's Folio's mark: a small pixel waymark (a road running to the horizon) after the card's name.
+  function folioMark(d) { return d && d.folio ? '<i class="folio-mark" title="The Pilgrim’s Folio"></i>' : ''; }
   // A card's score rule as readable text.
   function scoreText(s) {
     if (!s) return '';
@@ -43,6 +45,12 @@ var KFace = (function () {
       case 'flatMinusPerAdjacentNotOwned': return n + '◇ − ' + m + ' per foreign neighbor';
       case 'flatMinusPerExtraClaimant': return n + '◇ − ' + m + ' per extra claimant';
       case 'flatPlusTokens': return n + '◇ + tokens';
+      case 'longestLine': return n + '◇ per card in its longest line' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'longestLineSuits': return n + '◇ per suit' + (s.own ? ' you own' : '') + ' in its longest line' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'lineSuit': return n + '◇ per ' + s.suit + ' in its row and column' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'perSurroundSuit': return n + '◇ per ' + s.suit + ' around it';
+      case 'perSurroundRuined': return n + '◇ per Ruined card around it';
+      case 'perAdjacentOwner': return n + '◇ per player beside it';
       default: return '';
     }
   }
@@ -64,7 +72,7 @@ var KFace = (function () {
     var h = '<div class="card s-' + esc(d.suit) + (o.big ? ' big' : '') + (d.type === 'Foundation' ? ' found' : '') + (o.ink === 'light' ? ' lighttext' : '') + '"' + (tx ? ' style="' + tx + '"' : '') + '>';
     h += '<div class="top"><span>' + esc(o.cost != null ? o.cost : d.cost) + '●</span>' + icon(d.suit) + '</div>';
     if (art) h += '<div class="art" style="' + artStyle(art) + '"></div>';
-    h += '<div class="nm">' + esc(d.name) + '</div><div class="ty">' + esc(d.type) + ' · ' + esc(d.suit) + '</div>';
+    h += '<div class="nm">' + esc(d.name) + folioMark(d) + '</div><div class="ty">' + esc(d.type) + ' · ' + esc(d.suit) + '</div>';
     if (o.big) {
       h += '<div class="txt">' + esc(d.text || '') + '</div>';
       var bits = [];
@@ -91,7 +99,7 @@ var KFace = (function () {
     var h = '<div class="card s-' + esc(d.suit) + (d.type === 'Foundation' ? ' found' : '') + (o.ink === 'light' ? ' lighttext' : '') + '"' + (o.style ? ' style="' + o.style + '"' : '') + '>';
     h += '<div class="top"><span>' + esc(d.cost) + '●</span>' + icon(d.suit) + '</div>';
     if (o.art) h += '<div class="art" style="' + artStyle(o.art) + '"></div>';
-    h += '<div class="nm">' + esc(d.name) + '</div><div class="ty">' + esc(d.type) + '</div>';
+    h += '<div class="nm">' + esc(d.name) + folioMark(d) + '</div><div class="ty">' + esc(d.type) + '</div>';
     h += '<div class="foot"><span class="meeps"></span><span class="val">' + (+d.income ? d.income + '●' : '') + '</span></div>';
     return h + '</div>';
   }
@@ -204,7 +212,7 @@ var KFace = (function () {
     return all;
   }
 
-  return { esc: esc, ICON: ICON, icon: icon, placeIcon: placeIcon, scoreText: scoreText, SUIT_BG: SUIT_BG, FOUND_BG: FOUND_BG, picCSS: picCSS, artStyle: artStyle,
+  return { folioMark: folioMark, esc: esc, ICON: ICON, icon: icon, placeIcon: placeIcon, scoreText: scoreText, SUIT_BG: SUIT_BG, FOUND_BG: FOUND_BG, picCSS: picCSS, artStyle: artStyle,
     handFace: handFace, boardBlank: boardBlank, rng: rng, BAYER4: BAYER4, texPixels: texPixels, faces: faces, HAND: [75, 103], BOARD: [52, 52] };
 })();
 if (typeof module !== 'undefined') module.exports = KFace;

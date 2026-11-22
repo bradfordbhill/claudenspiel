@@ -3685,6 +3685,48 @@ var KData = (function () {
   };
   STARTER.forEach(function (d) { d.burn = BURNS[d.id] || null; });
 
-  return { SUITS: SUITS, TYPES: TYPES, ALL4: ALL4, STARTER: STARTER, BURNS: BURNS, make: c };
+  // The Pilgrim's Folio (Claudenspiel 1.0): twelve cards about the road to the city, two a suit. Finishing Act I of the
+  // campaign opens it; then it is a New game option that shuffles these into the deck (they are never stored in the
+  // card library). Its own vocabulary is the line: the unbroken run of cards through a card in its row or its column.
+  var FOLIO = [
+    c({ id: 'pilgrims-way', name: "Pilgrim's Way", suit: 'Sceptre', cost: 12, income: 3, copies: 2, sees: { area: 'line' }, score: { kind: 'longestLine', n: 1, max: 7 },
+      text: '1◇ for each card in its longest line (the unbroken run of cards through it in its row or column, itself included), up to 7◇.',
+      note: 'Carcassonne’s road, folded into one card. It rewards building long and straight, which pulls Kingdoms into each other’s paths.' }),
+    c({ id: 'chapter-house', name: 'Chapter House', suit: 'Sceptre', cost: 12, income: 4, sees: { area: 'surround8', suit: 'Sceptre' }, score: { kind: 'perSurroundSuit', n: 2, suit: 'Sceptre' },
+      text: '2◇ for each Sceptre card around it, corners included.', note: 'A Sceptre payoff that counts the diagonals, so the Archbishop can build in blocks.' }),
+    c({ id: 'wayside-inn', name: 'Wayside Inn', suit: 'Goblet', cost: 9, income: 3, copies: 2, sees: { area: 'adjacent' }, score: { kind: 'perAdjacentOwner', n: 3 },
+      text: '3◇ for each different player who owns a card next to it (you count too).', note: 'The only card that wants rivals beside it: built on a border, it scores more the busier the road.' }),
+    c({ id: 'feast-day', name: 'Feast Day', suit: 'Goblet', type: 'Action', cost: 6, onPlay: [{ do: 'feast', max: 4 }],
+      text: 'Everyone draws a card. Then you draw another and bank 1◇ for every two Goblet cards on the board (up to 4◇).', note: 'A gift to the table that pays its host most. Hedonists throw the best feasts.' }),
+    c({ id: 'watchfire', name: 'Watchfire', suit: 'Sword', cost: 8, income: 3, copies: 2, sees: { area: 'surround8' }, score: { kind: 'perSurroundRuined', n: 3 },
+      text: '3◇ for each Ruined card around it, corners included.', note: 'Light it among the wreckage. War finally leaves something worth having behind.' }),
+    c({ id: 'levy', name: 'Levy', suit: 'Sword', type: 'Action', cost: 3, copies: 2, onPlay: [{ do: 'perGain', gain: 'ap', of: 'mine', suit: 'Sword', n: 2, max: 10 }],
+      text: 'Gain 2● for each Sword card in your Kingdom (up to 10●).', note: 'Raise the tax, raise the army: one big turn for a Kingdom of Swords.' }),
+    c({ id: 'ossuary-bell', name: 'Ossuary Bell', suit: 'Bone', cost: 8, income: 2, score: { kind: 'flat', n: 2 }, mods: { bell: 1 },
+      text: '2◇. Whenever a card is buried anywhere, its owner banks 1◇.', note: 'From the gameplay wishlist. Every burial on the board, yours or a rival’s, rings it.' }),
+    c({ id: 'vigil', name: 'Vigil', suit: 'Bone', type: 'Action', cost: 3, copies: 2, onPlay: [{ do: 'draw', n: 1 }, { do: 'buryFromHand', n: 1 }],
+      text: 'Draw a card, then bury a card from your hand under your Foundation.', note: 'Filtering for anyone, a buried card for the Cryptkeeper.' }),
+    c({ id: 'hedgerow', name: 'Hedgerow', suit: 'Leaf', cost: 4, income: 1, copies: 2, sees: { area: 'cross', suit: 'Leaf' }, score: { kind: 'lineSuit', n: 2, suit: 'Leaf', max: 8 },
+      text: '2◇ for each other Leaf card in its row line and column line (up to 8◇).', note: 'The cheap road card: a green cross through the Gardener’s field.' }),
+    c({ id: 'harvest-moon', name: 'Harvest Moon', suit: 'Leaf', type: 'Action', cost: 6, onPlay: [{ do: 'perGain', gain: 'vp', of: 'region', n: 1, per: 2, max: 5 }],
+      text: 'Bank 1◇ for every two cards in your largest region (up to 5◇).', note: 'Banked ◇ can’t be Ruined: a way to cash a big field before the raiders come.' }),
+    c({ id: 'cartographer', name: 'Cartographer', suit: 'Tome', cost: 9, income: 3, copies: 2, sees: { area: 'line' }, score: { kind: 'longestLineSuits', n: 2, max: 10, own: true },
+      text: '2◇ for each different suit among the cards you own in its longest line (up to 10◇).', note: 'Your own road, mapped: lay a line of many suits. The Philosopher’s natural ally. (Counting rivals’ cards too made it the strongest card in the deck.)' }),
+    c({ id: 'pilgrims-tale', name: "Pilgrim's Tale", suit: 'Tome', type: 'Action', cost: 3, copies: 2, onPlay: [{ do: 'perGain', gain: 'draw', of: 'mine', suit: 'Tome', base: 1, n: 1, max: 3 }],
+      text: 'Draw a card, and one more for each Tome card in your Kingdom (up to 3 cards).', note: 'Cheap, and better the more you’ve read.' })
+  ];
+  var FOLIO_BURNS = {
+    'pilgrims-way': [{ k: 'cheap', n: 4 }, { k: 'draw', n: 1 }], 'chapter-house': [{ k: 'per', of: 'board', suit: 'Sceptre', n: 1, max: 4 }],
+    'wayside-inn': [{ k: 'coin', n: 4 }, { k: 'draw', n: 1 }], 'feast-day': [{ k: 'draw', n: 2 }],
+    'watchfire': [{ k: 'per', of: 'ruined', n: 1, max: 4 }], 'levy': [{ k: 'sword' }, { k: 'coin', n: 2 }],
+    'ossuary-bell': [{ k: 'bury' }, { k: 'bank', n: 1 }], 'vigil': [{ k: 'bury' }, { k: 'draw', n: 1 }],
+    'hedgerow': [{ k: 'per', of: 'mine', suit: 'Leaf', n: 1, max: 3 }], 'harvest-moon': [{ k: 'bank', n: 2 }],
+    'cartographer': [{ k: 'per', of: 'suits', n: 1, max: 4 }], 'pilgrims-tale': [{ k: 'draw', n: 2 }]
+  };
+  FOLIO.forEach(function (d) { d.folio = 'pilgrim'; d.burn = FOLIO_BURNS[d.id]; BURNS[d.id] = FOLIO_BURNS[d.id]; });
+  // The deck's card definitions with the folio shuffled in (cards already in the library by the same id are kept as they are).
+  function withFolio(lib) { var have = {}; lib.forEach(function (d) { have[d.id] = 1; }); return lib.concat(FOLIO.filter(function (d) { return !have[d.id]; })); }
+
+  return { SUITS: SUITS, TYPES: TYPES, ALL4: ALL4, STARTER: STARTER, BURNS: BURNS, FOLIO: FOLIO, withFolio: withFolio, make: c };
 })();
 if (typeof module !== 'undefined') module.exports = KData;

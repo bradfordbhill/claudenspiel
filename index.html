@@ -811,6 +811,12 @@ html[data-motion="off"] .cdoves { display: none; }
 .cfoe .cportrait { background: #f0a060; border: 2px solid #1a1020; image-rendering: pixelated; }
 .crfoes { display: inline-flex; gap: 2px; }
 .crfoes svg { height: 14px; width: auto; background: #f0a060; }
+
+/* The Pilgrim's Folio: a pixel waymark after a folio card's name (a road to a golden horizon), and the Library's folio banner. */
+.folio-mark { display: inline-block; width: 9px; height: 8px; margin-left: 3px; vertical-align: 0; background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%209%208%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20width%3D%229%22%20height%3D%228%22%20fill%3D%22%234f8a3c%22/%3E%3Crect%20width%3D%229%22%20height%3D%222%22%20fill%3D%22%23f2c46b%22/%3E%3Crect%20x%3D%224%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23c9a66b%22/%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23c9a66b%22/%3E%3Crect%20x%3D%223%22%20y%3D%222%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23c9a66b%22/%3E%3Crect%20x%3D%222%22%20y%3D%223%22%20width%3D%225%22%20height%3D%221%22%20fill%3D%22%23c9a66b%22/%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%225%22%20height%3D%221%22%20fill%3D%22%23c9a66b%22/%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%227%22%20height%3D%221%22%20fill%3D%22%23c9a66b%22/%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%227%22%20height%3D%221%22%20fill%3D%22%23c9a66b%22/%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%229%22%20height%3D%221%22%20fill%3D%22%23c9a66b%22/%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff6c2%22/%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff6c2%22/%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23fff6c2%22/%3E%3C/svg%3E") no-repeat; background-size: 9px 8px; image-rendering: pixelated; box-shadow: 0 0 0 1px rgba(60,40,20,.55); }
+.card.big .folio-mark { width: 18px; height: 16px; background-size: 18px 16px; }
+.foliobanner { display: flex; gap: 10px; align-items: center; padding: 6px 10px; margin: 4px 0; background: linear-gradient(90deg, rgba(79,138,60,.18), rgba(242,196,107,.18)); border: 1px solid rgba(201,166,107,.6); }
+.foliobanner .folio-mark { width: 27px; height: 24px; background-size: 27px 24px; flex: none; }
 </style></head><body><div id="app"></div><script>
 /* Kartenspiel — starter data. Card definitions are plain JSON so they can live in a db later. */
 var KData = (function () {
@@ -4499,7 +4505,49 @@ var KData = (function () {
   };
   STARTER.forEach(function (d) { d.burn = BURNS[d.id] || null; });
 
-  return { SUITS: SUITS, TYPES: TYPES, ALL4: ALL4, STARTER: STARTER, BURNS: BURNS, make: c };
+  // The Pilgrim's Folio (Claudenspiel 1.0): twelve cards about the road to the city, two a suit. Finishing Act I of the
+  // campaign opens it; then it is a New game option that shuffles these into the deck (they are never stored in the
+  // card library). Its own vocabulary is the line: the unbroken run of cards through a card in its row or its column.
+  var FOLIO = [
+    c({ id: 'pilgrims-way', name: "Pilgrim's Way", suit: 'Sceptre', cost: 12, income: 3, copies: 2, sees: { area: 'line' }, score: { kind: 'longestLine', n: 1, max: 7 },
+      text: '1◇ for each card in its longest line (the unbroken run of cards through it in its row or column, itself included), up to 7◇.',
+      note: 'Carcassonne’s road, folded into one card. It rewards building long and straight, which pulls Kingdoms into each other’s paths.' }),
+    c({ id: 'chapter-house', name: 'Chapter House', suit: 'Sceptre', cost: 12, income: 4, sees: { area: 'surround8', suit: 'Sceptre' }, score: { kind: 'perSurroundSuit', n: 2, suit: 'Sceptre' },
+      text: '2◇ for each Sceptre card around it, corners included.', note: 'A Sceptre payoff that counts the diagonals, so the Archbishop can build in blocks.' }),
+    c({ id: 'wayside-inn', name: 'Wayside Inn', suit: 'Goblet', cost: 9, income: 3, copies: 2, sees: { area: 'adjacent' }, score: { kind: 'perAdjacentOwner', n: 3 },
+      text: '3◇ for each different player who owns a card next to it (you count too).', note: 'The only card that wants rivals beside it: built on a border, it scores more the busier the road.' }),
+    c({ id: 'feast-day', name: 'Feast Day', suit: 'Goblet', type: 'Action', cost: 6, onPlay: [{ do: 'feast', max: 4 }],
+      text: 'Everyone draws a card. Then you draw another and bank 1◇ for every two Goblet cards on the board (up to 4◇).', note: 'A gift to the table that pays its host most. Hedonists throw the best feasts.' }),
+    c({ id: 'watchfire', name: 'Watchfire', suit: 'Sword', cost: 8, income: 3, copies: 2, sees: { area: 'surround8' }, score: { kind: 'perSurroundRuined', n: 3 },
+      text: '3◇ for each Ruined card around it, corners included.', note: 'Light it among the wreckage. War finally leaves something worth having behind.' }),
+    c({ id: 'levy', name: 'Levy', suit: 'Sword', type: 'Action', cost: 3, copies: 2, onPlay: [{ do: 'perGain', gain: 'ap', of: 'mine', suit: 'Sword', n: 2, max: 10 }],
+      text: 'Gain 2● for each Sword card in your Kingdom (up to 10●).', note: 'Raise the tax, raise the army: one big turn for a Kingdom of Swords.' }),
+    c({ id: 'ossuary-bell', name: 'Ossuary Bell', suit: 'Bone', cost: 8, income: 2, score: { kind: 'flat', n: 2 }, mods: { bell: 1 },
+      text: '2◇. Whenever a card is buried anywhere, its owner banks 1◇.', note: 'From the gameplay wishlist. Every burial on the board, yours or a rival’s, rings it.' }),
+    c({ id: 'vigil', name: 'Vigil', suit: 'Bone', type: 'Action', cost: 3, copies: 2, onPlay: [{ do: 'draw', n: 1 }, { do: 'buryFromHand', n: 1 }],
+      text: 'Draw a card, then bury a card from your hand under your Foundation.', note: 'Filtering for anyone, a buried card for the Cryptkeeper.' }),
+    c({ id: 'hedgerow', name: 'Hedgerow', suit: 'Leaf', cost: 4, income: 1, copies: 2, sees: { area: 'cross', suit: 'Leaf' }, score: { kind: 'lineSuit', n: 2, suit: 'Leaf', max: 8 },
+      text: '2◇ for each other Leaf card in its row line and column line (up to 8◇).', note: 'The cheap road card: a green cross through the Gardener’s field.' }),
+    c({ id: 'harvest-moon', name: 'Harvest Moon', suit: 'Leaf', type: 'Action', cost: 6, onPlay: [{ do: 'perGain', gain: 'vp', of: 'region', n: 1, per: 2, max: 5 }],
+      text: 'Bank 1◇ for every two cards in your largest region (up to 5◇).', note: 'Banked ◇ can’t be Ruined: a way to cash a big field before the raiders come.' }),
+    c({ id: 'cartographer', name: 'Cartographer', suit: 'Tome', cost: 9, income: 3, copies: 2, sees: { area: 'line' }, score: { kind: 'longestLineSuits', n: 2, max: 10, own: true },
+      text: '2◇ for each different suit among the cards you own in its longest line (up to 10◇).', note: 'Your own road, mapped: lay a line of many suits. The Philosopher’s natural ally. (Counting rivals’ cards too made it the strongest card in the deck.)' }),
+    c({ id: 'pilgrims-tale', name: "Pilgrim's Tale", suit: 'Tome', type: 'Action', cost: 3, copies: 2, onPlay: [{ do: 'perGain', gain: 'draw', of: 'mine', suit: 'Tome', base: 1, n: 1, max: 3 }],
+      text: 'Draw a card, and one more for each Tome card in your Kingdom (up to 3 cards).', note: 'Cheap, and better the more you’ve read.' })
+  ];
+  var FOLIO_BURNS = {
+    'pilgrims-way': [{ k: 'cheap', n: 4 }, { k: 'draw', n: 1 }], 'chapter-house': [{ k: 'per', of: 'board', suit: 'Sceptre', n: 1, max: 4 }],
+    'wayside-inn': [{ k: 'coin', n: 4 }, { k: 'draw', n: 1 }], 'feast-day': [{ k: 'draw', n: 2 }],
+    'watchfire': [{ k: 'per', of: 'ruined', n: 1, max: 4 }], 'levy': [{ k: 'sword' }, { k: 'coin', n: 2 }],
+    'ossuary-bell': [{ k: 'bury' }, { k: 'bank', n: 1 }], 'vigil': [{ k: 'bury' }, { k: 'draw', n: 1 }],
+    'hedgerow': [{ k: 'per', of: 'mine', suit: 'Leaf', n: 1, max: 3 }], 'harvest-moon': [{ k: 'bank', n: 2 }],
+    'cartographer': [{ k: 'per', of: 'suits', n: 1, max: 4 }], 'pilgrims-tale': [{ k: 'draw', n: 2 }]
+  };
+  FOLIO.forEach(function (d) { d.folio = 'pilgrim'; d.burn = FOLIO_BURNS[d.id]; BURNS[d.id] = FOLIO_BURNS[d.id]; });
+  // The deck's card definitions with the folio shuffled in (cards already in the library by the same id are kept as they are).
+  function withFolio(lib) { var have = {}; lib.forEach(function (d) { have[d.id] = 1; }); return lib.concat(FOLIO.filter(function (d) { return !have[d.id]; })); }
+
+  return { SUITS: SUITS, TYPES: TYPES, ALL4: ALL4, STARTER: STARTER, BURNS: BURNS, FOLIO: FOLIO, withFolio: withFolio, make: c };
 })();
 if (typeof module !== 'undefined') module.exports = KData;
 /* Kartenspiel rules engine.
@@ -4596,7 +4644,7 @@ var KEngine = (function () {
   function protectedStack(st, k) { var s = st.board[k]; return !!s && (!!(st.wards && st.wards[s[0]] != null) || s.slice(1).some(function (x) { var m = rawDef(st, x).mods || {}; return m.burialEffect && m.burialEffect.protect; })); }
   // Cards with a burialEffect (Flowers, Eye for an Eye, Standard Bearer) boost whatever they are buried under.
   function onBuried(st, u, k) {
-    if (top(st, k)) barrowBank(st, u, k);
+    if (top(st, k)) { barrowBank(st, u, k); bellToll(st, k); }
     var m = (rawDef(st, u).mods || {}).burialEffect, t = top(st, k); if (!m || !t) return;
     var c = st.cards[t], nm = rawDef(st, t).name;
     if (m.ap) { c.apBonus = (c.apBonus || 0) + m.ap; log(st, nm + ' now produces ' + m.ap + '● more per turn, permanently (' + rawDef(st, u).name + ').'); }
@@ -4609,6 +4657,11 @@ var KEngine = (function () {
   function barrowBank(st, u, k) {
     var v = groundsAround(st, k, 'barrowVP'), p = st.cur; if (!v || p == null || !st.players[p]) return;
     bank(st, p, v, top(st, k)); log(st, 'The Barrow keeps its dead: ' + st.players[p].name + ' banks ' + v + '◇.');
+  }
+  // Ossuary Bell (the Pilgrim's Folio): whenever a card is buried anywhere, each owner of an active Bell banks 1◇.
+  function bellToll(st, k) {
+    keys(st).forEach(function (x) { var t = top(st, x); if (!active(st, x)) return; var v = +((def(st, t).mods || {}).bell || 0); if (!v) return;
+      st.cards[t].claimants.forEach(function (o) { if (!st.players[o] || st.players[o].out) return; bank(st, o, v, t); log(st, 'The Ossuary Bell tolls: ' + st.players[o].name + ' banks ' + v + '◇.'); }); });
   }
   // Shrine: cards next to it keep the Shrine's peace; they can't be contested or Cursed.
   function shrinePeace(st, k) { return groundsAround(st, k, 'peace') > 0; }
@@ -4709,9 +4762,32 @@ var KEngine = (function () {
         return n - m * nb.filter(function (x) { var t = top(st, x); if (!t) return false; var cl = st.cards[t].claimants; return !c.claimants.some(function (o) { return cl.indexOf(o) >= 0; }); }).length;
       case 'flatMinusPerExtraClaimant': return n - m * Math.max(0, c.claimants.length - 1);
       case 'flatPlusTokens': return n + (c.tokens || 0);
+      // The Pilgrim's Folio (Claudenspiel 1.0): roads. A card's line is the unbroken run of cards through it in its row
+      // or its column; its longest line is the longer of the two (itself included). s.max caps the value.
+      case 'longestLine': return capped(s, n * longestLine(st, k).length);
+      case 'longestLineSuits': return capped(s, n * lineSuits(st, longestLine(st, k).filter(function (x) { return !s.own || ownedBy(st, x, p); })));   // s.own: only the cards p owns count
+      case 'lineSuit': return capped(s, n * lineRun(st, k, 1, 0).concat(lineRun(st, k, 0, 1)).filter(function (x) { return x !== k && hasSuit(st, top(st, x), s.suit); }).length);
+      case 'perSurroundSuit': return capped(s, n * n8(k).filter(function (x) { var t = top(st, x); return t && !st.cards[t].ruined && hasSuit(st, t, s.suit); }).length);
+      case 'perSurroundRuined': return capped(s, n * n8(k).filter(function (x) { var t = top(st, x); return t && st.cards[t].ruined; }).length);
+      case 'perAdjacentOwner': { var who = {}; nb.forEach(function (x) { var t = top(st, x); if (t && !st.cards[t].ruined) st.cards[t].claimants.forEach(function (o) { who[o] = 1; }); }); return capped(s, n * Object.keys(who).length); }
       default: return 0;
     }
   }
+  function capped(s, v) { return s.max ? Math.min(+s.max, v) : v; }
+  // The unbroken run of occupied cells through k along (dx, dy), k included, west/north first.
+  function lineRun(st, k, dx, dy) {
+    var p = XY(k), out = [k], x, y;
+    for (x = p[0] - dx, y = p[1] - dy; top(st, K(x, y)); x -= dx, y -= dy) out.unshift(K(x, y));
+    for (x = p[0] + dx, y = p[1] + dy; top(st, K(x, y)); x += dx, y += dy) out.push(K(x, y));
+    return out;
+  }
+  // k's longest line: its row run or its column run, whichever is longer (on a tie, the one with more suits).
+  function longestLine(st, k) {
+    var r = lineRun(st, k, 1, 0), c = lineRun(st, k, 0, 1);
+    if (r.length !== c.length) return r.length > c.length ? r : c;
+    return lineSuits(st, c) > lineSuits(st, r) ? c : r;
+  }
+  function lineSuits(st, cells) { var ss = {}; cells.forEach(function (x) { var t = top(st, x); if (t && !st.cards[t].ruined) suitsOf(st, t).forEach(function (q) { ss[q] = 1; }); }); return Object.keys(ss).length; }
   // Occupied cells north of k in the same column.
   function northKeys(st, k) { var p = XY(k); return keys(st).filter(function (x) { var q = XY(x); return q[0] === p[0] && q[1] < p[1]; }); }
   // Size of the largest connected group of cells in p's Kingdom (flood fill).
@@ -5536,6 +5612,25 @@ var KEngine = (function () {
       if (!theirs.length) { log(st, 'No opponent meeple to swap with.'); return 'done'; }
       return pend(res, { kind: 'cell', options: theirs, prompt: 'Choose an opponent’s card to swap meeples with.', verb: 'target', optional: true });
     },
+    // The Pilgrim's Folio: gain ● (gain 'ap'), cards ('draw') or ◇ ('vp'): base, plus n for each of `of` ('mine': your
+    // cards of s.suit; 'board': cards of s.suit anywhere; 'region': cards in your largest region), counted per s.per, up to s.max.
+    perGain: function (st, res, s) {
+      var p = res.player, pl = st.players[p], cnt = 0;
+      if (s.of === 'mine') cnt = kingdom(st, p).filter(function (x) { return hasSuit(st, top(st, x), s.suit); }).length;
+      else if (s.of === 'board') cnt = keys(st).filter(function (x) { var t = top(st, x); return !st.cards[t].ruined && hasSuit(st, t, s.suit); }).length;
+      else if (s.of === 'region') cnt = regionCells(st, p).length;
+      var amt = (+s.base || 0) + (+s.n || 1) * Math.floor(cnt / (+s.per || 1)); if (s.max) amt = Math.min(+s.max, amt);
+      if (s.gain === 'ap') { pl.ap += amt; log(st, pl.name + ' gains ' + amt + '●.'); }
+      else if (s.gain === 'draw') { var got = draw(st, p, amt); log(st, pl.name + ' draws ' + got + '.'); }
+      else if (s.gain === 'vp') { bank(st, p, amt, res.src); log(st, pl.name + ' banks ' + amt + '◇.'); }
+      return 'done';
+    },
+    // Feast Day: everyone draws a card, then the player draws another and banks 1◇ for every two Goblet cards on the board (up to 4).
+    feast: function (st, res, s) {
+      var p = res.player; st.players.forEach(function (q, i) { if (!q.out) draw(st, i, 1); }); draw(st, p, 1);
+      var g = keys(st).filter(function (x) { var t = top(st, x); return !st.cards[t].ruined && hasSuit(st, t, 'Goblet'); }).length, v = Math.min(+s.max || 4, Math.floor(g / 2));
+      if (v) bank(st, p, v, res.src); log(st, 'Feast Day: everyone draws; ' + st.players[p].name + ' draws again' + (v ? ' and banks ' + v + '◇' : '') + '.'); return 'done';
+    },
     payAP: function (st, res, s) { spend(st.players[res.player], +s.n || 0); return 'done'; },
     tokens: function (st, res, s) { bank(st, res.player, +s.n || 0, res.src); log(st, st.players[res.player].name + ' banks ' + s.n + '◇.'); return 'done'; },
     // Move the source card to an empty adjacent cell (Choreography and Merriment).
@@ -5704,7 +5799,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, folio: !!setup.folio, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -6067,6 +6162,9 @@ var KEngine = (function () {
       case 'adjacentToOwn': if (p != null) { var s = {}; kingdom(st, p).forEach(function (kk) { n4(kk).forEach(function (x) { s[x] = 1; }); }); cells = Object.keys(s); } break;
       case 'westOfOwn': if (p != null) cells = kingdom(st, p).map(function (kk) { var r = XY(kk); return K(r[0] - 1, r[1]); }); break;
       case 'board': cells = keys(st); break;
+      // the Pilgrim's Folio: the longest line, or both lines (row and column runs)
+      case 'line': cells = longestLine(st, k); break;
+      case 'cross': cells = lineRun(st, k, 1, 0).concat(lineRun(st, k, 0, 1)); break;
     }
     cells = cells.filter(function (x) { return x !== k; });
     var counted = cells.filter(function (x) { var t = top(st, x); return t && (!sv.suit || hasSuit(st, t, sv.suit)); });
@@ -6142,7 +6240,7 @@ var KEngine = (function () {
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
     burnBlock: burnBlock, BURN: BURN, burnSteps: burnSteps, burnText: burnText, defBurn: defBurn, defBurnText: defBurnText, burnStepText: burnStepText, burnNeedsCell: burnNeedsCell, burnGain: burnGain, warded: warded, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
-    shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
+    shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, lineRun: lineRun, longestLine: longestLine, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };
 })();
 if (typeof module !== 'undefined') module.exports = KEngine;
@@ -6564,6 +6662,8 @@ var KFace = (function () {
     var k = ['N', 'E', 'S', 'W'].filter(function (s) { return pl.indexOf(s) >= 0; }).join('');
     return m[k] || k;
   }
+  // The Pilgrim's Folio's mark: a small pixel waymark (a road running to the horizon) after the card's name.
+  function folioMark(d) { return d && d.folio ? '<i class="folio-mark" title="The Pilgrim’s Folio"></i>' : ''; }
   // A card's score rule as readable text.
   function scoreText(s) {
     if (!s) return '';
@@ -6581,6 +6681,12 @@ var KFace = (function () {
       case 'flatMinusPerAdjacentNotOwned': return n + '◇ − ' + m + ' per foreign neighbor';
       case 'flatMinusPerExtraClaimant': return n + '◇ − ' + m + ' per extra claimant';
       case 'flatPlusTokens': return n + '◇ + tokens';
+      case 'longestLine': return n + '◇ per card in its longest line' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'longestLineSuits': return n + '◇ per suit' + (s.own ? ' you own' : '') + ' in its longest line' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'lineSuit': return n + '◇ per ' + s.suit + ' in its row and column' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'perSurroundSuit': return n + '◇ per ' + s.suit + ' around it';
+      case 'perSurroundRuined': return n + '◇ per Ruined card around it';
+      case 'perAdjacentOwner': return n + '◇ per player beside it';
       default: return '';
     }
   }
@@ -6602,7 +6708,7 @@ var KFace = (function () {
     var h = '<div class="card s-' + esc(d.suit) + (o.big ? ' big' : '') + (d.type === 'Foundation' ? ' found' : '') + (o.ink === 'light' ? ' lighttext' : '') + '"' + (tx ? ' style="' + tx + '"' : '') + '>';
     h += '<div class="top"><span>' + esc(o.cost != null ? o.cost : d.cost) + '●</span>' + icon(d.suit) + '</div>';
     if (art) h += '<div class="art" style="' + artStyle(art) + '"></div>';
-    h += '<div class="nm">' + esc(d.name) + '</div><div class="ty">' + esc(d.type) + ' · ' + esc(d.suit) + '</div>';
+    h += '<div class="nm">' + esc(d.name) + folioMark(d) + '</div><div class="ty">' + esc(d.type) + ' · ' + esc(d.suit) + '</div>';
     if (o.big) {
       h += '<div class="txt">' + esc(d.text || '') + '</div>';
       var bits = [];
@@ -6629,7 +6735,7 @@ var KFace = (function () {
     var h = '<div class="card s-' + esc(d.suit) + (d.type === 'Foundation' ? ' found' : '') + (o.ink === 'light' ? ' lighttext' : '') + '"' + (o.style ? ' style="' + o.style + '"' : '') + '>';
     h += '<div class="top"><span>' + esc(d.cost) + '●</span>' + icon(d.suit) + '</div>';
     if (o.art) h += '<div class="art" style="' + artStyle(o.art) + '"></div>';
-    h += '<div class="nm">' + esc(d.name) + '</div><div class="ty">' + esc(d.type) + '</div>';
+    h += '<div class="nm">' + esc(d.name) + folioMark(d) + '</div><div class="ty">' + esc(d.type) + '</div>';
     h += '<div class="foot"><span class="meeps"></span><span class="val">' + (+d.income ? d.income + '●' : '') + '</span></div>';
     return h + '</div>';
   }
@@ -6742,7 +6848,7 @@ var KFace = (function () {
     return all;
   }
 
-  return { esc: esc, ICON: ICON, icon: icon, placeIcon: placeIcon, scoreText: scoreText, SUIT_BG: SUIT_BG, FOUND_BG: FOUND_BG, picCSS: picCSS, artStyle: artStyle,
+  return { folioMark: folioMark, esc: esc, ICON: ICON, icon: icon, placeIcon: placeIcon, scoreText: scoreText, SUIT_BG: SUIT_BG, FOUND_BG: FOUND_BG, picCSS: picCSS, artStyle: artStyle,
     handFace: handFace, boardBlank: boardBlank, rng: rng, BAYER4: BAYER4, texPixels: texPixels, faces: faces, HAND: [75, 103], BOARD: [52, 52] };
 })();
 if (typeof module !== 'undefined') module.exports = KFace;
@@ -6754,6 +6860,13 @@ if (typeof module !== 'undefined') module.exports = KCardArt;
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-folio', date: '22 November 2026', title: 'The Pilgrim’s Folio', notes: [
+    'Win every stop of Act I of the campaign and <b>the Pilgrim’s Folio</b> opens: twelve new cards from the road, two a suit, shuffled into your games (switch them off under <b>Folios</b> on the New game page). Each carries a small pixel waymark after its name.',
+    'The folio’s word is the <b>line</b>, the unbroken run of cards through a card in its row or column. <b>Pilgrim’s Way</b> scores its longest line, <b>Cartographer</b> the suits of your own cards along it, and <b>Hedgerow</b> the Leaf cards in its row and column. Select one on the board and its line lights up.',
+    '<b>Wayside Inn</b> pays for every player with a card next to it, so it wants to be built on a border. <b>Watchfire</b> scores the Ruins around it, <b>Chapter House</b> the Sceptres, and the <b>Ossuary Bell</b> banks you 1◇ whenever anyone buries a card.',
+    'Five Actions: <b>Feast Day</b> (everyone draws, you most), <b>Levy</b> (● for your Swords), <b>Vigil</b> (draw 1, bury 1), <b>Harvest Moon</b> (bank ◇ for your largest region) and <b>Pilgrim’s Tale</b> (draw for your Tomes). Every folio card burns its own way too.',
+    'A new deed, <b>The Long Road</b>: finish owning a card whose line is ten cards long. Help has a new page on the folio and now describes Act III too.'
+  ] },
   { v: 'cs-1.0-pre-city', date: '21 November 2026', title: 'The City at Dawn', notes: [
     '<b>Act III</b>, the last act of the campaign, opens once you win the Bridge of Kings. A new map: the city at dawn, the sun coming up over the roofs beside the cathedral, rows of red tile and slate, chimney smoke, doves crossing the sky, and the street climbing from the gate to the <b>Margrave’s Hall</b> on its hill.',
     'Every quarter is held by a named champion who plays as the <b>Genius</b>, the strongest bot: <b>Mistress Florin</b> the moneychanger, <b>Archivist Mechthild</b>, <b>Guildmaster Thorvald</b>, <b>the Abbess</b> and <b>Sir Ulrich the Red</b>, each with a pixel portrait. At the Hall three of them sit down against you at once.',
@@ -6897,7 +7010,8 @@ var KDeeds = (function () {
       foundationOneAway: !!(foc && foc.th && foc.n >= foc.th - 1),
       destroyed: by(/ is (Ruined|Overwhelmed) by /), reclaimed: mine(/ takes back a meeple /),
       banked2: mine(/ banks 2◇ /), bought: mine(/ pays \d+● for a second claim/), grounds: log.filter(function (l) { var m = GROUNDS.exec(l); return m && m[1] === me; }).length,
-      startedLastRound: !!(st.lastRound && st.lastRound.by === p), lastRound: !!st.lastRound
+      startedLastRound: !!(st.lastRound && st.lastRound.by === p), lastRound: !!st.lastRound,
+      longLine: E.longestLine ? kd.reduce(function (a, k) { return Math.max(a, E.longestLine(st, k).length); }, 0) : 0
     };
   }
   var L = [
@@ -6919,6 +7033,7 @@ var KDeeds = (function () {
     { id: 'comeback', name: 'Comeback', text: 'Win a last round that someone else started.', check: function (g) { return g.won && g.lastRound && !g.startedLastRound; } },
     { id: 'swift', name: 'Swift', text: 'Win by the end of round 5.', check: function (g) { return g.won && g.round <= 5; } },
     { id: 'seventy', name: 'Overflowing', text: 'Finish with 70◇ or more.', check: function (g) { return g.total >= 70; } },
+    { id: 'road', name: 'The Long Road', text: 'Finish owning a card whose line (its unbroken row or column of cards) is 10 cards long or more.', check: function (g) { return g.longLine >= 10; } },
     { id: 'six', name: 'Six Crowns', text: 'Win with every archetype.', progress: true, check: function (g, book) { return Object.keys(book.wins || {}).length >= 6; } }
   ];
   // Archetype mastery: ten levels per archetype, earned by playing it. Each finished game as an archetype is worth
@@ -7952,7 +8067,7 @@ var CSTerrain = (function () {
     var got = CC.stars(st, p); if (!got) return;
     var book = campBook(), fresh = CC.record(book, st.campaign.stop, got); lsSet('cs.campaign', book);
     app.campResult = { log: st.log.length, stop: st.campaign.stop, got: got, fresh: fresh };
-    if (fresh[0]) { var nx = CC.next(st.campaign.stop); setTimeout(function () { SFX.play('deed'); toast(nx ? (CC.actOf(nx) !== CC.actOf(st.campaign.stop) ? (CC.actOf(nx) === 3 ? '🏰 Act II complete. The city gate opens: ' : '⛵ Act I complete. The river towns open: ') : '🛤 The road opens: ') + CC.stop(nx).name + '.' : '👑 Act III complete. The Long Road to the City is walked.'); }, 900); }
+    if (fresh[0]) { var nx = CC.next(st.campaign.stop); setTimeout(function () { SFX.play('deed'); toast(nx ? (CC.actOf(nx) !== CC.actOf(st.campaign.stop) ? (CC.actOf(nx) === 3 ? '🏰 Act II complete. The city gate opens: ' : '⛵ Act I complete. The Pilgrim’s Folio (twelve new cards, under Folios in New game) and the river towns open: ') : '🛤 The road opens: ') + CC.stop(nx).name + '.' : '👑 Act III complete. The Long Road to the City is walked.'); }, 900); }
   }
   // The campaign part of the Chronicle: the stop, its three stars (new ones stamp in), and where to go next.
   function campaignBlock(st) {
@@ -8465,7 +8580,7 @@ var CSTerrain = (function () {
     h += '<div class="top"><span>' + esc(d.cost) + '●</span>' + icon(suit) + '</div>';
     var art = artOf(c.def); if (art && !ruined) h += '<div class="art" style="' + artStyle(art) + '"></div>';
     else if (!ruined && typeof CSTerrain !== 'undefined' && E.isGrounds(st, u) && CSTerrain.has(c.def)) h += '<div class="art terrain" style="' + CSTerrain.css(c.def) + '"></div>';   // living Grounds (src/terrain.js)
-    h += '<div class="nm">' + esc(ruined ? E.rawDef(st, u).name : d.name) + '</div><div class="ty">' + esc(ruined ? (c.overwhelmed ? 'Overwhelmed' : 'Ruined') : d.type) + '</div>';
+    h += '<div class="nm">' + esc(ruined ? E.rawDef(st, u).name : d.name) + (ruined ? '' : KF.folioMark(d)) + '</div><div class="ty">' + esc(ruined ? (c.overwhelmed ? 'Overwhelmed' : 'Ruined') : d.type) + '</div>';
     if (stack.length > 1) h += '<span class="stackn" title="' + (stack.length - 1) + ' card(s) underneath">+' + (stack.length - 1) + '</span>';
     if (c.dtok > 0 && !ruined) h += '<span class="defb" title="' + c.dtok + ' Defense token' + (c.dtok > 1 ? 's' : '') + ': each one stops a Ruin or Curse">' + shieldStack(c.dtok) + (c.dtok > 4 ? '<b>' + c.dtok + '</b>' : '') + '</span>';
     if (!ruined && (c.apBonus || c.vpBonus || c.decay || E.protectedStack(st, k))) h += '<span class="bonusb">' + (E.protectedStack(st, k) && !E.warded(st, k) ? '⚑' : '') + (c.vpBonus ? '+' + c.vpBonus + '◇' : '') + (c.apBonus ? '+' + c.apBonus + '●' : '') + (c.decay ? ' ☠' + c.decay : '') + '</span>';
@@ -8979,6 +9094,9 @@ var CSTerrain = (function () {
   (function () { var s = lsGet('cs.setup'); if (s && s.players && s.players.length) for (var k in s) setup[k] = s[k]; })();   // the last game's setup
   function archetypes() { return sortLib(app.lib.filter(function (c) { return c.type === 'Foundation' && c.archetype; })); }
   // Contest is on by default at 2–4 players, where it was measured (it moves no archetype at 4); 5 is unmeasured.
+  // The Pilgrim's Folio: open once Act I of the campaign is won; then on by default for new games.
+  function folioOpen() { return !!(CC && CC.actDone(campBook(), 1)); }
+  function folioOn() { return folioOpen() && setup.folio !== false; }
   function contestOn() { return setup.contest != null ? !!setup.contest : (+setup.n || 2) <= 4; }
   function ensureSetup() {
     var A = archetypes().map(function (c) { return c.archetype; });
@@ -9021,6 +9139,9 @@ var CSTerrain = (function () {
       '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (contestOn() ? ' checked' : '') + '> Once a turn, pay 8● to take a rival’s card next to the one you just placed. A Cryptkeeper’s buried cards don’t go with it: they move under the Mausoleum. On by default for 2–4 players</label>' +
       '<label>Burn</label><label><input type="checkbox" data-set="burn"' + (setup.burn ? ' checked' : '') + '> Second edition, on trial: once a turn, burn a card from your hand for its own one-time effect (shown on a flame tag under each card)</label>' +
       '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
+      '<label class="full" style="margin-top:4px"><b>Folios</b></label>' +
+      (folioOpen() ? '<label><i class="folio-mark"></i> The Pilgrim’s Folio</label><label><input type="checkbox" data-set="folio"' + (folioOn() ? ' checked' : '') + '> Shuffle in twelve cards from the road (' + D.FOLIO.reduce(function (a, c) { return a + c.copies; }, 0) + ' copies): roads and lines, an inn, a bell, a feast. See them in the Library</label>'
+        : '<label class="muted"><i class="folio-mark" style="filter:grayscale(1)"></i> The Pilgrim’s Folio 🔒</label><span class="small muted">Twelve new cards. Win every stop of Act I of the campaign to open it.</span>') +
       '</div></fieldset>';
     var dup = {}, bad = false; for (var j = 0; j < setup.n; j++) { if (dup[setup.players[j].arch]) bad = true; dup[setup.players[j].arch] = 1; }
     h += '<div class="row"><button class="btn def" data-act="start"' + (bad ? ' disabled' : '') + '>Start game</button>' + (bad ? '<span class="err">Two players picked the same archetype.</span>' : '') +
@@ -9287,7 +9408,7 @@ var CSTerrain = (function () {
     var A = archetypes().map(function (c) { return c.archetype; });
     var ps = []; for (var i = 0; i < sbSetup.n; i++) ps.push({ name: 'Player ' + (i + 1), arch: sbSetup.arch[i] || A[i], color: COLORS[i] });
     var saved = lsGet('cs.sandbox');
-    var st = saved && saved.opts && saved.opts.sandbox && !app._sbReset ? saved : E.newGame(app.lib, { players: ps, sandbox: true });
+    var st = saved && saved.opts && saved.opts.sandbox && !app._sbReset ? saved : E.newGame(folioOpen() ? D.withFolio(app.lib) : app.lib, { players: ps, sandbox: true });
     app._sbReset = false;
     app.sandbox = newCtx(st, 'sandbox'); app.sandbox.ui.sbCard = Object.keys(st.defs)[0];
   }
@@ -9295,7 +9416,7 @@ var CSTerrain = (function () {
   /* ----- library ----- */
   // Library page: filterable card table plus a preview.
   function libraryPage() {
-    var L = app.libUI, rows = app.lib.filter(function (c) {
+    var L = app.libUI, src = L.folio ? D.FOLIO.map(normalizeCard) : app.lib, rows = src.filter(function (c) {
       return (!L.suit || c.suit === L.suit) && (!L.type || c.type === L.type) && (!L.q || (c.name + ' ' + c.text).toLowerCase().indexOf(L.q.toLowerCase()) >= 0);
     });
     var sorters = { suit: null, name: function (a, b) { return a.name.localeCompare(b.name); }, cost: function (a, b) { return a.cost - b.cost; }, type: function (a, b) { return a.type.localeCompare(b.type); } };
@@ -9305,15 +9426,18 @@ var CSTerrain = (function () {
     h += '<div class="raised row" style="padding:4px">Search <input type="text" data-focus-key="libq" data-lib="q" value="' + esc(L.q) + '" style="width:160px">' +
       'Suit <select data-lib="suit"><option value="">All</option>' + D.SUITS.map(function (s) { return '<option' + (L.suit === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
       'Type <select data-lib="type"><option value="">All</option>' + D.TYPES.map(function (s) { return '<option' + (L.type === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
+      'Cards <select data-lib="folio"><option value="">Library</option><option value="pilgrim"' + (L.folio ? ' selected' : '') + '>The Pilgrim’s Folio</option></select>' +
       '<span class="grow" style="flex:1"></span><a class="btn" href="' + (ONLINE ? 'dithry/#cards' : 'dithry.html#cards') + '" target="_blank" rel="noopener" title="Paint the cards’ faces in Dithry">Paint cards</a><button class="btn" data-act="suits">Suit wheel</button>' + (ONLINE ? '<span class="muted small">' + app.lib.length + ' cards</span>' : '<button class="btn" data-act="newCard">New card</button><button class="btn" data-act="exportLib">Export…</button><button class="btn" data-act="importLib">Import…</button><button class="btn" data-act="restoreAsk">Restore starter cards…</button>') + '</div>';
+    if (L.folio) h += '<div class="foliobanner"><i class="folio-mark"></i><span class="small"><b>The Pilgrim’s Folio</b> · twelve cards from the road, two a suit. Its word is the <i>line</i>: the unbroken run of cards through a card in its row or its column. ' +
+      (folioOpen() ? 'Open: switch it on under Folios in New game.' : '🔒 Win every stop of Act I of the campaign to play with these.') + ' Folio cards are fixed: the card builder can’t change them.</span></div>';
     h += '<div class="split"><div class="sunken scroll"><table class="list small"><thead><tr>' +
       [['name', 'Name'], ['suit', 'Suit'], ['type', 'Type'], ['cost', 'Cost'], ['', 'Value'], ['', 'Income'], ['', 'Copies'], ['', 'Automation']].map(function (c) { return '<th' + (c[0] ? ' data-sort="' + c[0] + '"' : '') + '>' + c[1] + (L.sort === c[0] ? ' ▾' : '') + '</th>'; }).join('') + '</tr></thead><tbody>';
     rows.forEach(function (c) {
       h += '<tr data-row="' + esc(c.id) + '" class="' + (L.sel === c.id ? 'sel' : '') + '"><td>' + esc(c.name) + '</td><td>' + icon(c.suit) + ' ' + esc(c.suit) + '</td><td>' + esc(c.type) + '</td><td>' + esc(c.cost) + '●</td><td>' + esc(scoreText(c.score)) + '</td><td>' + (+c.income ? c.income + '●' : '') + '</td><td>' + (c.type === 'Foundation' ? '—' : esc(c.copies)) + '</td><td>' + esc(autoSummary(c)) + '</td></tr>';
     });
     h += '</tbody></table>' + (rows.length ? '' : '<p class="pane muted">No cards match. Clear the filters or add a new card.</p>') + '</div>';
-    var sel = L.sel && libById(L.sel);
-    h += '<div class="raised pane">' + (sel ? '<div class="panelhead">Preview</div>' + defFace(sel, { big: true }) + (sel.type !== 'Foundation' ? '<p class="small burnline">🔥 <b>Burn:</b> ' + esc(E.defBurnText(sel)) + '</p>' : '') + (ONLINE ? '' : '<div class="row" style="margin-top:6px"><button class="btn def" data-act="editCard" data-id="' + esc(sel.id) + '">Edit</button><button class="btn" data-act="dupCard" data-id="' + esc(sel.id) + '">Duplicate</button><button class="btn" data-act="delCard" data-id="' + esc(sel.id) + '">Delete…</button></div>') : '<p class="muted">Select a card to preview it.</p>') + '</div></div></div>';
+    var sel = L.sel && (L.folio ? rows.filter(function (c) { return c.id === L.sel; })[0] : libById(L.sel));
+    h += '<div class="raised pane">' + (sel ? '<div class="panelhead">Preview</div>' + defFace(sel, { big: true }) + (sel.type !== 'Foundation' ? '<p class="small burnline">🔥 <b>Burn:</b> ' + esc(E.defBurnText(sel)) + '</p>' : '') + (ONLINE || L.folio ? '' : '<div class="row" style="margin-top:6px"><button class="btn def" data-act="editCard" data-id="' + esc(sel.id) + '">Edit</button><button class="btn" data-act="dupCard" data-id="' + esc(sel.id) + '">Duplicate</button><button class="btn" data-act="delCard" data-id="' + esc(sel.id) + '">Delete…</button></div>') : '<p class="muted">Select a card to preview it.</p>') + '</div></div></div>';
     return h;
   }
   // Short tag for how much of a card the engine automates.
@@ -9507,7 +9631,13 @@ var CSTerrain = (function () {
         '<li>Win a stop to open the next. Each stop has three stars: win, win by its par round, and a challenge in the spirit of its lesson. Stars are kept in this browser and never lost.</li>' +
         '<li>A strip above the board names the stop, its lesson and its stars; in the first round it also spells out the new rule.</li>' +
         '<li><b>Act II, the river towns</b>, opens once the Toll Gate is won. Every town plays the full game against tacticians (who plan) and warlords (who Ruin), and keeps a <b>custom</b> of its own: few meeples at Saltmarsh Wharf, a market row at Ferrybridge, burning at the Weir, no Sword cards at Lantern Abbey, a third card a turn at Tanners’ Row, and all of it at once, four players, on the Bridge of Kings.</li>' +
-        '<li>Act III (the city, against the Genius) is still to come.</li></ul>' },
+        '<li><b>Act III, the city at dawn</b>, opens once the Bridge of Kings is won: six quarters held by named champions who play as the Genius, the strongest bot.</li>' +
+        '<li>Win every stop of Act I and <b>the Pilgrim’s Folio</b> opens (see below).</li></ul>' },
+      { id: 'folio', title: 'The Pilgrim’s Folio', html: '<p>Twelve cards from the road, two a suit, opened by winning every stop of Act I of the campaign. Switch them on under <b>Folios</b> on the New game page (they are on by default once open), and see them in the Library under <b>Cards → The Pilgrim’s Folio</b>. Folio cards carry a small waymark <i class="folio-mark"></i> after their name.</p><ul>' +
+        '<li>Their word is the <b>line</b>: the unbroken run of cards through a card in its row or its column, itself included. A card’s <b>longest line</b> is the longer of the two. Any card counts, claimed or not, Grounds and Ruins too; one empty space breaks the line.</li>' +
+        '<li><i>Pilgrim’s Way</i> scores its longest line, <i>Cartographer</i> the suits of your own cards in it, <i>Hedgerow</i> the Leaf cards in both its lines. Select one on the board to see its line lit.</li>' +
+        '<li><i>Wayside Inn</i> wants company: 3◇ for each player with a card next to it. <i>Watchfire</i> scores the Ruins around it, <i>Chapter House</i> the Sceptres, corners included. The <i>Ossuary Bell</i> banks its owner 1◇ whenever anyone buries a card.</li>' +
+        '<li>Five Actions: <i>Feast Day</i> (everyone draws; you draw again and bank for the Goblets on the board), <i>Levy</i> (● for your Swords), <i>Vigil</i> (draw 1, bury 1), <i>Pilgrim’s Tale</i> (draw for your Tomes) and <i>Harvest Moon</i> (bank ◇ for your largest region, where no raider can reach it).</li></ul>' },
       { id: 'claudenspiel', title: 'What Claudenspiel changes', html: '<p>Claudenspiel is Claude’s own fork of Kartenspiel. Its rules differ:</p><ul>' +
         '<li><b>The last round:</b> reaching the target starts it. Everyone gets the same number of turns, then the highest total wins; a tie goes to whoever got there first. With three or more players, earlier seats start with a few ◇, since later seats see the score to beat: 6◇ and 4◇ for the first two of three players, 9◇, 6◇ and 3◇ for the first three of four.</li>' +
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
@@ -10239,14 +10369,14 @@ var CSTerrain = (function () {
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(app.lib, { seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: contestOn() });
+        var st = E.newGame(folioOn() ? D.withFolio(app.lib) : app.lib, { folio: folioOn(), seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: contestOn() });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }
       case 'rematch': {   // the same players, archetypes, seats and rules, with a fresh shuffle
         var old = ctx.state, rp = old.players.map(function (q) { return { name: q.name, arch: q.arch, color: q.color }; }), ro = {};
         for (var ok in old.opts) ro[ok] = old.opts[ok]; ro.players = rp; ro.seed = window.ksSeed;
-        var rs = E.newGame(old.campaign && CC ? CC.defs(old.campaign.stop, app.lib) : app.lib, ro); rs.players.forEach(function (q, i) { if (old.players[i].bot) q.bot = old.players[i].bot; }); if (old.campaign) rs.campaign = clone(old.campaign);
+        var rs = E.newGame(old.campaign && CC ? CC.defs(old.campaign.stop, app.lib) : old.opts.folio ? D.withFolio(app.lib) : app.lib, ro); rs.players.forEach(function (q, i) { if (old.players[i].bot) q.bot = old.players[i].bot; }); if (old.campaign) rs.campaign = clone(old.campaign);
         app.modal = null; app.game = newCtx(rs, 'game'); lsSet('cs.game', rs); render(); toast('Rematch: same players and rules, new shuffle.'); return;
       }
       case 'soloSetup': case 'hotseatSetup': {   // home page shortcuts: preset the seats, then the New game page

@@ -22,7 +22,8 @@ var KDeeds = (function () {
       foundationOneAway: !!(foc && foc.th && foc.n >= foc.th - 1),
       destroyed: by(/ is (Ruined|Overwhelmed) by /), reclaimed: mine(/ takes back a meeple /),
       banked2: mine(/ banks 2◇ /), bought: mine(/ pays \d+● for a second claim/), grounds: log.filter(function (l) { var m = GROUNDS.exec(l); return m && m[1] === me; }).length,
-      startedLastRound: !!(st.lastRound && st.lastRound.by === p), lastRound: !!st.lastRound
+      startedLastRound: !!(st.lastRound && st.lastRound.by === p), lastRound: !!st.lastRound,
+      longLine: E.longestLine ? kd.reduce(function (a, k) { return Math.max(a, E.longestLine(st, k).length); }, 0) : 0
     };
   }
   var L = [
@@ -44,6 +45,7 @@ var KDeeds = (function () {
     { id: 'comeback', name: 'Comeback', text: 'Win a last round that someone else started.', check: function (g) { return g.won && g.lastRound && !g.startedLastRound; } },
     { id: 'swift', name: 'Swift', text: 'Win by the end of round 5.', check: function (g) { return g.won && g.round <= 5; } },
     { id: 'seventy', name: 'Overflowing', text: 'Finish with 70◇ or more.', check: function (g) { return g.total >= 70; } },
+    { id: 'road', name: 'The Long Road', text: 'Finish owning a card whose line (its unbroken row or column of cards) is 10 cards long or more.', check: function (g) { return g.longLine >= 10; } },
     { id: 'six', name: 'Six Crowns', text: 'Win with every archetype.', progress: true, check: function (g, book) { return Object.keys(book.wins || {}).length >= 6; } }
   ];
   // Archetype mastery: ten levels per archetype, earned by playing it. Each finished game as an archetype is worth

@@ -15,7 +15,8 @@ How players grow with Claudenspiel. The rule: progress widens what you can do an
 - ✅ 1.0-pre Stars per stop: win; win by the stop's par round (the median winning round); a challenge in the spirit of the lesson. The engine counts each player's lost cards.
 
 ## Collection
-- ○ Folios: themed packs of 12–15 new cards (the Grounds folio, a River folio) unlocked by the campaign, mixed into solo games and offered as table options.
+- ✅ 1.0-pre The Pilgrim's Folio: twelve cards (two a suit) about the road, opened by winning Act I, then a New game option (on by default), in the sandbox and in the Library under its own heading. A pixel waymark marks folio cards.
+- ○ A River folio (opened by Act II) and a City folio (Act III). Candidates: a ferry that moves a card across a line, a tollhouse that charges rivals for building in its line, guild cards that share ◇ between their claimants.
 
 ## Recognition
 - ✅ 0.3 The Book of Deeds: 19 achievements to start (Pyrrhic: win with your Foundation one enemy from Overwhelm; Five Suits: make a stack Ascend; Patience: win after taking back a meeple; Grave Robber: bury 10 cards in one game).

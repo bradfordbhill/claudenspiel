@@ -1,6 +1,13 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-folio', date: '22 November 2026', title: 'The Pilgrim’s Folio', notes: [
+    'Win every stop of Act I of the campaign and <b>the Pilgrim’s Folio</b> opens: twelve new cards from the road, two a suit, shuffled into your games (switch them off under <b>Folios</b> on the New game page). Each carries a small pixel waymark after its name.',
+    'The folio’s word is the <b>line</b>, the unbroken run of cards through a card in its row or column. <b>Pilgrim’s Way</b> scores its longest line, <b>Cartographer</b> the suits of your own cards along it, and <b>Hedgerow</b> the Leaf cards in its row and column. Select one on the board and its line lights up.',
+    '<b>Wayside Inn</b> pays for every player with a card next to it, so it wants to be built on a border. <b>Watchfire</b> scores the Ruins around it, <b>Chapter House</b> the Sceptres, and the <b>Ossuary Bell</b> banks you 1◇ whenever anyone buries a card.',
+    'Five Actions: <b>Feast Day</b> (everyone draws, you most), <b>Levy</b> (● for your Swords), <b>Vigil</b> (draw 1, bury 1), <b>Harvest Moon</b> (bank ◇ for your largest region) and <b>Pilgrim’s Tale</b> (draw for your Tomes). Every folio card burns its own way too.',
+    'A new deed, <b>The Long Road</b>: finish owning a card whose line is ten cards long. Help has a new page on the folio and now describes Act III too.'
+  ] },
   { v: 'cs-1.0-pre-city', date: '21 November 2026', title: 'The City at Dawn', notes: [
     '<b>Act III</b>, the last act of the campaign, opens once you win the Bridge of Kings. A new map: the city at dawn, the sun coming up over the roofs beside the cathedral, rows of red tile and slate, chimney smoke, doves crossing the sky, and the street climbing from the gate to the <b>Margrave’s Hall</b> on its hill.',
     'Every quarter is held by a named champion who plays as the <b>Genius</b>, the strongest bot: <b>Mistress Florin</b> the moneychanger, <b>Archivist Mechthild</b>, <b>Guildmaster Thorvald</b>, <b>the Abbess</b> and <b>Sir Ulrich the Red</b>, each with a pixel portrait. At the Hall three of them sit down against you at once.',

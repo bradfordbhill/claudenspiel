@@ -92,7 +92,7 @@ var KEngine = (function () {
   function protectedStack(st, k) { var s = st.board[k]; return !!s && (!!(st.wards && st.wards[s[0]] != null) || s.slice(1).some(function (x) { var m = rawDef(st, x).mods || {}; return m.burialEffect && m.burialEffect.protect; })); }
   // Cards with a burialEffect (Flowers, Eye for an Eye, Standard Bearer) boost whatever they are buried under.
   function onBuried(st, u, k) {
-    if (top(st, k)) barrowBank(st, u, k);
+    if (top(st, k)) { barrowBank(st, u, k); bellToll(st, k); }
     var m = (rawDef(st, u).mods || {}).burialEffect, t = top(st, k); if (!m || !t) return;
     var c = st.cards[t], nm = rawDef(st, t).name;
     if (m.ap) { c.apBonus = (c.apBonus || 0) + m.ap; log(st, nm + ' now produces ' + m.ap + '● more per turn, permanently (' + rawDef(st, u).name + ').'); }
@@ -105,6 +105,11 @@ var KEngine = (function () {
   function barrowBank(st, u, k) {
     var v = groundsAround(st, k, 'barrowVP'), p = st.cur; if (!v || p == null || !st.players[p]) return;
     bank(st, p, v, top(st, k)); log(st, 'The Barrow keeps its dead: ' + st.players[p].name + ' banks ' + v + '◇.');
+  }
+  // Ossuary Bell (the Pilgrim's Folio): whenever a card is buried anywhere, each owner of an active Bell banks 1◇.
+  function bellToll(st, k) {
+    keys(st).forEach(function (x) { var t = top(st, x); if (!active(st, x)) return; var v = +((def(st, t).mods || {}).bell || 0); if (!v) return;
+      st.cards[t].claimants.forEach(function (o) { if (!st.players[o] || st.players[o].out) return; bank(st, o, v, t); log(st, 'The Ossuary Bell tolls: ' + st.players[o].name + ' banks ' + v + '◇.'); }); });
   }
   // Shrine: cards next to it keep the Shrine's peace; they can't be contested or Cursed.
   function shrinePeace(st, k) { return groundsAround(st, k, 'peace') > 0; }
@@ -205,9 +210,32 @@ var KEngine = (function () {
         return n - m * nb.filter(function (x) { var t = top(st, x); if (!t) return false; var cl = st.cards[t].claimants; return !c.claimants.some(function (o) { return cl.indexOf(o) >= 0; }); }).length;
       case 'flatMinusPerExtraClaimant': return n - m * Math.max(0, c.claimants.length - 1);
       case 'flatPlusTokens': return n + (c.tokens || 0);
+      // The Pilgrim's Folio (Claudenspiel 1.0): roads. A card's line is the unbroken run of cards through it in its row
+      // or its column; its longest line is the longer of the two (itself included). s.max caps the value.
+      case 'longestLine': return capped(s, n * longestLine(st, k).length);
+      case 'longestLineSuits': return capped(s, n * lineSuits(st, longestLine(st, k).filter(function (x) { return !s.own || ownedBy(st, x, p); })));   // s.own: only the cards p owns count
+      case 'lineSuit': return capped(s, n * lineRun(st, k, 1, 0).concat(lineRun(st, k, 0, 1)).filter(function (x) { return x !== k && hasSuit(st, top(st, x), s.suit); }).length);
+      case 'perSurroundSuit': return capped(s, n * n8(k).filter(function (x) { var t = top(st, x); return t && !st.cards[t].ruined && hasSuit(st, t, s.suit); }).length);
+      case 'perSurroundRuined': return capped(s, n * n8(k).filter(function (x) { var t = top(st, x); return t && st.cards[t].ruined; }).length);
+      case 'perAdjacentOwner': { var who = {}; nb.forEach(function (x) { var t = top(st, x); if (t && !st.cards[t].ruined) st.cards[t].claimants.forEach(function (o) { who[o] = 1; }); }); return capped(s, n * Object.keys(who).length); }
       default: return 0;
     }
   }
+  function capped(s, v) { return s.max ? Math.min(+s.max, v) : v; }
+  // The unbroken run of occupied cells through k along (dx, dy), k included, west/north first.
+  function lineRun(st, k, dx, dy) {
+    var p = XY(k), out = [k], x, y;
+    for (x = p[0] - dx, y = p[1] - dy; top(st, K(x, y)); x -= dx, y -= dy) out.unshift(K(x, y));
+    for (x = p[0] + dx, y = p[1] + dy; top(st, K(x, y)); x += dx, y += dy) out.push(K(x, y));
+    return out;
+  }
+  // k's longest line: its row run or its column run, whichever is longer (on a tie, the one with more suits).
+  function longestLine(st, k) {
+    var r = lineRun(st, k, 1, 0), c = lineRun(st, k, 0, 1);
+    if (r.length !== c.length) return r.length > c.length ? r : c;
+    return lineSuits(st, c) > lineSuits(st, r) ? c : r;
+  }
+  function lineSuits(st, cells) { var ss = {}; cells.forEach(function (x) { var t = top(st, x); if (t && !st.cards[t].ruined) suitsOf(st, t).forEach(function (q) { ss[q] = 1; }); }); return Object.keys(ss).length; }
   // Occupied cells north of k in the same column.
   function northKeys(st, k) { var p = XY(k); return keys(st).filter(function (x) { var q = XY(x); return q[0] === p[0] && q[1] < p[1]; }); }
   // Size of the largest connected group of cells in p's Kingdom (flood fill).
@@ -1032,6 +1060,25 @@ var KEngine = (function () {
       if (!theirs.length) { log(st, 'No opponent meeple to swap with.'); return 'done'; }
       return pend(res, { kind: 'cell', options: theirs, prompt: 'Choose an opponent’s card to swap meeples with.', verb: 'target', optional: true });
     },
+    // The Pilgrim's Folio: gain ● (gain 'ap'), cards ('draw') or ◇ ('vp'): base, plus n for each of `of` ('mine': your
+    // cards of s.suit; 'board': cards of s.suit anywhere; 'region': cards in your largest region), counted per s.per, up to s.max.
+    perGain: function (st, res, s) {
+      var p = res.player, pl = st.players[p], cnt = 0;
+      if (s.of === 'mine') cnt = kingdom(st, p).filter(function (x) { return hasSuit(st, top(st, x), s.suit); }).length;
+      else if (s.of === 'board') cnt = keys(st).filter(function (x) { var t = top(st, x); return !st.cards[t].ruined && hasSuit(st, t, s.suit); }).length;
+      else if (s.of === 'region') cnt = regionCells(st, p).length;
+      var amt = (+s.base || 0) + (+s.n || 1) * Math.floor(cnt / (+s.per || 1)); if (s.max) amt = Math.min(+s.max, amt);
+      if (s.gain === 'ap') { pl.ap += amt; log(st, pl.name + ' gains ' + amt + '●.'); }
+      else if (s.gain === 'draw') { var got = draw(st, p, amt); log(st, pl.name + ' draws ' + got + '.'); }
+      else if (s.gain === 'vp') { bank(st, p, amt, res.src); log(st, pl.name + ' banks ' + amt + '◇.'); }
+      return 'done';
+    },
+    // Feast Day: everyone draws a card, then the player draws another and banks 1◇ for every two Goblet cards on the board (up to 4).
+    feast: function (st, res, s) {
+      var p = res.player; st.players.forEach(function (q, i) { if (!q.out) draw(st, i, 1); }); draw(st, p, 1);
+      var g = keys(st).filter(function (x) { var t = top(st, x); return !st.cards[t].ruined && hasSuit(st, t, 'Goblet'); }).length, v = Math.min(+s.max || 4, Math.floor(g / 2));
+      if (v) bank(st, p, v, res.src); log(st, 'Feast Day: everyone draws; ' + st.players[p].name + ' draws again' + (v ? ' and banks ' + v + '◇' : '') + '.'); return 'done';
+    },
     payAP: function (st, res, s) { spend(st.players[res.player], +s.n || 0); return 'done'; },
     tokens: function (st, res, s) { bank(st, res.player, +s.n || 0, res.src); log(st, st.players[res.player].name + ' banks ' + s.n + '◇.'); return 'done'; },
     // Move the source card to an empty adjacent cell (Choreography and Merriment).
@@ -1200,7 +1247,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, folio: !!setup.folio, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -1563,6 +1610,9 @@ var KEngine = (function () {
       case 'adjacentToOwn': if (p != null) { var s = {}; kingdom(st, p).forEach(function (kk) { n4(kk).forEach(function (x) { s[x] = 1; }); }); cells = Object.keys(s); } break;
       case 'westOfOwn': if (p != null) cells = kingdom(st, p).map(function (kk) { var r = XY(kk); return K(r[0] - 1, r[1]); }); break;
       case 'board': cells = keys(st); break;
+      // the Pilgrim's Folio: the longest line, or both lines (row and column runs)
+      case 'line': cells = longestLine(st, k); break;
+      case 'cross': cells = lineRun(st, k, 1, 0).concat(lineRun(st, k, 0, 1)); break;
     }
     cells = cells.filter(function (x) { return x !== k; });
     var counted = cells.filter(function (x) { var t = top(st, x); return t && (!sv.suit || hasSuit(st, t, sv.suit)); });
@@ -1638,7 +1688,7 @@ var KEngine = (function () {
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
     burnBlock: burnBlock, BURN: BURN, burnSteps: burnSteps, burnText: burnText, defBurn: defBurn, defBurnText: defBurnText, burnStepText: burnStepText, burnNeedsCell: burnNeedsCell, burnGain: burnGain, warded: warded, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
-    shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
+    shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, lineRun: lineRun, longestLine: longestLine, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };
 })();
 if (typeof module !== 'undefined') module.exports = KEngine;
