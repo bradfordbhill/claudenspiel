@@ -22,7 +22,9 @@ chk('withFolio twice', D.withFolio(DEFS).length===DEFS.length, 'shuffling the fo
   chk('Row', E.cardValue(st,'0,0',0)===4 && E.longestLine(st,'0,0').length===4, 'a row of four makes it 4◇ (the column has two)');
   st.board['4,0']=[plainOf(st)]; chk('Unbroken', E.cardValue(st,'0,0',0)===4, 'a gap breaks the line');
   for(let x=3;x<=8;x++) if(!st.board[x+',0']) st.board[x+',0']=[plainOf(st)];
-  chk('Cap', E.cardValue(st,'0,0',0)===7, 'it stops at 7◇'); }
+  chk('Cap', E.cardValue(st,'0,0',0)===7, 'it stops at 7◇');
+  st.cards[E.top(st,'1,0')].ruined=true; chk('Broken road', E.cardValue(st,'0,0',0)===2 && E.longestLine(st,'0,0').length===2, 'a Ruin beside it cuts the row: only the column of two is left ('+E.cardValue(st,'0,0',0)+')');
+  st.opts.brokenRoads=false; chk('Unbroken option', E.cardValue(st,'0,0',0)===7, 'with brokenRoads off, a Ruin still counts in the line'); }
 { let st=game(); const cart=take(st,'cartographer'); st.board['0,0']=[cart]; st.cards[cart].claimants=[0];
   const a=plainOf(st,'Leaf'), b=plainOf(st,'Bone'), c2=plainOf(st,'Leaf'); st.board['0,1']=[a]; st.board['0,2']=[b]; st.board['1,0']=[c2];
   chk('Cartographer rivals', E.cardValue(st,'0,0',0)===2, 'unowned cards in its line don’t count: only its own Tome ('+E.cardValue(st,'0,0',0)+')');

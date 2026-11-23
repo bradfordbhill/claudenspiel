@@ -288,3 +288,10 @@ html[data-motion="off"] .cdoves { display: none; }
 .card.big .folio-mark { width: 18px; height: 16px; background-size: 18px 16px; }
 .foliobanner { display: flex; gap: 10px; align-items: center; padding: 6px 10px; margin: 4px 0; background: linear-gradient(90deg, rgba(79,138,60,.18), rgba(242,196,107,.18)); border: 1px solid rgba(201,166,107,.6); }
 .foliobanner .folio-mark { width: 27px; height: 24px; background-size: 27px 24px; flex: none; }
+
+/* War cuts roads: a Ruin that stops a selected line card's road wears a red pixel barrier */
+.cell.roadcut::after { content: ''; position: absolute; inset: 38% 8%; z-index: 4; pointer-events: none;
+  background: repeating-linear-gradient(90deg, #c8321e 0 6px, #f4e6c8 6px 12px); border: 2px solid #3a1408; image-rendering: pixelated;
+  box-shadow: 0 2px 0 #3a1408; animation: roadcut-in .35s steps(4) both; }
+@keyframes roadcut-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .cell.roadcut::after { animation: none; } }

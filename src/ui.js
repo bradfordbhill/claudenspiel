@@ -921,6 +921,10 @@
     var cols = b.maxX - b.minX + 1, rows = b.maxY - b.minY + 1, W = cols * (CW + GAP) + GAP, Hh = rows * (CH + GAP) + GAP;
     var see = {}, counted = {}, seenBy = {};
     if (ui.sel && E.top(st, ui.sel) && ui.showSeen) { var sg = E.sight(st, ui.sel); sg.cells.forEach(function (k) { see[k] = 1; }); sg.counted.forEach(function (k) { counted[k] = 1; }); }
+    // War cuts roads: for a line card, mark the Ruins that stop its row and column runs.
+    var roadCut = {}; if (ui.sel && E.top(st, ui.sel) && ui.showSeen && st.opts.brokenRoads) { var sv0 = (E.rawDef(st, E.top(st, ui.sel)).sees || {}).area;
+      if (sv0 === 'line' || sv0 === 'cross') [[1, 0], [0, 1]].forEach(function (d) { var run = E.lineRun(st, ui.sel, d[0], d[1]); [[run[0], -1], [run[run.length - 1], 1]].forEach(function (e) {
+        var q = E.XY(e[0]), x = E.K(q[0] + d[0] * e[1], q[1] + d[1] * e[1]), t = E.top(st, x); if (t && st.cards[t].ruined) roadCut[x] = 1; }); }); }
     if (ui.sel && ui.showSeenBy) ks.forEach(function (k) { if (k !== ui.sel && E.sight(st, k).cells.indexOf(ui.sel) >= 0) seenBy[k] = 1; });
     var claimSet = {};
     if (ctx.kind === 'game' && myTurn(ctx) && st.turn && st.turn.started && !st.pending && !st.res && !ui.hand && !ui.mode && !ui.swap && st.winner == null) E.claimOptions(st, st.cur).forEach(function (k) { optSet[k] = 1; claimSet[k] = 1; });
@@ -934,7 +938,7 @@
       if (optSet[k]) cls += u ? ' opt' : ' optempty';
       if (optSet[k] && u && buryingSuit && !E.hasSuit(st, u, buryingSuit)) cls += ' optdash';
       if (claimSet[k]) cls += ' claimable';
-      if (see[k]) cls += ' see'; if (counted[k]) cls += ' counted'; if (seenBy[k]) cls += ' seenby';
+      if (see[k]) cls += ' see'; if (counted[k]) cls += ' counted'; if (roadCut[k]) cls += ' roadcut'; if (seenBy[k]) cls += ' seenby';
       if (ui.sel === k) cls += ' focus';
       if (u && ctx.kind === 'game' && myTurn(ctx) && E.abilityReady(st, k)) cls += ' ready';
       var ov = u ? overlayFor(ctx, k) : null; if (ov) cls += ov.on ? ' ovl-on ovl-full' : ' ovl-dim';
@@ -1820,7 +1824,7 @@
         '<li><b>Act III, the city at dawn</b>, opens once the Bridge of Kings is won: six quarters held by named champions who play as the Genius, the strongest bot.</li>' +
         '<li>Win every stop of Act I and <b>the Pilgrim’s Folio</b> opens (see below).</li></ul>' },
       { id: 'folio', title: 'The Pilgrim’s Folio', html: '<p>Twelve cards from the road, two a suit, opened by winning every stop of Act I of the campaign. Switch them on under <b>Folios</b> on the New game page (they are on by default once open), and see them in the Library under <b>Cards → The Pilgrim’s Folio</b>. Folio cards carry a small waymark <i class="folio-mark"></i> after their name.</p><ul>' +
-        '<li>Their word is the <b>line</b>: the unbroken run of cards through a card in its row or its column, itself included. A card’s <b>longest line</b> is the longer of the two. Any card counts, claimed or not, Grounds and Ruins too; one empty space breaks the line.</li>' +
+        '<li>Their word is the <b>line</b>: the unbroken run of cards through a card in its row or its column, itself included. A card’s <b>longest line</b> is the longer of the two. Any card counts, claimed or not, Grounds too. An empty space breaks the line, and so does a <b>Ruined</b> card: war cuts roads.</li>' +
         '<li><i>Pilgrim’s Way</i> scores its longest line, <i>Cartographer</i> the suits of your own cards in it, <i>Hedgerow</i> the Leaf cards in both its lines. Select one on the board to see its line lit.</li>' +
         '<li><i>Wayside Inn</i> wants company: 3◇ for each player with a card next to it. <i>Watchfire</i> scores the Ruins around it, <i>Chapter House</i> the Sceptres, corners included. The <i>Ossuary Bell</i> banks its owner 1◇ whenever anyone buries a card.</li>' +
         '<li>Five Actions: <i>Feast Day</i> (everyone draws; you draw again and bank for the Goblets on the board), <i>Levy</i> (● for your Swords), <i>Vigil</i> (draw 1, bury 1), <i>Pilgrim’s Tale</i> (draw for your Tomes) and <i>Harvest Moon</i> (bank ◇ for your largest region, where no raider can reach it).</li></ul>' },

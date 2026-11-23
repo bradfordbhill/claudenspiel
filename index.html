@@ -817,6 +817,13 @@ html[data-motion="off"] .cdoves { display: none; }
 .card.big .folio-mark { width: 18px; height: 16px; background-size: 18px 16px; }
 .foliobanner { display: flex; gap: 10px; align-items: center; padding: 6px 10px; margin: 4px 0; background: linear-gradient(90deg, rgba(79,138,60,.18), rgba(242,196,107,.18)); border: 1px solid rgba(201,166,107,.6); }
 .foliobanner .folio-mark { width: 27px; height: 24px; background-size: 27px 24px; flex: none; }
+
+/* War cuts roads: a Ruin that stops a selected line card's road wears a red pixel barrier */
+.cell.roadcut::after { content: ''; position: absolute; inset: 38% 8%; z-index: 4; pointer-events: none;
+  background: repeating-linear-gradient(90deg, #c8321e 0 6px, #f4e6c8 6px 12px); border: 2px solid #3a1408; image-rendering: pixelated;
+  box-shadow: 0 2px 0 #3a1408; animation: roadcut-in .35s steps(4) both; }
+@keyframes roadcut-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .cell.roadcut::after { animation: none; } }
 </style></head><body><div id="app"></div><script>
 /* Kartenspiel — starter data. Card definitions are plain JSON so they can live in a db later. */
 var KData = (function () {
@@ -4510,7 +4517,7 @@ var KData = (function () {
   // card library). Its own vocabulary is the line: the unbroken run of cards through a card in its row or its column.
   var FOLIO = [
     c({ id: 'pilgrims-way', name: "Pilgrim's Way", suit: 'Sceptre', cost: 12, income: 3, copies: 2, sees: { area: 'line' }, score: { kind: 'longestLine', n: 1, max: 7 },
-      text: '1◇ for each card in its longest line (the unbroken run of cards through it in its row or column, itself included), up to 7◇.',
+      text: '1◇ for each card in its longest line (the unbroken run of cards through it in its row or column, itself included; a Ruin breaks it), up to 7◇.',
       note: 'Carcassonne’s road, folded into one card. It rewards building long and straight, which pulls Kingdoms into each other’s paths.' }),
     c({ id: 'chapter-house', name: 'Chapter House', suit: 'Sceptre', cost: 12, income: 4, sees: { area: 'surround8', suit: 'Sceptre' }, score: { kind: 'perSurroundSuit', n: 2, suit: 'Sceptre' },
       text: '2◇ for each Sceptre card around it, corners included.', note: 'A Sceptre payoff that counts the diagonals, so the Archbishop can build in blocks.' }),
@@ -4543,6 +4550,7 @@ var KData = (function () {
     'hedgerow': [{ k: 'per', of: 'mine', suit: 'Leaf', n: 1, max: 3 }], 'harvest-moon': [{ k: 'bank', n: 2 }],
     'cartographer': [{ k: 'per', of: 'suits', n: 1, max: 4 }], 'pilgrims-tale': [{ k: 'draw', n: 2 }]
   };
+  if (typeof process !== 'undefined' && process.env && process.env.FOLIO_DROP) FOLIO = FOLIO.filter(function (d) { return process.env.FOLIO_DROP.split(',').indexOf(d.id) < 0; });   // simulator: try the folio without some cards
   FOLIO.forEach(function (d) { d.folio = 'pilgrim'; d.burn = FOLIO_BURNS[d.id]; BURNS[d.id] = FOLIO_BURNS[d.id]; });
   // The deck's card definitions with the folio shuffled in (cards already in the library by the same id are kept as they are).
   function withFolio(lib) { var have = {}; lib.forEach(function (d) { have[d.id] = 1; }); return lib.concat(FOLIO.filter(function (d) { return !have[d.id]; })); }
@@ -4777,8 +4785,9 @@ var KEngine = (function () {
   // The unbroken run of occupied cells through k along (dx, dy), k included, west/north first.
   function lineRun(st, k, dx, dy) {
     var p = XY(k), out = [k], x, y;
-    for (x = p[0] - dx, y = p[1] - dy; top(st, K(x, y)); x -= dx, y -= dy) out.unshift(K(x, y));
-    for (x = p[0] + dx, y = p[1] + dy; top(st, K(x, y)); x += dx, y += dy) out.push(K(x, y));
+    var on = function (q) { var t = top(st, q); return t && !(st.opts.brokenRoads && st.cards[t].ruined); };   // a Ruin breaks the road
+    for (x = p[0] - dx, y = p[1] - dy; on(K(x, y)); x -= dx, y -= dy) out.unshift(K(x, y));
+    for (x = p[0] + dx, y = p[1] + dy; on(K(x, y)); x += dx, y += dy) out.push(K(x, y));
     return out;
   }
   // k's longest line: its row run or its column run, whichever is longer (on a tie, the one with more suits).
@@ -5799,7 +5808,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, folio: !!setup.folio, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, folio: !!setup.folio, brokenRoads: setup.brokenRoads !== false, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -6860,6 +6869,11 @@ if (typeof module !== 'undefined') module.exports = KCardArt;
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-roads', date: '23 November 2026', title: 'War cuts roads', notes: [
+    'A <b>Ruined</b> card now breaks a line, just like an empty space. Ruin the middle of a rival’s road and their <b>Pilgrim’s Way</b>, <b>Cartographer</b> or <b>Hedgerow</b> is cut in two.',
+    'Why: with the Pilgrim’s Folio, the long roads were scoring faster than war could take them apart, and the Warmonger fell well behind (a win index of 0.74 against 0.90 without the folio, on the same 300 three-player deals). With broken roads it is back to 0.88.',
+    'The print-and-play PDF now has the folio too, on its own sheets after the base deck, each card marked with the little road.'
+  ] },
   { v: 'cs-1.0-pre-folio', date: '22 November 2026', title: 'The Pilgrim’s Folio', notes: [
     'Win every stop of Act I of the campaign and <b>the Pilgrim’s Folio</b> opens: twelve new cards from the road, two a suit, shuffled into your games (switch them off under <b>Folios</b> on the New game page). Each carries a small pixel waymark after its name.',
     'The folio’s word is the <b>line</b>, the unbroken run of cards through a card in its row or column. <b>Pilgrim’s Way</b> scores its longest line, <b>Cartographer</b> the suits of your own cards along it, and <b>Hedgerow</b> the Leaf cards in its row and column. Select one on the board and its line lights up.',
@@ -8735,6 +8749,10 @@ var CSTerrain = (function () {
     var cols = b.maxX - b.minX + 1, rows = b.maxY - b.minY + 1, W = cols * (CW + GAP) + GAP, Hh = rows * (CH + GAP) + GAP;
     var see = {}, counted = {}, seenBy = {};
     if (ui.sel && E.top(st, ui.sel) && ui.showSeen) { var sg = E.sight(st, ui.sel); sg.cells.forEach(function (k) { see[k] = 1; }); sg.counted.forEach(function (k) { counted[k] = 1; }); }
+    // War cuts roads: for a line card, mark the Ruins that stop its row and column runs.
+    var roadCut = {}; if (ui.sel && E.top(st, ui.sel) && ui.showSeen && st.opts.brokenRoads) { var sv0 = (E.rawDef(st, E.top(st, ui.sel)).sees || {}).area;
+      if (sv0 === 'line' || sv0 === 'cross') [[1, 0], [0, 1]].forEach(function (d) { var run = E.lineRun(st, ui.sel, d[0], d[1]); [[run[0], -1], [run[run.length - 1], 1]].forEach(function (e) {
+        var q = E.XY(e[0]), x = E.K(q[0] + d[0] * e[1], q[1] + d[1] * e[1]), t = E.top(st, x); if (t && st.cards[t].ruined) roadCut[x] = 1; }); }); }
     if (ui.sel && ui.showSeenBy) ks.forEach(function (k) { if (k !== ui.sel && E.sight(st, k).cells.indexOf(ui.sel) >= 0) seenBy[k] = 1; });
     var claimSet = {};
     if (ctx.kind === 'game' && myTurn(ctx) && st.turn && st.turn.started && !st.pending && !st.res && !ui.hand && !ui.mode && !ui.swap && st.winner == null) E.claimOptions(st, st.cur).forEach(function (k) { optSet[k] = 1; claimSet[k] = 1; });
@@ -8748,7 +8766,7 @@ var CSTerrain = (function () {
       if (optSet[k]) cls += u ? ' opt' : ' optempty';
       if (optSet[k] && u && buryingSuit && !E.hasSuit(st, u, buryingSuit)) cls += ' optdash';
       if (claimSet[k]) cls += ' claimable';
-      if (see[k]) cls += ' see'; if (counted[k]) cls += ' counted'; if (seenBy[k]) cls += ' seenby';
+      if (see[k]) cls += ' see'; if (counted[k]) cls += ' counted'; if (roadCut[k]) cls += ' roadcut'; if (seenBy[k]) cls += ' seenby';
       if (ui.sel === k) cls += ' focus';
       if (u && ctx.kind === 'game' && myTurn(ctx) && E.abilityReady(st, k)) cls += ' ready';
       var ov = u ? overlayFor(ctx, k) : null; if (ov) cls += ov.on ? ' ovl-on ovl-full' : ' ovl-dim';
@@ -9634,7 +9652,7 @@ var CSTerrain = (function () {
         '<li><b>Act III, the city at dawn</b>, opens once the Bridge of Kings is won: six quarters held by named champions who play as the Genius, the strongest bot.</li>' +
         '<li>Win every stop of Act I and <b>the Pilgrim’s Folio</b> opens (see below).</li></ul>' },
       { id: 'folio', title: 'The Pilgrim’s Folio', html: '<p>Twelve cards from the road, two a suit, opened by winning every stop of Act I of the campaign. Switch them on under <b>Folios</b> on the New game page (they are on by default once open), and see them in the Library under <b>Cards → The Pilgrim’s Folio</b>. Folio cards carry a small waymark <i class="folio-mark"></i> after their name.</p><ul>' +
-        '<li>Their word is the <b>line</b>: the unbroken run of cards through a card in its row or its column, itself included. A card’s <b>longest line</b> is the longer of the two. Any card counts, claimed or not, Grounds and Ruins too; one empty space breaks the line.</li>' +
+        '<li>Their word is the <b>line</b>: the unbroken run of cards through a card in its row or its column, itself included. A card’s <b>longest line</b> is the longer of the two. Any card counts, claimed or not, Grounds too. An empty space breaks the line, and so does a <b>Ruined</b> card: war cuts roads.</li>' +
         '<li><i>Pilgrim’s Way</i> scores its longest line, <i>Cartographer</i> the suits of your own cards in it, <i>Hedgerow</i> the Leaf cards in both its lines. Select one on the board to see its line lit.</li>' +
         '<li><i>Wayside Inn</i> wants company: 3◇ for each player with a card next to it. <i>Watchfire</i> scores the Ruins around it, <i>Chapter House</i> the Sceptres, corners included. The <i>Ossuary Bell</i> banks its owner 1◇ whenever anyone buries a card.</li>' +
         '<li>Five Actions: <i>Feast Day</i> (everyone draws; you draw again and bank for the Goblets on the board), <i>Levy</i> (● for your Swords), <i>Vigil</i> (draw 1, bury 1), <i>Pilgrim’s Tale</i> (draw for your Tomes) and <i>Harvest Moon</i> (bank ◇ for your largest region, where no raider can reach it).</li></ul>' },

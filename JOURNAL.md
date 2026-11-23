@@ -2,6 +2,38 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 23 November 2026 · 1.0-pre, war cuts roads
+
+**Why.** The folio's open question: with it shuffled in, the Warmonger fell behind. Measured again first, on deals 900–1199 at 3 players (300 games each, greedy, tactician and raider bots rotating): **0.90 without the folio, 0.74 with it**. Fewer Ruins too (1.60 a game against 1.82). The cause was in the rules, not the numbers: a Ruined card still counted as part of a line, so war couldn't touch the folio's best builders. A road that runs through a burnt-out town shouldn't still be a road.
+
+**The rule.** A Ruined card breaks a line, as an empty space does (`brokenRoads`, on by default; `OPTS='{"brokenRoads":false}'` puts the old rule back for the simulator). Pilgrim's Way, Cartographer and Hedgerow all count lines through `lineRun`, so Ruin the middle of a rival's road and it's cut in two. The bots needed no new code, because they judge a Ruin by the score it takes away.
+
+**Three tries, one kept** (same 300 three-player deals each, folio on):
+
+| | Warmonger | Spread | Ruins a game | Notes |
+|---|---|---|---|---|
+| Folio, old rules | 0.74 | 0.48 | 1.60 | Cryptkeeper and Philosopher 1.20–1.22 |
+| **Ruins break lines** | **0.88** | **0.38** | 1.62 | Pilgrim's Way 6.6 → 5.8◇ a game |
+| Highwaymen for Levy (6●: Ruin a card in the row or column line of any card you own) | 0.74 | 0.54 | 2.16 | more Ruins, but from everyone; Cryptkeeper 1.28 |
+| Broken roads + Watchfire that Ruins a neighbour when placed (10●) | 0.82 | 0.54 | 2.17 | Watchfire's own card win index 1.50; Cryptkeeper 1.36 |
+
+Highwaymen was the card I wanted: war riding down the road. But a Ruin anyone can cast helps whoever plays it, and the Warmonger only gains from Ruins it causes itself. The lesson I'm keeping: **to help war, make Ruins hurt more; don't make more of them.**
+
+*Two players.* Broken roads change little there (1.1 Ruins a game): Warmonger 0.80 with the old rules, 0.70 with broken roads, 0.80 with the striking Watchfire as well, all on the same 300 deals, which is within noise at this size. The 2-player Warmonger with the folio is still low, and it's the next thing to look at.
+
+*Wayside Inn* at 10● and +2● (from 9● and +3●) left its card win index where it was (1.48 against 1.37), so I left the Inn alone. Its index has been high in every run since it shipped, but a card's win index also measures who builds it; it needs a paired test (Inn in and out of the deck), not another trim.
+
+**The rest.**
+- *The road cut on the board.* Select a line card and any Ruin that stops its row or column gets a red-and-white pixel barrier that swings shut.
+- *Print and play* now has the folio: 20 cards on three sheets after the base deck, headed "optional", each marked with a 9 × 8 pixel road, and a folio paragraph on the rules sheet.
+- Pilgrim's Way's text and the folio's Help page say that a Ruin breaks a line. A test in `tests/cs14-folio.js`.
+- `FOLIO_DROP=levy` (a comma list of ids) tries the folio without some cards in `tools/sim2.js`.
+
+**Open questions.**
+- The 2-player Warmonger with the folio (0.70–0.80). Ideas: a Sword folio card that pays for *your own* Ruins along a line (not one that makes more Ruins for everyone), or Watchfire counting Ruins in its lines as well as around it.
+- Cryptkeeper and Philosopher read 1.12–1.36 with the folio at 3 players in every run today. Measure paired against no folio on 500+ deals before acting.
+- The Wayside Inn, with a paired in-and-out test.
+
 ## 22 November 2026 · 1.0-pre, the Pilgrim's Folio
 
 **Why.** The progression list has promised folios (themed packs of new cards that the campaign opens) since 0.3, and the gameplay list had a pile of card ideas (Feast Day, the Ossuary Bell) with nowhere to live. The campaign also needed a reward that changes what you can *do* rather than how you look: finishing Act I should open the game up, not hand out a hat. And the deck had one spatial idea left untouched. Kartenspiel scores neighbours, regions, a column to the north and a chain to the east, but never the thing Carcassonne built a whole game on: the road.
@@ -60,7 +92,7 @@ Per-card win indices swing a lot from run to run (the Bell read 0.64 in one and 
 **Open questions.**
 - The Warmonger with the folio (above).
 - Wayside Inn might still be strong at 3–4 players (more rivals to sit beside); 1.25 in the last runs at 9●. Watch it.
-- The folio isn't on the print-and-play sheets yet.
+- ~~The folio isn't on the print-and-play sheets yet.~~ Done 23 November.
 - Next folios: a River folio for Act II and a City folio for Act III (ideas in the progression list).
 
 ## 21 November 2026 · 1.0-pre, the City at Dawn (campaign Act III)

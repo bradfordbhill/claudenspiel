@@ -11,6 +11,8 @@ const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const cards = [];
 D.STARTER.filter(c => c.type === 'Foundation').forEach(c => cards.push(c));
 D.STARTER.filter(c => c.type !== 'Foundation').forEach(c => { for (let i = 0; i < (c.copies || 1); i++) cards.push(c); });
+// The Pilgrim's Folio follows the base deck on its own sheets, each card marked with the waymark (a road to a gold horizon).
+const BASE = cards.length; D.FOLIO.forEach(c => { for (let i = 0; i < (c.copies || 1); i++) cards.push(c); });
 const burnText = (c) => c.type === 'Foundation' ? '' : E.defBurnText(c);
 
 const html = `<!doctype html><html><head><meta charset="utf-8">
@@ -36,6 +38,9 @@ body { margin: 0; font-family: 'DotGothic16', monospace; color: #1b1712; }
 .burn { margin-top: 1.6mm; background: #2a1410; color: #ffd27a; border: .5mm solid #e8541c; padding: 1mm 1.6mm; font-size: 7pt; line-height: 1.3; }
 .burn b { color: #ff9a1f; }
 .ft { display: flex; justify-content: space-between; font-size: 9pt; margin-top: 1.4mm; }
+.way { display: inline-block; width: 5.4mm; height: 4.8mm; margin-left: 1.4mm; vertical-align: .6mm; }
+.way svg { width: 100%; height: 100%; shape-rendering: crispEdges; }
+.foliohead { position: absolute; left: 10.5mm; top: 6mm; font-family: 'Jacquard 24', serif; font-size: 16pt; color: #6b4a1f; }
 .crop { position: absolute; background: #000; }
 .rules { padding: 16mm 18mm; font-size: 9.6pt; line-height: 1.45; columns: 2; column-gap: 9mm; }
 .rules h1 { font-family: 'Jacquard 24', serif; font-size: 34pt; margin: 0 0 2mm; column-span: all; color: #2f6b5a; }
@@ -46,6 +51,7 @@ body { margin: 0; font-family: 'DotGothic16', monospace; color: #1b1712; }
 <script>${read('src/cardface.js')}</script>
 <script>
 const CARDS = ${JSON.stringify(cards.map(c => ({ id: c.id, name: c.name, suit: c.suit, type: c.type, cost: c.cost, income: c.income, text: c.text, place: c.place, score: c.score, archetype: c.archetype, weakTo: c.weakTo, overwhelm: c.overwhelm })))};
+const BASE = ${BASE};
 const BURNS = ${JSON.stringify(cards.map(burnText))};
 const KF = KFace, esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 function tex(suit, seed) { const gw = 126, gh = 176, cv = document.createElement('canvas'); cv.width = gw; cv.height = gh;
@@ -57,7 +63,7 @@ function face(c, i) {
   if (c.overwhelm != null && c.overwhelm !== '') meta.push('Overwhelmed by ' + c.overwhelm + ' enemies.');
   return '<div class="pc s-' + c.suit + (c.type === 'Foundation' ? ' found' : '') + '" style="background-image:url(' + tex(c.suit, c.id + i) + ')">' +
     '<div class="hd"><span>' + c.cost + '●</span>' + KF.icon(c.suit) + '</div>' +
-    '<div class="nm">' + esc(c.name) + '</div><div class="ty">' + esc(c.type) + ' · ' + esc(c.suit) + '</div>' +
+    '<div class="nm">' + esc(c.name) + (i >= BASE ? '<i class="way"><svg viewBox="0 0 9 8"><rect width="9" height="3" fill="#f2c14e"/><rect y="3" width="9" height="5" fill="#5f8f45"/><rect x="4" y="3" width="1" height="1" fill="#9a7650"/><rect x="3" y="4" width="3" height="2" fill="#9a7650"/><rect x="2" y="6" width="5" height="2" fill="#9a7650"/><rect x="4" y="6" width="1" height="1" fill="#e8d9a8"/></svg></i>' : '') + '</div><div class="ty">' + esc(c.type) + ' · ' + esc(c.suit) + '</div>' +
     '<div class="tx">' + esc(c.text) + '</div>' + (meta.length ? '<div class="meta">' + meta.map(esc).join('<br>') + '</div>' : '') +
     (BURNS[i] ? '<div class="burn"><b>🔥 Burn:</b> ' + esc(BURNS[i]) + '</div>' : '') +
     '<div class="ft"><span>' + KF.placeIcon(c.place) + '</span><span>' + (+c.income ? c.income + '● a turn' : '') + '</span></div></div>';
@@ -68,18 +74,19 @@ function crops() { let h = ''; const L = 10.5, T = 16.5, W = 63, H = 88;
     h += '<div class="crop" style="top:' + y + 'mm;left:' + (L - 6) + 'mm;height:.2mm;width:4mm"></div><div class="crop" style="top:' + y + 'mm;left:' + (L + 3 * W + 2) + 'mm;height:.2mm;width:4mm"></div>'; }
   return h; }
 let h = '';
-for (let p = 0; p < CARDS.length; p += 9) h += '<div class="sheet">' + crops() + '<div class="grid">' + CARDS.slice(p, p + 9).map((c, j) => face(c, p + j)).join('') + '</div></div>';
+const sheets = (from, to, head) => { for (let p = from; p < to; p += 9) h += '<div class="sheet">' + (head ? '<div class="foliohead">' + head + '</div>' : '') + crops() + '<div class="grid">' + CARDS.slice(p, Math.min(p + 9, to)).map((c, j) => face(c, p + j)).join('') + '</div></div>'; };
+sheets(0, BASE); sheets(BASE, CARDS.length, 'The Pilgrim’s Folio · optional, shuffle in once you know the game');
 h += '<div class="sheet"><div class="rules">' + document.getElementById('rules-src').innerHTML + '</div></div>';
 document.getElementById('out').innerHTML = h;
 </script>
 </body></html>`;
 
 const RULES = `<h1>Claudenspiel</h1><p class="sub">A shared-board card game for 2–4 players, about 45 minutes. Print the card pages on card stock (or sleeve them over old cards) and cut along the marks. You also need about 8 meeples per player in their colour, some coins for ● (Aktion points) and tokens for ◇ (victory points). Play online at bradfordbhill.github.io/claudenspiel.</p>
-<h2>Setup</h2><ul><li>Each player picks an archetype and takes its Foundation into hand: Archbishop (Cathedral), Hedonist (Palace), Warmonger (Warcamp), Cryptkeeper (Mausoleum), Gardener (Orchard), Philosopher (Observatory).</li><li>Shuffle the other ${cards.length - 6} cards into the deck. Deal 4 to each player. Each player takes 8 meeples.</li><li>With 3 players, seats 1 and 2 start with 6◇ and 4◇; with 4 players, seats 1–3 start with 9◇, 6◇ and 3◇.</li></ul>
+<h2>Setup</h2><ul><li>Each player picks an archetype and takes its Foundation into hand: Archbishop (Cathedral), Hedonist (Palace), Warmonger (Warcamp), Cryptkeeper (Mausoleum), Gardener (Orchard), Philosopher (Observatory).</li><li>Shuffle the other ${BASE - 6} cards into the deck. Deal 4 to each player. Each player takes 8 meeples.</li><li>With 3 players, seats 1 and 2 start with 6◇ and 4◇; with 4 players, seats 1–3 start with 9◇, 6◇ and 3◇.</li></ul>
 <h2>A turn</h2><ul><li><b>Start:</b> gain ● equal to the income of the cards you own (your Foundation gives 8●), and draw 2.</li><li><b>Play cards</b> from your hand by paying their cost in ●. Structures and Grounds go on the board touching at least one card, on the sides their placement arrows allow. It costs 3● less next to a card you own. Actions and Blessings take effect, then are buried under a card they touched; Curses cover or slip under their target.</li><li><b>Claim</b> once a turn: put a meeple on an unclaimed card. Claimed cards (and your Foundation) are your Kingdom; their value counts for you. You may buy one more claim a turn for 10● of this turn’s ●.</li><li><b>Burn</b> once a turn (optional rule): discard a card from your hand for the effect in its flame box instead of building it. A <i>ward</i> keeps a card of yours from being Ruined, Overwhelmed, contested or Cursed until your next turn.</li><li><b>Contest</b> once a turn (2–4 players): right after placing a card, pay 8● to take a rival’s card next to it; their meeple goes home and yours takes its place.</li><li><b>End:</b> every full 6● left over banks 1◇ (at most 2◇ a turn). Unspent ● is lost.</li></ul>
 <h2>The board</h2><ul><li>A card’s enemies are Sword (except for Sword cards) and the suit its archetype can’t play (Sword’s enemy is Bone). A card with 3 enemy-suit neighbours (Foundations: 8, counting corners) is <b>Overwhelmed</b>: flipped over, worth nothing, its meeples sent home.</li><li>A <b>Ruined</b> card is flipped the same way. The Warmonger banks ◇ for each one it causes.</li><li><b>Grounds</b> are terrain: nobody claims them and they never count as an enemy, but they change the cards next to them.</li><li>Cards <b>buried</b> under another card stay there, and some cards count them.</li></ul>
 <h2>Winning</h2><p>Your score is the value of your Kingdom plus your banked ◇. When someone reaches 52◇, finish the round so everyone has had the same number of turns. The highest score wins; a tie goes to whoever reached 52◇ first.</p>
-<h2>Archetypes</h2><p>Each Foundation scores in its own way and bans one suit from its owner. The Archbishop builds Sceptre, the Hedonist Goblet, the Warmonger wars, the Cryptkeeper buries, the Gardener grows one great region, and the Philosopher collects all six suits.</p>`;
+<h2>The Pilgrim’s Folio</h2><p>The cards marked with a little road are an expansion: shuffle them in once you know the game. Their word is the <b>line</b>: the unbroken run of cards through a card in its row or its column, itself included. A Ruined card breaks a line.</p><h2>Archetypes</h2><p>Each Foundation scores in its own way and bans one suit from its owner. The Archbishop builds Sceptre, the Hedonist Goblet, the Warmonger wars, the Cryptkeeper buries, the Gardener grows one great region, and the Philosopher collects all six suits.</p>`;
 
 (async () => {
   const b = await chromium.launch(), p = await b.newPage();
@@ -91,5 +98,5 @@ const RULES = `<h1>Claudenspiel</h1><p class="sub">A shared-board card game for 
   await p.pdf({ path: OUT, format: 'A4', printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
   if (process.env.PNG) await p.screenshot({ path: process.env.PNG, clip: { x: 0, y: 0, width: 794, height: 1123 } });
   await b.close();
-  console.log('wrote', OUT, cards.length, 'cards on', Math.ceil(cards.length / 9), 'pages, plus rules');
+  console.log('wrote', OUT, BASE, 'base cards and', cards.length - BASE, 'folio cards,', 'cards on', Math.ceil(BASE / 9) + Math.ceil((cards.length - BASE) / 9), 'pages, plus rules');
 })();

@@ -1,6 +1,11 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-roads', date: '23 November 2026', title: 'War cuts roads', notes: [
+    'A <b>Ruined</b> card now breaks a line, just like an empty space. Ruin the middle of a rival’s road and their <b>Pilgrim’s Way</b>, <b>Cartographer</b> or <b>Hedgerow</b> is cut in two.',
+    'Why: with the Pilgrim’s Folio, the long roads were scoring faster than war could take them apart, and the Warmonger fell well behind (a win index of 0.74 against 0.90 without the folio, on the same 300 three-player deals). With broken roads it is back to 0.88.',
+    'The print-and-play PDF now has the folio too, on its own sheets after the base deck, each card marked with the little road.'
+  ] },
   { v: 'cs-1.0-pre-folio', date: '22 November 2026', title: 'The Pilgrim’s Folio', notes: [
     'Win every stop of Act I of the campaign and <b>the Pilgrim’s Folio</b> opens: twelve new cards from the road, two a suit, shuffled into your games (switch them off under <b>Folios</b> on the New game page). Each carries a small pixel waymark after its name.',
     'The folio’s word is the <b>line</b>, the unbroken run of cards through a card in its row or column. <b>Pilgrim’s Way</b> scores its longest line, <b>Cartographer</b> the suits of your own cards along it, and <b>Hedgerow</b> the Leaf cards in its row and column. Select one on the board and its line lights up.',

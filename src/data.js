@@ -3690,7 +3690,7 @@ var KData = (function () {
   // card library). Its own vocabulary is the line: the unbroken run of cards through a card in its row or its column.
   var FOLIO = [
     c({ id: 'pilgrims-way', name: "Pilgrim's Way", suit: 'Sceptre', cost: 12, income: 3, copies: 2, sees: { area: 'line' }, score: { kind: 'longestLine', n: 1, max: 7 },
-      text: '1◇ for each card in its longest line (the unbroken run of cards through it in its row or column, itself included), up to 7◇.',
+      text: '1◇ for each card in its longest line (the unbroken run of cards through it in its row or column, itself included; a Ruin breaks it), up to 7◇.',
       note: 'Carcassonne’s road, folded into one card. It rewards building long and straight, which pulls Kingdoms into each other’s paths.' }),
     c({ id: 'chapter-house', name: 'Chapter House', suit: 'Sceptre', cost: 12, income: 4, sees: { area: 'surround8', suit: 'Sceptre' }, score: { kind: 'perSurroundSuit', n: 2, suit: 'Sceptre' },
       text: '2◇ for each Sceptre card around it, corners included.', note: 'A Sceptre payoff that counts the diagonals, so the Archbishop can build in blocks.' }),
@@ -3723,6 +3723,7 @@ var KData = (function () {
     'hedgerow': [{ k: 'per', of: 'mine', suit: 'Leaf', n: 1, max: 3 }], 'harvest-moon': [{ k: 'bank', n: 2 }],
     'cartographer': [{ k: 'per', of: 'suits', n: 1, max: 4 }], 'pilgrims-tale': [{ k: 'draw', n: 2 }]
   };
+  if (typeof process !== 'undefined' && process.env && process.env.FOLIO_DROP) FOLIO = FOLIO.filter(function (d) { return process.env.FOLIO_DROP.split(',').indexOf(d.id) < 0; });   // simulator: try the folio without some cards
   FOLIO.forEach(function (d) { d.folio = 'pilgrim'; d.burn = FOLIO_BURNS[d.id]; BURNS[d.id] = FOLIO_BURNS[d.id]; });
   // The deck's card definitions with the folio shuffled in (cards already in the library by the same id are kept as they are).
   function withFolio(lib) { var have = {}; lib.forEach(function (d) { have[d.id] = 1; }); return lib.concat(FOLIO.filter(function (d) { return !have[d.id]; })); }
