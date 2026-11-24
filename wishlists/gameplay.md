@@ -23,7 +23,9 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ✅ 1.0-pre Death Ray 9● and 3◇ (was 2◇ for 12●, the worst printed value).
 - ○ Re-run the Genius-only balance study after every balance release.
 - ✅ 1.0-pre War cuts roads: a Ruined card breaks a line. The 3-player Warmonger with the folio 0.74 → 0.88 (0.90 without the folio), spread 0.48 → 0.38. Tried and dropped: Highwaymen (a Ruin anywhere along your lines) and a Watchfire that Ruins when placed, since both make more Ruins for everyone.
-- ▶ The 2-player Warmonger with the folio (0.70–0.80). A Sword folio card that pays for your own Ruins, or Watchfire counting the Ruins in its lines.
+- ✅ 1.0-pre The 2-player Warmonger with the folio, on 1,520 games each with contest: 0.85 against 0.90 without the folio, about one standard error. The 0.70–0.80 readings were 300-game noise. A Levy that pays for your own Ruins, a Watchfire that sees Ruins down its lines, a Levy that Ruins and three Harvest Moon trims were all tried and none moved it. No change.
+- ○ The 2-player Warmonger in the base game (0.90 on 1,520 games with contest).
+- ○ Re-measure the 3-player folio numbers on 1,500+ games before acting on them.
 - ○ Cryptkeeper and Philosopher with the folio at 3 players (1.12–1.36 in every run): paired test on 500+ deals.
 - ○ Wayside Inn (1.37–1.48): a trim to 10● +2● changed nothing; needs a paired in-and-out test.
 

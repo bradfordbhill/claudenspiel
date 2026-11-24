@@ -1,5 +1,7 @@
 // Bot self-play for balance analysis. The bots themselves live in src/bots.js (greedy, tactician, raider, warlord).
-// OPTS='{"contest":true}' sets rules for every game; SECS=1000 sets the time limit (default 255 s).
+// OPTS='{"burn":true}' sets rules for every game; SECS=1000 sets the time limit (default 255 s).
+// Contest is on for 2–4 players, as in the game's New game page (OPTS='{"contest":false}' turns it off). Before
+// 24 November 2026 it was off here unless OPTS said otherwise, so older journal numbers without OPTS are contest-free.
 // FOLIO=1 shuffles the Pilgrim's Folio into every deck.
 // Usage: node tools/sim2.js <players> <first game> <last game> <output.json> [lineup]
 //   lineup (optional) fixes styles instead of rotating them, e.g. "Warmonger=warlord,*=greedy".
@@ -14,7 +16,7 @@ function game(n,g,stats,lineup){
   if(lineup) { const must=Object.keys(lineup).filter(a=>a!=='*'); combos=combos.filter(c=>must.every(a=>c.includes(a))); }
   const c=combos[g%combos.length], rot=Math.floor(g/combos.length)%n; const archs=c.slice(rot).concat(c.slice(0,rot));
   const strats=archs.map((a,i)=>lineup ? (lineup[a]||lineup['*']||'greedy') : STRATS[(g+i*(n===3?1:2)+Math.floor(g/combos.length))%3]);
-  let st=E.newGame(process.env.FOLIO?D.withFolio(D.STARTER):D.STARTER,{players:archs.map((a,i)=>({name:'P'+i,arch:a})),seed:5000+g+n*1000,seatTokens:process.env.SEATTOK!=null?JSON.parse(process.env.SEATTOK):undefined,target:process.env.TARGET?+process.env.TARGET:undefined,...JSON.parse(process.env.OPTS||'{}')}); let guard=0;
+  let st=E.newGame(process.env.FOLIO?D.withFolio(D.STARTER):D.STARTER,{players:archs.map((a,i)=>({name:'P'+i,arch:a})),seed:5000+g+n*1000,seatTokens:process.env.SEATTOK!=null?JSON.parse(process.env.SEATTOK):undefined,target:process.env.TARGET?+process.env.TARGET:undefined,contest:n<=4,...JSON.parse(process.env.OPTS||'{}')}); let guard=0;
   while(st.winner==null && st.round<=30 && guard++<400){ if(st.pending) { st=B.resolve(st,st.cur,strats[st.cur],strats); if(!st) break; continue; } const s=B.turn(st,stats,strats); if(!s) break; st=s; }
   return {st,archs,strats}; }
 // Command line: play games [from, to) (stopping after ~255 s) and save results for analyze2.js.

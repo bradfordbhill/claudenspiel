@@ -2,6 +2,38 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 24 November 2026 · 1.0-pre, clear marks, and a question closed
+
+**The 2-player Warmonger with the folio, measured properly.** Yesterday's open question rested on 300-game runs (0.70–0.80). Two things were wrong with them. `tools/sim2.js` left **contest off** unless `OPTS` said otherwise, though the game turns it on for 2–4 players. And at 2 players each archetype only sits in about 100 of 300 games, so a win index carries about ±0.10 of noise. On deals 900–1199 without contest the Warmonger read 0.72 with *and* without the folio. With contest, the same deals read 1.00 without the folio and 0.76 with it.
+
+So I ran 1,520 games of each, deals 2000–3519, contest on (greedy, tactician and raider bots rotating):
+
+| 2 players | Archbishop | Cryptkeeper | Gardener | Hedonist | Philosopher | Warmonger | Spread |
+|---|---|---|---|---|---|---|---|
+| No folio | 1.05 | 1.03 | 0.97 | 0.95 | 1.10 | **0.90** | 0.20 |
+| Folio | 1.08 | 1.12 | 0.98 | 0.92 | 1.06 | **0.85** | 0.27 |
+| Folio, three war nudges | 1.07 | 1.13 | 0.97 | 0.92 | 1.04 | **0.87** | 0.26 |
+
+The folio costs the 2-player Warmonger about 0.05, roughly one standard error (0.044 here). It is not the 0.2 the small runs suggested. The three nudges together (below) moved it 0.02, which is noise. **No card changes.** The 2-player Warmonger sits a little low in the base game too (0.90). That's a base-game question for a later pass, not a folio one.
+
+*Tried on 300 games each before the big runs, all within noise and none kept:*
+- *Levy* also banks 2◇ for each card you have Ruined or Overwhelmed this game (up to 6◇), to pay for your own Ruins: +0.02.
+- *Watchfire* also counting the Ruins that stop its row and column lines further down the road: +0.06 together with the Levy change. Watchfire's average rose from 3.8◇ to 4.5◇, but two copies in 150 cards can't move an archetype.
+- *Levy* adding a Ruin next to one of your Swords if you own 2 or 3 Sword cards: +0.00–0.02.
+- *Harvest Moon* at 1◇ per three cards, at 8●, or counting only region cards with no Ruin beside them: +0.00–0.06.
+- *Dropping folio cards* (`FOLIO_DROP`) looked dramatic (without the five Actions 0.98, without Harvest Moon 0.90), but removing a card reshuffles every deck, so those runs aren't paired with the baseline. At 300 games they mostly measured the shuffle.
+
+**Lessons I'm keeping.** Below about 1,000 two-player games, an archetype difference of 0.15 means nothing. Never compare `FOLIO_DROP` runs as if they were paired. And measure the rules people actually play: `tools/sim2.js` now turns contest on for 2–4 players, as the New game page does (`OPTS='{"contest":false}'` turns it off). Older journal numbers without `OPTS` are contest-free.
+
+**Clear marks** (the UI wishlist's colour-blind item). The game told seats apart only by colour: meeples, swatches, race lanes, Chronicle lines. A new setting above the board, **Clear marks**, gives every seat a 7 × 7 pixel shape (dot, bar, plus, peak, cross, ring), drawn in black and white so it reads on any meeple colour. The shapes go on meeples (board, claim chip, drag ghost), swatches (player cards, Chronicle key, handover and player prompts) and race lanes (repeated along the fill). Each seat's Chronicle line gets its own dash. Every board card also shows its suit large and faint behind the text. The pictures are built in the page as data-URI CSS, so the game stays one file. Help → Hints and settings describes it.
+
+**The desk sounds.** With Sound on, tabs turn a page and plain buttons give a muted wooden click. Game moves keep their own sounds (claim, contest and so on are excluded), so the interface sounds like a desk, not a computer. A browser check counted 24 audio nodes for four tab clicks and no page errors.
+
+**Open questions.**
+- The 2-player Warmonger in the base game (0.90 over 1,520 games, 0.85 with the folio). Look at what a Warmonger loses at a 2-player table (one rival, so every Ruin lands on the same Kingdom, which then plays safe).
+- The 3-player folio numbers (Cryptkeeper and Philosopher high, the Warmonger with broken roads at 0.88) are also 300-game runs. They need the same 1,500-game treatment before anyone acts on them.
+- Clear marks' second half: stronger dithered suit textures, so suits differ by pattern as well.
+
 ## 23 November 2026 · 1.0-pre, war cuts roads
 
 **Why.** The folio's open question: with it shuffled in, the Warmonger fell behind. Measured again first, on deals 900–1199 at 3 players (300 games each, greedy, tactician and raider bots rotating): **0.90 without the folio, 0.74 with it**. Fewer Ruins too (1.60 a game against 1.82). The cause was in the rules, not the numbers: a Ruined card still counted as part of a line, so war couldn't touch the folio's best builders. A road that runs through a burnt-out town shouldn't still be a road.

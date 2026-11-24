@@ -403,6 +403,9 @@
       deed: function () { noise('highpass', 4000, 0.05, 0.12); noise('highpass', 4200, 0.05, 0.12, 0.08); S.claim(); },
       win: function (arch) { var sad = arch === 'Archbishop' || arch === 'Cryptkeeper'; var notes = sad ? [196, 233, 294, 392] : arch === 'Warmonger' ? [196, 196, 262, 392] : [262, 330, 392, 523];
         notes.forEach(function (f, i) { tone('triangle', f, i === 3 ? 0.9 : 0.22, 0.14, i * 0.18); tone('square', f, i === 3 ? 0.9 : 0.2, 0.03, i * 0.18); }); },
+      // The desk: a muted wooden click for buttons, a page turning between tabs.
+      click: function () { noise('lowpass', 900, 0.03, 0.18); tone('triangle', 540, 0.04, 0.05, 0, 0.7); },
+      page: function () { for (var i = 0; i < 5; i++) noise('bandpass', 1400 + i * 500, 0.06, 0.05 + i * 0.012, i * 0.03); noise('lowpass', 500, 0.08, 0.12, 0.17); },
       lose: function () { tone('sawtooth', 98, 1.6, 0.06); noise('lowpass', 300, 1.5, 0.15); },
       turn: function () { tone('sine', 1320, 0.5, 0.08); tone('sine', 1980, 0.4, 0.04, 0.01); tone('sine', 1320, 0.6, 0.05, 0.22); },
       // Contest: two blades meet, ring off-key, and a meeple clatters home.
@@ -764,6 +767,7 @@
     var noOW = c.ascended || !!(E.rawDef(st, u).mods || {}).immune;
     var h = '<div class="card s-' + esc(suit) + (ruined ? ' ruined' : '') + (!ruined && !c.ascended && inkOf(c.def) ? ' lighttext' : '') + '' + (E.rawDef(st, u).type === 'Foundation' ? ' found' : '') + (c.ascended && !ruined ? ' ascended' : '') + (E.isCursed(st, k) && !ruined ? ' cursed' : '') + '"' + (ruined || c.ascended ? '' : ' style="' + (FACES[c.def] && FACES[c.def].board ? KF.picCSS(FACES[c.def].board) : cardTex(suit, u, CW, CH)) + '"') + '>';
     h += '<div class="top"><span>' + esc(d.cost) + '●</span>' + icon(suit) + '</div>';
+    if (prefs.marks && !ruined) h += '<div class="wm">' + icon(suit) + '</div>';   // Clear marks: the suit, large and faint
     var art = artOf(c.def); if (art && !ruined) h += '<div class="art" style="' + artStyle(art) + '"></div>';
     else if (!ruined && typeof CSTerrain !== 'undefined' && E.isGrounds(st, u) && CSTerrain.has(c.def)) h += '<div class="art terrain" style="' + CSTerrain.css(c.def) + '"></div>';   // living Grounds (src/terrain.js)
     h += '<div class="nm">' + esc(ruined ? E.rawDef(st, u).name : d.name) + (ruined ? '' : KF.folioMark(d)) + '</div><div class="ty">' + esc(ruined ? (c.overwhelmed ? 'Overwhelmed' : 'Ruined') : d.type) + '</div>';
@@ -780,7 +784,7 @@
     var val = '';
     if (!ruined && c.claimants.length) { var v = E.cardValue(st, k, c.claimants[0]) + E.volcanicBonus(st, k); val = v + '◇'; }
     var inc = !ruined ? E.cardIncome(st, k) : 0;
-    h += '<div class="foot"><span class="meeps">' + c.claimants.map(function (p) { return '<span class="meep" style="background:' + st.players[p].color + '" title="' + esc(st.players[p].name) + '"></span>'; }).join('') + (c.tokens ? '<span title="tokens">⬤' + c.tokens + '</span>' : '') + '</span><span class="val">' + val + (inc ? ' ' + inc + '●' : '') + '</span></div>';
+    h += '<div class="foot"><span class="meeps">' + c.claimants.map(function (p) { return '<span class="meep sm-' + p + '" style="background:' + st.players[p].color + '" title="' + esc(st.players[p].name) + '"></span>'; }).join('') + (c.tokens ? '<span title="tokens">⬤' + c.tokens + '</span>' : '') + '</span><span class="val">' + val + (inc ? ' ' + inc + '●' : '') + '</span></div>';
     return h + '</div>';
   }
 
@@ -1009,6 +1013,7 @@
       '<label><input type="checkbox" data-tog="coords"' + (u.coords ? ' checked' : '') + '> Grid</label>' +
       (ctx.kind === 'game' && hasBots(ctx.state) ? '<label title="How fast the bots play">Bots <select data-pref="botSpeed">' + [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast'], ['instant', 'Instant']].map(function (o) { return '<option value="' + o[0] + '"' + ((prefs.botSpeed || 'normal') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' : '') +
       '<label title="Sound effects (Claudenspiel)"><input type="checkbox" data-tog-pref="sound"' + (prefs.sound ? ' checked' : '') + '> Sound</label>' +
+      '<label title="Colour-blind help: a shape for every player and a large suit mark on every board card"><input type="checkbox" data-tog-pref="marks"' + (prefs.marks ? ' checked' : '') + '> Clear marks</label>' +
       '<label title="Animations">Motion <select data-pref="motion">' + [['full', 'Full'], ['calm', 'Calm'], ['off', 'Off']].map(function (o) { return '<option value="' + o[0] + '"' + ((prefs.motion || 'full') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       '<button class="btn sm" data-act="debug" title="Copy the log and board state to the clipboard">Copy debug report</button>' +
       '<button class="btn sm" data-act="keys" title="Keyboard shortcuts">Keys</button>' +
@@ -1032,7 +1037,7 @@
     var lanes = st.players.map(function (pl, i) {
       var t = sc[i].total, w = Math.max(1, Math.round(100 * Math.min(t, top) / top));
       return '<div class="lane' + (i === st.cur ? ' cur' : '') + (pl.out ? ' out' : '') + '" title="' + esc(pl.name) + ': ' + t + '◇ of ' + T + '◇"><span class="lname">' + esc(pl.name) + '</span>' +
-        '<span class="track"><span class="fill" style="width:' + w + '%;background:' + pl.color + '"></span><span class="goal" style="left:' + Math.round(100 * T / top) + '%"></span></span><b>' + t + '◇</b></div>';
+        '<span class="track"><span class="fill sm-' + i + '" style="width:' + w + '%;background-color:' + pl.color + '"></span><span class="goal" style="left:' + Math.round(100 * T / top) + '%"></span></span><b>' + t + '◇</b></div>';
     }).join('');
     return '<div class="race raised" role="img" aria-label="Score race to ' + T + '◇">' + lanes + (st.lastRound ? '<div class="lastround">🔔 Last round: ' + esc(st.players[st.lastRound.by].name) + ' reached ' + T + '◇</div>' : '') + '</div>';
   }
@@ -1156,7 +1161,7 @@
     var st = ctx.state, sc = E.scores(st), h = '<table class="players small"><tr><th></th><th>Player</th><th title="Victory points">◇</th><th title="Aktion points">●</th><th title="Meeples left">♟</th>' + (ctx.kind === 'game' ? '<th title="Cards in hand">Hand</th>' : '') + '</tr>';
     st.players.forEach(function (pl, i) {
       var isCur = ctx.kind === 'game' && i === st.cur;
-      h += '<tr class="' + (isCur ? 'cur' : '') + '"' + (pl.out ? ' style="opacity:.5"' : '') + '><td><span class="swatch" style="background:' + pl.color + '"></span></td>' +
+      h += '<tr class="' + (isCur ? 'cur' : '') + '"' + (pl.out ? ' style="opacity:.5"' : '') + '><td><span class="swatch sm-' + i + '" style="background:' + pl.color + '"></span></td>' +
         '<td title="' + esc(pl.arch) + '">' + esc(pl.name) + '<br><span class="small" style="opacity:.8">' + esc(pl.arch) + (pl.out ? ' (out)' : '') + '</span></td>' +
         '<td title="Cards ' + sc[i].cards + ' + tokens ' + sc[i].tokens + '">' + sc[i].total + '</td><td>' + (isCur || ctx.kind === 'sandbox' ? pl.ap : '') + '</td><td>' + pl.meeples + '</td>' + (ctx.kind === 'game' ? '<td>' + pl.hand.length + '</td>' : '') + '</tr>';
     });
@@ -1168,7 +1173,7 @@
     var st = ctx.state, sc = E.scores(st), h = '<div class="plist">';
     st.players.forEach(function (pl, i) {
       var isCur = ctx.kind === 'game' && i === st.cur;
-      h += '<div class="pcard' + (isCur ? ' cur' : '') + (pl.out ? ' out' : '') + '"><div class="pname"><span class="swatch" style="background:' + pl.color + '"></span> <b>' + esc(pl.name) + (i === fixedSeat(ctx) ? ' (you)' : '') + '</b> <span class="small">' + esc(pl.arch) + (pl.out ? ' (out)' : '') + (ctx.online && !isConnected(pl.name) ? ' · offline' : '') + (pl.bot ? ' · ' + esc(BOT_NAMES[pl.bot] || pl.bot) : '') + (ctx.thinking === i ? ' · <span class="candle" aria-hidden="true"><i></i></span><i>thinking…</i>' : '') + '</span>' + (isCur ? '<span class="turnmark">◀ turn</span>' : '') + '</div>' +
+      h += '<div class="pcard' + (isCur ? ' cur' : '') + (pl.out ? ' out' : '') + '"><div class="pname"><span class="swatch sm-' + i + '" style="background:' + pl.color + '"></span> <b>' + esc(pl.name) + (i === fixedSeat(ctx) ? ' (you)' : '') + '</b> <span class="small">' + esc(pl.arch) + (pl.out ? ' (out)' : '') + (ctx.online && !isConnected(pl.name) ? ' · offline' : '') + (pl.bot ? ' · ' + esc(BOT_NAMES[pl.bot] || pl.bot) : '') + (ctx.thinking === i ? ' · <span class="candle" aria-hidden="true"><i></i></span><i>thinking…</i>' : '') + '</span>' + (isCur ? '<span class="turnmark">◀ turn</span>' : '') + '</div>' +
         '<div class="pbody"><span data-fx="pile-' + i + '">' + jewelPile(sc[i].total) + '</span><div class="pstats"><div class="bignum" title="Victory points: cards ' + sc[i].cards + ' + tokens ' + sc[i].tokens + '">' + sc[i].total + '<span class="unit">◇</span></div>' +
         '<div class="small">♟ ' + pl.meeples + ' meeples' + (ctx.kind === 'game' ? ' · ' + pl.hand.length + ' in hand' : '') + (pl.reserve > 0 ? ' · ' + pl.reserve + '● Reserves' : '') + '</div></div></div></div>';
     });
@@ -1194,11 +1199,36 @@
       st.log.slice(-150).map(function (l) { return '<div class="' + logClass(l) + '">' + esc(l) + '</div>'; }).join('');
   }
 
+  // Clear marks (colour-blind help): every seat gets a pixel shape (dot, bar, plus, peak, cross, ring) drawn on its
+  // meeples, swatches and race lane, and its Chronicle line its own dash. Built once as CSS with data-URI pictures.
+  var SEAT_MARKS = [
+    ['.......', '..kkk..', '.kwwwk.', '.kwwwk.', '.kwwwk.', '..kkk..', '.......'],
+    ['.......', '.......', 'kkkkkkk', 'kwwwwwk', 'kkkkkkk', '.......', '.......'],
+    ['..kkk..', '..kwk..', 'kkkwkkk', 'kwwwwwk', 'kkkwkkk', '..kwk..', '..kkk..'],
+    ['...k...', '..kwk..', '..kwk..', '.kwwwk.', '.kwwwk.', 'kwwwwwk', 'kkkkkkk'],
+    ['kk...kk', 'kwk.kwk', '.kwkwk.', '..kwk..', '.kwkwk.', 'kwk.kwk', 'kk...kk'],
+    ['kkkkkkk', 'kwwwwwk', 'kwkkkwk', 'kwk.kwk', 'kwkkkwk', 'kwwwwwk', 'kkkkkkk']];
+  var SEAT_DASH = ['none', '7 3', '2 3', '9 3 2 3', '4 4', '1 4'];
+  function seatMarkURI(i) {
+    var m = SEAT_MARKS[i % SEAT_MARKS.length], r = '';
+    m.forEach(function (row, y) { row.split('').forEach(function (c, x) { if (c !== '.') r += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + (c === 'k' ? '#000' : '#fff') + '"/>'; }); });
+    return 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 7" shape-rendering="crispEdges">' + r + '</svg>') + '")';
+  }
+  function seatMarkStyle() {
+    if (document.getElementById('seatmarks')) return;
+    var css = SEAT_MARKS.map(function (m, i) { var u = seatMarkURI(i);
+      return 'html[data-marks="on"] .meep.sm-' + i + '::after,html[data-marks="on"] .swatch.sm-' + i + '::after{background-image:' + u + '}' +
+        'html[data-marks="on"] .race .fill.sm-' + i + '{background-image:' + u + '}' +
+        'html[data-marks="on"] path.pl.sm-' + i + '{stroke-dasharray:' + SEAT_DASH[i] + '}'; }).join('\n');
+    var tag = document.createElement('style'); tag.id = 'seatmarks'; tag.textContent = css; document.head.appendChild(tag);
+  }
+
   /* ---------------- pages ---------------- */
   var rendering = false, rerender = false;
   // Redraw the whole app from `app`. A render requested during a render runs once the current one finishes.
   function render() {
     document.documentElement.setAttribute('data-motion', prefs.motion || 'full');
+    document.documentElement.setAttribute('data-marks', prefs.marks ? 'on' : 'off'); if (prefs.marks) seatMarkStyle();
     if (rendering) { rerender = true; return; }
     rendering = true;
     try { renderNow(); } finally { rendering = false; }
@@ -1490,7 +1520,7 @@
     h += '<g class="lines">';
     order.forEach(function (i) {
       var d = 'M' + X(0) + ' ' + Y(c[0].t[i]); for (var j = 1; j <= N; j++) d += 'H' + X(j) + 'V' + Y(c[j].t[i]);
-      h += '<path d="' + d + '" stroke="' + st.players[i].color + '" class="pl' + (i === st.winner ? ' win' : '') + (st.players[i].out ? ' out' : '') + '"/>';
+      h += '<path d="' + d + '" stroke="' + st.players[i].color + '" class="pl sm-' + i + (i === st.winner ? ' win' : '') + (st.players[i].out ? ' out' : '') + '"/>';
     });
     // marks for the turns that held a moment, on the acting player's line
     c.forEach(function (e, j) { if (!e.ev.length || e.p < 0) return; var x = X(j), y = Y(e.t[e.p]), k = /contests/.test(e.ev.join()) ? 'contest' : /ASCENDS/.test(e.ev.join()) ? 'ascend' : /is (Ruined|Overwhelmed)/.test(e.ev.join()) ? 'ruin' : 'bell';
@@ -1511,9 +1541,9 @@
     var s = chronicleStory(st), sc = E.scores(st).map(function (x) { return x.total; }), w = st.winner;
     var others = sc.filter(function (v, i) { return i !== w && !st.players[i].out; }), margin = w != null && others.length ? sc[w] - Math.max.apply(null, others) : null;
     var h = '<div class="chronwrap">';
-    if (w != null) h += '<p class="chronhead"><span class="swatch" style="background:' + st.players[w].color + '"></span> <b>' + esc(st.players[w].name) + '</b> wins by ' + margin + '◇ after ' + c[c.length - 1].r + ' rounds, leading after ' + s.ledFor[w] + ' of ' + s.turns + ' turns' + (margin <= 3 ? ': a photo finish.' : s.ledFor[w] === s.turns ? ', wire to wire.' : s.ledFor[w] * 4 <= s.turns ? ': a late charge.' : '.') + '</p>';
+    if (w != null) h += '<p class="chronhead"><span class="swatch sm-' + w + '" style="background:' + st.players[w].color + '"></span> <b>' + esc(st.players[w].name) + '</b> wins by ' + margin + '◇ after ' + c[c.length - 1].r + ' rounds, leading after ' + s.ledFor[w] + ' of ' + s.turns + ' turns' + (margin <= 3 ? ': a photo finish.' : s.ledFor[w] === s.turns ? ', wire to wire.' : s.ledFor[w] * 4 <= s.turns ? ': a late charge.' : '.') + '</p>';
     h += '<div class="chronplot sunken">' + chronicleSVG(st, s) + '</div>';
-    h += '<div class="chronkey small">' + st.players.map(function (p, i) { return '<span><span class="swatch" style="background:' + p.color + '"></span>' + esc(p.name) + ' <span class="muted">(' + esc(p.arch) + ')</span></span>'; }).join('') + '</div>';
+    h += '<div class="chronkey small">' + st.players.map(function (p, i) { return '<span><span class="swatch sm-' + i + '" style="background:' + p.color + '"></span>' + esc(p.name) + ' <span class="muted">(' + esc(p.arch) + ')</span></span>'; }).join('') + '</div>';
     if (s.pts.length) h += '<h4 class="chronsub">Turning points</h4><ol class="chronpts">' + s.pts.map(function (x) { return '<li class="k-' + x.kind + '"><span class="ico" aria-hidden="true">' + CHRON_ICON[x.kind] + '</span><span class="rd">Round ' + c[x.j].r + '</span><span>' + esc(x.text) + '</span></li>'; }).join('') + '</ol>';
     else h += '<p class="small muted">A quiet game: no Ruins, contests or lead changes, just building.</p>';
     h += '<details class="small"><summary>Scores by round</summary><table class="list chrontab"><tr><th>Round</th>' + st.players.map(function (p) { return '<th>' + esc(p.name) + '</th>'; }).join('') + '</tr>';
@@ -1546,7 +1576,7 @@
     if (!st.turn.started && ui.mode !== 'reclaim' && !isBot(st, st.cur)) {
       var pl = st.players[st.cur];
       var hasClaims = E.keys(st).some(function (k) { var c = st.cards[E.top(st, k)]; return !c.fixed && c.claimants.indexOf(st.cur) >= 0; });
-      return modal('Next turn', '<div class="msgbox">' + pix(HOURGLASS, ART_PAL, 3) + '<div><p style="font-size:15px"><span class="swatch" style="background:' + pl.color + ';width:14px;height:14px"></span> Pass the device to <b>' + esc(pl.name) + '</b> (' + esc(pl.arch) + ').</p><p class="small muted">Starting the turn gains ● and draws ' + (st.opts.drawPerTurn != null ? st.opts.drawPerTurn : 1) + ' card' + ((st.opts.drawPerTurn != null ? +st.opts.drawPerTurn : 1) === 1 ? '' : 's') + '. Taking back a meeple replaces the whole turn: no ●, no draw, no plays.</p></div></div>' + recapHTML(st, st.cur),
+      return modal('Next turn', '<div class="msgbox">' + pix(HOURGLASS, ART_PAL, 3) + '<div><p style="font-size:15px"><span class="swatch sm-' + st.cur + '" style="background:' + pl.color + ';width:14px;height:14px"></span> Pass the device to <b>' + esc(pl.name) + '</b> (' + esc(pl.arch) + ').</p><p class="small muted">Starting the turn gains ● and draws ' + (st.opts.drawPerTurn != null ? st.opts.drawPerTurn : 1) + ' card' + ((st.opts.drawPerTurn != null ? +st.opts.drawPerTurn : 1) === 1 ? '' : 's') + '. Taking back a meeple replaces the whole turn: no ●, no draw, no plays.</p></div></div>' + recapHTML(st, st.cur),
         (ctx.hist.length ? '<button class="btn" data-act="undo">Undo last action</button>' : '') + '<button class="btn" data-act="reclaimMode"' + (hasClaims ? '' : ' disabled') + '>Take back a meeple instead</button><button class="btn def big" data-act="startTurn">Start ' + esc(pl.name) + '’s turn</button>');
     }
     if (pd && pd.kind !== 'cell') return pendingModal(ctx);
@@ -1566,7 +1596,7 @@
       }).join('') + '</div>', (st.res && !ctx.online ? '<button class="btn" data-act="cancelEffect">Cancel effect</button>' : '') + '<button class="btn def" data-act="answerHand"' + (picked.length === pd.count ? '' : ' disabled') + '>Confirm</button>');
     }
     if (pd.kind === 'suit') return modal(who.name + ': choose a suit', '<p>' + esc(pd.prompt) + '</p><div class="row">' + pd.options.map(function (s) { return '<button class="btn" data-answer="' + s + '">' + icon(s) + ' ' + s + '</button>'; }).join('') + (pd.allowKeep ? '<button class="btn" data-answer="keep">Keep its suit</button>' : '') + '</div>', '');
-    if (pd.kind === 'player') return modal(who.name + ': choose a player', '<p>' + esc(pd.prompt) + '</p><div class="row">' + pd.options.map(function (i) { return '<button class="btn" data-answer-p="' + i + '"><span class="swatch" style="background:' + st.players[i].color + '"></span> ' + esc(st.players[i].name) + ' (' + st.players[i].hand.length + ' cards)</button>'; }).join('') + (pd.allowNone ? '<button class="btn" data-act="answerNone">' + esc(pd.noneLabel || 'No one') + '</button>' : '') + (pd.options.length || pd.allowNone ? '' : '<span class="muted">No player can be chosen.</span>') + '</div>', pd.options.length || pd.allowNone ? '' : '<button class="btn def" data-act="answerNone">OK</button>');
+    if (pd.kind === 'player') return modal(who.name + ': choose a player', '<p>' + esc(pd.prompt) + '</p><div class="row">' + pd.options.map(function (i) { return '<button class="btn" data-answer-p="' + i + '"><span class="swatch sm-' + i + '" style="background:' + st.players[i].color + '"></span> ' + esc(st.players[i].name) + ' (' + st.players[i].hand.length + ' cards)</button>'; }).join('') + (pd.allowNone ? '<button class="btn" data-act="answerNone">' + esc(pd.noneLabel || 'No one') + '</button>' : '') + (pd.options.length || pd.allowNone ? '' : '<span class="muted">No player can be chosen.</span>') + '</div>', pd.options.length || pd.allowNone ? '' : '<button class="btn def" data-act="answerNone">OK</button>');
     if (pd.kind === 'confirm') return modal(who.name + ': decide', '<p>' + esc(pd.prompt) + '</p>', '<button class="btn" data-act="answerNo">No</button><button class="btn def" data-act="answerYes">Yes</button>');
     if (pd.kind === 'manual') return modal('Resolve by hand', '<p>' + esc(pd.prompt) + '</p><p class="small muted">Use the referee tools if the board needs changing.</p>', '<button class="btn def" data-answer="done">Done</button>');
     return '';
@@ -1578,7 +1608,7 @@
     var ctx = app.sandbox, st = ctx.state, ui = ctx.ui;
     var h = '<div class="page"><div class="gamegrid">';
     h += '<div class="left"><div class="pane raised col">' + playersPanel(ctx) +
-      '<div class="small">Banked ◇ tokens: ' + st.players.map(function (p, i) { return '<div class="row"><span class="swatch" style="background:' + p.color + '"></span>' + esc(p.name) + ' ◇<button class="btn sm" data-act="ptok" data-i="' + i + '" data-d="-1">−</button><button class="btn sm" data-act="ptok" data-i="' + i + '" data-d="1">+</button></div>'; }).join('') + '</div>' +
+      '<div class="small">Banked ◇ tokens: ' + st.players.map(function (p, i) { return '<div class="row"><span class="swatch sm-' + i + '" style="background:' + p.color + '"></span>' + esc(p.name) + ' ◇<button class="btn sm" data-act="ptok" data-i="' + i + '" data-d="-1">−</button><button class="btn sm" data-act="ptok" data-i="' + i + '" data-d="1">+</button></div>'; }).join('') + '</div>' +
       '<button class="btn" data-act="sbNew">Reset sandbox…</button></div>';
     h += '<div class="pane raised col"><div class="h">Place cards</div><select data-sel="sbCard" style="width:100%">' + cardOptions(st, ui.sbCard) + '</select>' +
       '<div class="row small"><label><input type="radio" name="sbm" data-sbmode="place"' + (ui.sbMode === 'place' ? ' checked' : '') + '> Click to place</label><label><input type="radio" name="sbm" data-sbmode="bury"' + (ui.sbMode === 'bury' ? ' checked' : '') + '> Click to bury under</label><label><input type="radio" name="sbm" data-sbmode="look"' + (ui.sbMode === 'look' ? ' checked' : '') + '> Just select</label></div>' +
@@ -1873,7 +1903,8 @@
         '<li>Ending a turn while you could still play or claim a card <b>asks once</b>.</li>' +
         '<li>When your turn comes round, the dialog shows <b>what everyone else did</b>.</li>' +
         '<li><b>⇅ Sort</b> orders your hand as drawn, by suit or by cost.</li>' +
-        '<li>Against bots, <b>Bots</b> above the board sets how fast they play. A finished game offers a <b>Rematch</b>.</li></ul>' +
+        '<li>Against bots, <b>Bots</b> above the board sets how fast they play. A finished game offers a <b>Rematch</b>.</li>' +
+        '<li><b>Clear marks</b> (above the board) helps if colours are hard to tell apart: every player gets a shape (dot, bar, plus, peak, cross, ring) on their meeples, swatch and race lane, and a dash of their own in the Chronicle, and every board card shows its suit large and faint.</li></ul>' +
         '<p>' + patchToggle() + '</p>' +
         '<p>Hints and the end-turn check are ' + (prefs.hints === false || prefs.confirmEnd === false ? 'off. <button class="btn sm" data-act="showHints">Turn them back on</button>' : 'on. <button class="btn sm" data-act="hideHintsAll">Turn them off</button>') + '</p>' },
       { id: 'modes', title: 'Ways to play', only: 'online', html: '<ul>' +
@@ -2203,7 +2234,7 @@
     var st = ctx.state, me = viewer(ctx), pl = st.players[me], sc = E.scores(st)[me], ov = ctx.ui.overlay || 'none';
     var canEnd = myTurn(ctx) && st.turn.started && !st.pending && !st.res && st.winner == null;
     var h = '<div class="page mgame">';
-    h += '<div class="mtop raised"><span class="swatch" style="background:' + pl.color + '"></span><b class="mname">' + esc(pl.name) + '</b>' +
+    h += '<div class="mtop raised"><span class="swatch sm-' + me + '" style="background:' + pl.color + '"></span><b class="mname">' + esc(pl.name) + '</b>' +
       '<span class="mstat" title="Aktion points">' + (st.turn.started && st.cur === me ? pl.ap : '–') + '●</span><span class="mstat" title="Victory points">' + sc.total + '◇</span>' +
       '<span class="mstat small" title="Meeples left">♟' + pl.meeples + '</span>' + meepleChip(ctx) + '<span class="grow"></span>' +
       '<button class="btn' + (ov === 'quick' ? ' on' : '') + '" data-act="ovQuick" title="Quickview overlay">◇●</button><button class="btn' + (ov === 'war' ? ' on' : '') + '" data-act="ovWar" title="War overlay">War</button>' +
@@ -2234,7 +2265,7 @@
   function meepleChip(ctx) {
     var st = ctx.state;
     if (ctx.kind !== 'game' || !myTurn(ctx) || !st.turn || !st.turn.started || st.pending || st.res || st.winner != null || !E.claimOptions(st, st.cur).length) return '';
-    return '<span class="meepchip" data-meeple="1" title="Drag onto an orange-outlined card to claim it"><span class="meep" style="background:' + st.players[st.cur].color + '"></span></span>';
+    return '<span class="meepchip" data-meeple="1" title="Drag onto an orange-outlined card to claim it"><span class="meep sm-' + st.cur + '" style="background:' + st.players[st.cur].color + '"></span></span>';
   }
 
   /* ---------------- touch and drag ---------------- */
@@ -2307,7 +2338,7 @@
       if (drag.blocked && !drag.zone) { toast(drag.blocked); drag.ghost.remove(); return false; }
     } else {
       if (!E.claimOptions(st, st.cur).length) return false;
-      drag.ghost = el('dragghost meepghost', '<span class="meep" style="background:' + st.players[st.cur].color + '"></span>');
+      drag.ghost = el('dragghost meepghost', '<span class="meep sm-' + st.cur + '" style="background:' + st.players[st.cur].color + '"></span>');
     }
     drag.active = true; document.body.classList.add('dragging'); app.sheet = null; render(); moveDrag();
     return true;
@@ -2904,6 +2935,12 @@
       } });
   }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.win > .titlebar .crest')) showTitle(); });
+  // Menu sounds: a page turn for a tab, a wooden click for other plain buttons (game moves have sounds of their own).
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.classList.contains('tab')) SFX.play('page');
+    else if (b.classList.contains('btn') && !/^(claim|startTurn|endTurn|buyClaim|contest|play|ability|burn)/.test(b.getAttribute('data-act') || '')) SFX.play('click');
+  }, true);
   if (!lsGet('cs.notitle')) showTitle();
   maybePatchPopup();   // after an update: what's new
 })();

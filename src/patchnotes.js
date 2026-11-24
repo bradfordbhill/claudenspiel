@@ -1,6 +1,11 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-marks', date: '24 November 2026', title: 'Clear marks', notes: [
+    'A new setting above the board, <b>Clear marks</b>, for anyone who finds the player colours hard to tell apart. Every player gets a little pixel shape (dot, bar, plus, peak, cross, ring) on their meeples, their swatch and their lane in the race bar, and a dash of their own in the Chronicle. Every board card also shows its suit large and faint behind its text.',
+    'With Sound on, the tabs now turn a page and buttons give a soft wooden click.',
+    'Balance: the Warmonger’s trouble with the Pilgrim’s Folio at two players turned out to be mostly chance. On 1,520 games each it reads 0.90 without the folio and 0.85 with it, so no cards change.'
+  ] },
   { v: 'cs-1.0-pre-roads', date: '23 November 2026', title: 'War cuts roads', notes: [
     'A <b>Ruined</b> card now breaks a line, just like an empty space. Ruin the middle of a rival’s road and their <b>Pilgrim’s Way</b>, <b>Cartographer</b> or <b>Hedgerow</b> is cut in two.',
     'Why: with the Pilgrim’s Folio, the long roads were scoring faster than war could take them apart, and the Warmonger fell well behind (a win index of 0.74 against 0.90 without the folio, on the same 300 three-player deals). With broken roads it is back to 0.88.',

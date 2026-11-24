@@ -295,3 +295,13 @@ html[data-motion="off"] .cdoves { display: none; }
   box-shadow: 0 2px 0 #3a1408; animation: roadcut-in .35s steps(4) both; }
 @keyframes roadcut-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .cell.roadcut::after { animation: none; } }
+/* Clear marks (colour-blind help): seat shapes on meeples, swatches and race lanes (pictures built in ui.js), a big faint suit on board cards. */
+html[data-marks="on"] .meep, html[data-marks="on"] .swatch { position: relative; }
+html[data-marks="on"] .meep::after, html[data-marks="on"] .swatch::after { content: ''; position: absolute; inset: 50% auto auto 50%; width: 7px; height: 7px; transform: translate(-50%, -50%); background: center / 7px 7px no-repeat; image-rendering: pixelated; }
+html[data-marks="on"] .meepchip .meep::after, html[data-marks="on"] .meepghost .meep::after { width: 14px; height: 14px; background-size: 14px 14px; }
+html[data-marks="on"] .race .track { height: 9px; }
+html[data-marks="on"] .race .fill { background-repeat: repeat-x; background-size: 7px 7px; background-position: 1px center; image-rendering: pixelated; }
+html[data-marks="on"] .race .fill { background-origin: content-box; }
+.card .wm { position: absolute; inset: 22% 18% 26%; display: grid; place-items: center; opacity: .2; pointer-events: none; }
+.card .wm .suitico { width: 100%; height: 100%; stroke-width: 1.4; }
+.card.lighttext .wm { opacity: .3; }

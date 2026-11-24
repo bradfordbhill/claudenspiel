@@ -15,7 +15,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 1.0-pre The same hint for cards played from hand (Actions, Blessings): played in an imagined game with greedy choices, it reports your ◇, ● a turn and cards drawn, and what it costs the rival it hurts most.
 - ○ Turn replay: step through the last round's moves on the board, like a chess move list.
 - ✅ 1.0-pre (the chart and the story) ○ (the Genius's view) **The Chronicle**, a post-game report: each player's ◇ after every turn as a stepped pixel line, marks where Ruins, Overwhelms, contests and the last round happened, and the turning points in words (lead changes, the biggest turns). Still to come: the Genius's suggested better move at the two biggest moments.
-- ○ Colour-blind mode: suit patterns (the dithered suit textures, stronger) and suit glyphs on every board card.
+- ✅ 1.0-pre (shapes and suit marks) ○ (stronger suit textures) **Colour-blind mode, "Clear marks":** every seat gets a pixel shape (dot, bar, plus, peak, cross, ring) on its meeples, swatches and race lane and its own dash in the Chronicle; every board card shows its suit large and faint behind the text. Still to come: the dithered suit textures made stronger, so suits differ by pattern as well.
 
 ## Feel: ground rules
 - Everything stays pixel art: motion moves in whole pixels, in steps rather than smooth tweens (8–12 frames a second), and effects are made of dithered pixels, never soft glows or blur.
@@ -67,7 +67,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.4 **Deed earned:** a quill scratch and a wax seal.
 - ✅ 0.4 **Victory:** a short brass fanfare in a mode that fits the winner's archetype (bright for the Hedonist, solemn for the Archbishop, martial for the Warmonger). Defeat: a single low string note and the wind.
 - ○ **Ambience (optional, separate slider):** night wind over the prairie, crickets, the river; a distant tavern when a Hedonist leads; rain in the last round.
-- ○ **Menus:** a muted wooden click for buttons and a page turn between tabs, so the interface sounds like a desk, not a computer.
+- ✅ 1.0-pre **Menus:** a muted wooden click for buttons and a page turn between tabs, so the interface sounds like a desk, not a computer.
 
 ## Play
 - ✅ 1.0-pre Undo past a bot's turn in single player shows what the bots did (up to ten log lines) as it takes it back.
