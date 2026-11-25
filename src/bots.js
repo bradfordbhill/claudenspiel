@@ -379,12 +379,36 @@ var KBots = (function () {
       if(!moved){ const n=ap(st,{t:st.turn&&st.turn.started?'endTurn':'startTurn'}); if(!n) return null; st=n; } }
     return st; }
 
+  // Counsel: the Genius's advice to seat p, whose turn it is (started, nothing pending). It thinks exactly as it does
+  // for itself, from p's fair view (hidden cards guessed), and returns what to do now and why:
+  // { now: the actions to take before the next draw, line: the whole planned turn, rest: whether it goes on after a draw,
+  //   value: its expected race margin (◇ against the best rival, by its rollouts), alt: { acts, value } its next-best idea,
+  //   gain: { vp, inc, cards, meeples, rival: { i, vp, inc } } this turn in its imagined game, world: that game }.
+  function advise(st0,p){
+    if(!st0||st0.winner!=null||st0.cur!==p||!(st0.turn&&st0.turn.started)||st0.pending||st0.res) return null;
+    let info=null; const old=GENIUS.debug; GENIUS.debug=x=>{info=x;};
+    let now; try{ now=geniusDecide(st0,p); } finally{ GENIUS.debug=old; }
+    if(!info) return { now, line: now, rest: false, value: null, alt: null, gain: null, world: null };
+    const w=determinize(st0,p,rng(seedOf(st0,p))), line=info.lines[info.best]||now;
+    // Its next-best idea: the best line that is a different plan, not the same moves in another order (which ends level).
+    const head=acts=>JSON.stringify((acts||[]).filter(a=>a.t!=='answer'&&a.t!=='endTurn').map(a=>JSON.stringify(a)).sort()), h0=head(line);
+    let alt=null; info.values.forEach((v,j)=>{ if(j!==info.best&&head(info.lines[j])!==h0&&(!alt||v>alt.value)) alt={acts:info.lines[j],value:v}; });
+    // What the line does this turn, in the imagined game: up to and through the end of the turn.
+    const s0=E.scores(w), inc0=E.income(w,p), hand0=w.players[p].hand.length, meep0=w.players[p].meeples; let s=w;
+    for(const a of line){ const n=ap(s,a); if(!n) break; s=n; if(a.t==='endTurn') break; }
+    let g=0; while(s.pending&&s.pending.player===p&&g++<8){ const n=resolve(s,p,'gsim'); if(!n||n===s) break; s=n; }
+    const sc=E.scores(s); let rival=null;
+    s.players.forEach((q,i)=>{ if(i===p||q.out) return; const dv=sc[i].total-s0[i].total, di=E.income(s,i)-E.income(w,i); if((dv<0||di<0)&&(!rival||dv+di/2<rival.vp+rival.inc/2)) rival={i,vp:dv,inc:di}; });
+    const gain={ vp: sc[p].total-s0[p].total, inc: E.income(s,p)-inc0, cards: s.players[p].hand.length-hand0, meeples: s.players[p].meeples-meep0, rival };
+    const cut=line.filter(a=>a.t!=='endTurn').length;
+    return { now, line, rest: now.filter(a=>a.t!=='endTurn').length<cut, value: info.values[info.best], alt, gain, worlds: info.worlds, world: w }; }
+
   function plan(st0,style){
     if(style==='genius') return geniusDecide(st0,st0.cur);
     const st=Object.assign({},st0,{_botLog:[]}), end=turn(st,newStats(),st0.players.map(()=>style));
     return end&&end._botLog.length ? end._botLog : [{t:st0.turn&&st0.turn.started?'endTurn':'startTurn'}]; }
 
   return { STYLES: ['greedy', 'tactician', 'raider', 'warlord', 'genius'], GENIUS: GENIUS, RACE: RACE, plan: plan, choose: choose, resolve: resolve, turn: turn, newStats: newStats, evalState: evalState,
-    profile: profile, goal: goal, keepValue: keepValue, determinize: determinize, gEval: gEval };
+    profile: profile, goal: goal, keepValue: keepValue, determinize: determinize, gEval: gEval, advise: advise };
 })();
 if (typeof module !== 'undefined') module.exports = KBots;

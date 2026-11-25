@@ -1,6 +1,12 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-counsel', date: '25 November 2026', title: 'Ask the Genius', notes: [
+    'Playing against bots, you can now <b>ask the Genius</b> (the button with the candle under <b>End turn</b>, or the K key). The strongest bot plans your turn exactly as it would plan its own, from what you can see, never your rivals’ hands or the deck.',
+    'Its plan appears above the board as numbered steps, with wax-red numbers on the spaces it points at. The steps tick off as you follow them; do something else and the counsel is set aside. When a draw would change its mind, it stops there and offers to think again.',
+    'It also says <b>why</b>: what the turn gains you (◇, ● a turn, what it costs your rivals), where it reckons you’ll stand against the strongest rival once they’ve replied, and how much worse its next-best idea came out. When its ideas are close, it says so.',
+    'Asking is never hidden: the Chronicle counts it. A new deed, <b>Own Counsel</b>, is for beating a Genius without asking it once.'
+  ] },
   { v: 'cs-1.0-pre-marks', date: '24 November 2026', title: 'Clear marks', notes: [
     'A new setting above the board, <b>Clear marks</b>, for anyone who finds the player colours hard to tell apart. Every player gets a little pixel shape (dot, bar, plus, peak, cross, ring) on their meeples, their swatch and their lane in the race bar, and a dash of their own in the Chronicle. Every board card also shows its suit large and faint behind its text.',
     'With Sound on, the tabs now turn a page and buttons give a soft wooden click.',

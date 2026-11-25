@@ -289,11 +289,12 @@
     var r = E.apply(ctx.state, a);
     if (r.error) { ctx.err = r.error; render(); return false; }
     ctx.err = null; ctx.hist.push(ctx.state); if (ctx.hist.length > 80) ctx.hist.shift();
+    var prevSt = ctx.state;
     var ended = ctx.kind === 'game' && ctx.state.winner == null && r.winner != null;
     ctx.state = r;
     if (ended) { campaignEnd(r); earnDeeds(r); setTimeout(function () { if (app.game === ctx && app.page === 'game' && !app.modal && ctx.state.winner != null) chronicleModal(ctx); }, prefs.motion === 'off' ? 300 : prefs.motion === 'calm' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) ? 1500 : 4800); }
     if (ctx.kind === 'sandbox' && ctx.ui.autoCheck && /^sb(Place|Suit|Move|Remove|Bury|Unbury)$/.test(a.t)) { var r2 = E.apply(ctx.state, { t: 'sbCheck', quiet: true }); if (!r2.error) ctx.state = r2; }
-    uiAfter(ctx, a);
+    uiAfter(ctx, a); counselAfter(ctx, prevSt, a);
     lsSet(ctx.kind === 'game' ? 'cs.game' : 'cs.sandbox', ctx.state);
     var fx = FX.diff(ctx, ctx.hist[ctx.hist.length - 1], ctx.state, a);
     render(); FX.run(fx); maybeAutoEnd(ctx); return true;
@@ -346,8 +347,9 @@
     maybeAutoEnd.t = setTimeout(function () { if (ctx.ui.autoEnding && ctx.state.log.length === mark && stuck(ctx.state)) { ctx.ui.autoEnding = false; dispatch(ctx, { t: 'endTurn' }); } }, 1600);
   }
   // Go back to the previous state in the history.
-  function undo(ctx) { if (ctx.online || !ctx.hist.length) return; var was = ctx.state; ctx.state = ctx.hist.pop();
-    if (hasBots(ctx.state)) { var n0 = ctx.hist.length; while (ctx.hist.length && botToAct(ctx.state) != null) ctx.state = ctx.hist.pop(); if (ctx.hist.length < n0) undoneBots(was, ctx.state); clearTimeout(ctx.botTimer); ctx.botTimer = null; ctx.botQueue = null; } ctx.err = null; ctx.ui.hand = null; ctx.ui.picked = []; lsSet(ctx.kind === 'game' ? 'cs.game' : 'cs.sandbox', ctx.state); render(); }
+  function undo(ctx) { if (ctx.online || !ctx.hist.length) return; var was = ctx.state; ctx.state = ctx.hist.pop(); ctx.counsel = null;
+    if (hasBots(ctx.state)) { var n0 = ctx.hist.length; while (ctx.hist.length && botToAct(ctx.state) != null) ctx.state = ctx.hist.pop(); if (ctx.hist.length < n0) undoneBots(was, ctx.state); clearTimeout(ctx.botTimer); ctx.botTimer = null; ctx.botQueue = null; } if (was.counsel) ctx.state.counsel = was.counsel;   // taking a move back never takes back having asked the Genius
+    ctx.err = null; ctx.ui.hand = null; ctx.ui.picked = []; lsSet(ctx.kind === 'game' ? 'cs.game' : 'cs.sandbox', ctx.state); render(); }
   // Undo went back past bots' turns: say what they had done before it is taken back, so nothing vanishes unseen.
   function undoneBots(from, to) {
     var lines = (from.log || []).slice((to.log || []).length).filter(function (l) { return from.players.some(function (q) { return q.bot && l.indexOf(q.name + ' ') === 0; }); });
@@ -921,7 +923,8 @@
     if (ctx.kind === 'game' && myTurn(ctx) && ui.hand && st.turn && st.turn.started && !st.pending && !st.res && E.needsPlacement(E.rawDef(st, ui.hand))) legal = E.legalCells(st, ui.hand);
     if (pd && pd.kind === 'cell' && canAnswer(ctx, pd)) pd.options.forEach(function (k) { optSet[k] = 1; });
     if (Object.keys(legal).length) { var hd = E.rawDef(st, ui.hand); if (hd.type === 'Structure' || hd.type === 'Foundation') placing = { suit: hd.suit, found: hd.type === 'Foundation' }; }
-    Object.keys(legal).concat(Object.keys(optSet)).forEach(function (k) { var p = E.XY(k); b.minX = Math.min(b.minX, p[0]); b.maxX = Math.max(b.maxX, p[0]); b.minY = Math.min(b.minY, p[1]); b.maxY = Math.max(b.maxY, p[1]); });
+    var cmarks = ctx.kind === 'game' ? counselMarks(ctx) : {};
+    Object.keys(legal).concat(Object.keys(optSet), Object.keys(cmarks)).forEach(function (k) { var p = E.XY(k); b.minX = Math.min(b.minX, p[0]); b.maxX = Math.max(b.maxX, p[0]); b.minY = Math.min(b.minY, p[1]); b.maxY = Math.max(b.maxY, p[1]); });
     var cols = b.maxX - b.minX + 1, rows = b.maxY - b.minY + 1, W = cols * (CW + GAP) + GAP, Hh = rows * (CH + GAP) + GAP;
     var see = {}, counted = {}, seenBy = {};
     if (ui.sel && E.top(st, ui.sel) && ui.showSeen) { var sg = E.sight(st, ui.sel); sg.cells.forEach(function (k) { see[k] = 1; }); sg.counted.forEach(function (k) { counted[k] = 1; }); }
@@ -946,13 +949,15 @@
       if (ui.sel === k) cls += ' focus';
       if (u && ctx.kind === 'game' && myTurn(ctx) && E.abilityReady(st, k)) cls += ' ready';
       var ov = u ? overlayFor(ctx, k) : null; if (ov) cls += ov.on ? ' ovl-on ovl-full' : ' ovl-dim';
-      if (!u && legal[k] == null && !optSet[k] && !see[k] && !(ctx.kind === 'sandbox' || ui.mode === 'move')) { if (!ui.coords) continue; }
+      if (cmarks[k]) cls += ' counselled';
+      if (!u && legal[k] == null && !optSet[k] && !see[k] && !cmarks[k] && !(ctx.kind === 'sandbox' || ui.mode === 'move')) { if (!ui.coords) continue; }
       h += '<div class="' + cls + '" style="left:' + lx + 'px;top:' + ly + 'px">';
       if (u) h += boardFace(st, k, ctx);
       if (ov && ov.on) h += '<div class="ovl full ' + ov.cls + '">' + ov.html + '</div>';
       if (legal[k] != null && placing) h += placeChevrons(st, k, placing);
       if (legal[k] != null) h += '<div class="cost">' + (legal[k] > E.funds(st.players[st.cur]) ? '<span>' + legal[k] + '●<br>Not enough AP</span>' : legal[k] + '●') + '</div>';
       if (ui.coords) h += '<span class="coord">' + k + '</span>';
+      if (cmarks[k]) h += '<span class="cmark" aria-hidden="true">' + cmarks[k] + '</span>';
       h += '<button class="cellbtn" data-cell="' + k + '" aria-label="' + (u ? esc(E.def(st, u).name) + ' at ' + k : 'Empty space ' + k) + '"></button></div>';
     }
     if (ctx.ui.showOW) h += pressMarks(st, b);
@@ -1381,6 +1386,7 @@
       (st.turn.started ? (function () { var co = E.claimOptions(st, st.cur).length; return '<div class="claimstate' + (co ? ' avail' : '') + '">' + (st.turn.claimed ? 'Claim used' : co ? meepleChip(ctx) + ' Claim available' : 'Claim: nothing to claim yet') + '</div>' + (st.opts.buyClaim && st.turn.claimed && !st.turn.boughtClaim && myTurn(ctx) && (st.players[st.cur].ap || 0) >= E.CLAIM_PRICE && st.players[st.cur].meeples > 0 ? '<button class="btn sm" data-act="buyClaim" title="Claudenspiel: once a turn, pay ' + E.CLAIM_PRICE + '● to claim once more">Buy a claim (' + E.CLAIM_PRICE + '●)</button>' : '') + (myTurn(ctx) && !st.pending && !st.res && E.contestOptions(st, st.cur).length ? '<button class="btn sm" data-act="contest" title="Contest: pay ' + E.CONTEST_PRICE + '● to take a rival’s card next to the one you just placed">Contest (' + E.CONTEST_PRICE + '●)</button>' : ''); })() : '') + '</div></div>' +
       '<div class="row"><button class="btn def big" data-act="endTurn"' + (myTurn(ctx) && st.turn.started && !st.pending && !st.res && st.winner == null ? '' : ' disabled') + '>End turn</button>' +
       (ctx.online ? '' : '<button class="btn big" data-act="undo"' + (ctx.hist.length ? '' : ' disabled') + ' title="Undo the last action">Undo</button>') + '</div>' +
+      (fixedSeat(ctx) != null && hasBots(st) && !ctx.online ? '<button class="btn askg" data-act="askGenius"' + (canCounsel(ctx) && !(ctx.counsel && ctx.counsel.thinking) ? '' : ' disabled') + ' title="The Genius plans your turn as it would its own, from what you can see"><span class="candle" aria-hidden="true"><i></i></span>Ask the Genius</button>' : '') +
       (ctx.online ? '' : '<details class="small" data-keep="ref"' + (app.open.ref ? ' open' : '') + '><summary>Referee</summary><div class="col" style="margin-top:4px"><div class="row">● <button class="btn sm" data-act="apAdj" data-d="-1">−</button><button class="btn sm" data-act="apAdj" data-d="1">+</button> ◇ tokens <button class="btn sm" data-act="tokAdj" data-d="-1">−</button><button class="btn sm" data-act="tokAdj" data-d="1">+</button></div>' +
       '<select data-sel="giveId" style="max-width:100%">' + cardOptions(st, ui.giveId) + '</select><button class="btn sm" data-act="give">Give to ' + esc(pl.name) + '’s hand</button></div></details>') + '</div>';
     h += '<div class="raised" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:3px"><div class="panelhead" style="margin:0 0 3px">Log</div><div class="log sunken">' + logPanel(st) + '</div></div></div>';
@@ -1409,6 +1415,7 @@
     if (ui.swap) return '<div class="prompt">Choose 2 cards to discard, then draw 1. <button class="btn sm def" data-act="doSwap"' + (ui.swap.length === 2 ? '' : ' disabled') + '>Discard 2, draw 1</button><button class="btn sm" data-act="cancelSwap">Cancel</button></div>';
     if (ui.hand && !E.needsPlacement(E.rawDef(st, ui.hand))) { var ic = +E.rawDef(st, ui.hand).cost || 0, iok = ic <= E.funds(st.players[st.cur]), iwhy = E.playBlock(st, st.cur, ui.hand); return '<div class="prompt">' + esc(E.rawDef(st, ui.hand).name) + ' is played straight from your hand. <button class="btn sm def" data-act="cast"' + (iok && !iwhy ? '' : ' disabled') + '>' + (iwhy ? esc(iwhy) : iok ? 'Play it (' + ic + '●)' : 'Not enough AP (' + ic + '●)') + '</button>' + burnBtn(ctx) + ' <button class="btn sm" data-act="deselect">Cancel</button></div>'; }
     if (ui.hand) { var LC = E.legalCells(st, ui.hand), canPay = Object.keys(LC).some(function (x) { return LC[x] <= E.funds(st.players[st.cur]); }); return '<div class="prompt">' + (canPay ? verb() + ' a green space to play ' + esc(E.rawDef(st, ui.hand).name) + '.' : 'Not enough AP to play ' + esc(E.rawDef(st, ui.hand).name) + ' anywhere (you have ' + st.players[st.cur].ap + '●).') + burnBtn(ctx) + ' <button class="btn sm" data-act="deselect">Cancel</button></div>'; }
+    var cb = counselBar(ctx); if (cb) return cb;
     var co = st.turn.started && !pd && !st.res ? E.claimOptions(st, st.cur) : [];
     if (co.length) return '<div class="prompt">Claim available: ' + (verb() === 'Tap' ? 'drag your meeple onto an orange-outlined card, or tap the card' : 'your cursor is a meeple. Click an orange-outlined card') + ' to claim it (' + st.players[st.cur].meeples + ' meeples left), or keep playing.</div>';
     return hintBar(ctx);
@@ -1546,6 +1553,8 @@
     h += '<div class="chronkey small">' + st.players.map(function (p, i) { return '<span><span class="swatch sm-' + i + '" style="background:' + p.color + '"></span>' + esc(p.name) + ' <span class="muted">(' + esc(p.arch) + ')</span></span>'; }).join('') + '</div>';
     if (s.pts.length) h += '<h4 class="chronsub">Turning points</h4><ol class="chronpts">' + s.pts.map(function (x) { return '<li class="k-' + x.kind + '"><span class="ico" aria-hidden="true">' + CHRON_ICON[x.kind] + '</span><span class="rd">Round ' + c[x.j].r + '</span><span>' + esc(x.text) + '</span></li>'; }).join('') + '</ol>';
     else h += '<p class="small muted">A quiet game: no Ruins, contests or lead changes, just building.</p>';
+    var asked = Object.keys(st.counsel || {}).filter(function (i) { return st.counsel[i] > 0 && st.players[i]; });
+    if (asked.length) h += '<p class="small chroncounsel"><span class="candle" aria-hidden="true"><i></i></span>' + asked.map(function (i) { return esc(st.players[i].name) + ' asked the Genius’s counsel ' + (st.counsel[i] === 1 ? 'once' : st.counsel[i] === 2 ? 'twice' : st.counsel[i] + ' times'); }).join('; ') + '.</p>';
     h += '<details class="small"><summary>Scores by round</summary><table class="list chrontab"><tr><th>Round</th>' + st.players.map(function (p) { return '<th>' + esc(p.name) + '</th>'; }).join('') + '</tr>';
     var byR = {}; c.forEach(function (e) { if (e.r > 0) byR[e.r] = e.t; }); Object.keys(byR).forEach(function (r) { h += '<tr><td>' + r + '</td>' + byR[r].map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; });
     return h + '</table></details></div>';
@@ -1583,7 +1592,13 @@
     return '';
   }
   // Dialog for an engine prompt: choose cards, a suit, a player, yes/no, or resolve by hand. Asks to pass the device first if someone else must answer.
+  // A prompt in a dialog: when the Genius's counsel has an answer ready, it says which.
   function pendingModal(ctx) {
+    var h = pendingModal0(ctx), c = counselNow(ctx), a = c && c.steps && c.steps[0];
+    if (!h || !a || a.t !== 'answer') return h;
+    return h.replace('<div class="btns">', '<p class="small counselnote"><span class="candle" aria-hidden="true"><i></i></span>The Genius would answer: ' + counselStep(ctx.state, a).replace(/^… /, '') + '</p><div class="btns">');
+  }
+  function pendingModal0(ctx) {
     var st = ctx.state, ui = ctx.ui, pd = st.pending, who = st.players[pd.player];
     if (!canAnswer(ctx, pd)) return '';
     if (fixedSeat(ctx) == null && pd.kind !== 'cell' && pd.player !== st.cur && ui.passFor !== pd.player + ':' + st.log.length)
@@ -1900,6 +1915,7 @@
         '<h3>Keyboard shortcuts</h3>' + keysTable() },
       { id: 'comforts', title: 'Hints and settings', html: '<ul>' +
         '<li><b>Hints</b> suggest a next step on your turn.</li>' +
+        '<li>Against bots, <b>Ask the Genius</b> (K) has the strongest bot plan your turn as it would its own, from what you can see. Its steps are numbered on the board and tick off as you follow them, with its reasons: what the turn gains, and how far behind its next-best idea comes. Asking is never hidden: the Chronicle counts it, and the deed <b>Own Counsel</b> is for beating a Genius without asking.</li>' +
         '<li>Ending a turn while you could still play or claim a card <b>asks once</b>.</li>' +
         '<li>When your turn comes round, the dialog shows <b>what everyone else did</b>.</li>' +
         '<li><b>⇅ Sort</b> orders your hand as drawn, by suit or by cost.</li>' +
@@ -2239,6 +2255,7 @@
       '<span class="mstat small" title="Meeples left">♟' + pl.meeples + '</span>' + meepleChip(ctx) + '<span class="grow"></span>' +
       '<button class="btn' + (ov === 'quick' ? ' on' : '') + '" data-act="ovQuick" title="Quickview overlay">◇●</button><button class="btn' + (ov === 'war' ? ' on' : '') + '" data-act="ovWar" title="War overlay">War</button>' +
       (ctx.online ? '' : '<button class="btn" data-act="undo"' + (ctx.hist.length ? '' : ' disabled') + '>Undo</button>') +
+      (fixedSeat(ctx) != null && hasBots(st) && !ctx.online ? '<button class="btn askg" data-act="askGenius" aria-label="Ask the Genius"' + (canCounsel(ctx) ? '' : ' disabled') + '><span class="candle" aria-hidden="true"><i></i></span></button>' : '') +
       '<button class="btn def" data-act="endTurn"' + (canEnd ? '' : ' disabled') + '>End turn</button></div>';
     h += (ctx.online ? onlineBar(ctx) : '') + campaignRibbon(ctx) + promptBar(ctx);
     h += '<div class="boardwrap sunken">' + boardHTML(ctx).html + '</div>';
@@ -2480,8 +2497,8 @@
     ['C', 'Claim (if only one card can be claimed; otherwise the options light up)'], ['A', 'Use the selected card’s ability'], ['D', 'Discard 2, draw 1'], ['U or Ctrl+Z', 'Undo'],
     ['Y / N', 'Answer yes / no'], ['S', 'Skip an optional choice'], ['Esc', 'Cancel: deselect, close a dialog, leave a mode'],
     ['Q (hold)', 'Quickview overlay while held'], ['W (hold)', 'War overlay while held'], ['O', 'Cycle the overlay: None, Quickview, War'],
-    ['F', 'Fit the board'], ['+ / −', 'Zoom'], ['G', 'Grid'], ['?', 'This list']];
-  var KEYHINT = { endTurn: 'E', undo: 'U or Ctrl+Z', startSwap: 'D', skip: 'S', answerYes: 'Y', answerNo: 'N', startTurn: 'Space', claim: 'C', ability: 'A', fit: 'F', zoomin: '+', zoomout: '−', keys: '?' };
+    ['F', 'Fit the board'], ['+ / −', 'Zoom'], ['G', 'Grid'], ['K', 'Ask the Genius for counsel (against bots)'], ['?', 'This list']];
+  var KEYHINT = { endTurn: 'E', undo: 'U or Ctrl+Z', startSwap: 'D', skip: 'S', answerYes: 'Y', answerNo: 'N', startTurn: 'Space', claim: 'C', ability: 'A', fit: 'F', zoomin: '+', zoomout: '−', keys: '?', askGenius: 'K' };
   function keysTable() { return '<table class="list small keys">' + KEYS.map(function (r) { return '<tr><td><span class="kbd">' + esc(r[0]) + '</span></td><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table><p class="small muted">Keys do nothing while you type in a text box. Turn keys only work when it’s your turn.</p>'; }
   function keysModal() { app.modal = function () { return modal('Keyboard shortcuts', keysTable(), '<button class="btn def" data-act="closeModal">Close</button>'); }; render(); }
   // Tooltips name each button's key (run after every render).
@@ -2517,6 +2534,7 @@
     if (/^[1-9]$/.test(k)) { var hc = document.querySelectorAll('.bottom [data-hand]')[+k - 1]; if (hc) { hc.click(); return true; } return false; }
     switch (lower) {
       case 'e': return press('[data-act="endTurn"]');
+      case 'k': return press('[data-act="askGenius"]');
       case 'u': return press('[data-act="undo"]');
       case 'd': return press('[data-act="startSwap"]');
       case 's': return press('[data-act="skip"]');
@@ -2631,6 +2649,8 @@
       case 'hideHintsAll': setPref('hints', false); setPref('confirmEnd', false); render(); toast('Hints and the end-turn check are off.'); return;
       case 'handSort': { var so = ['drawn', 'suit', 'cost']; setPref('handSort', so[(so.indexOf(prefs.handSort || 'drawn') + 1) % so.length]); render(); return; }
       case 'undo': undo(ctx); return;
+      case 'askGenius': askGenius(ctx); return;
+      case 'dropCounsel': ctx.counsel = null; render(); return;
       case 'claim': dispatch(ctx, { t: 'claim', k: k }); return;
       case 'ability': dispatch(ctx, { t: 'ability', k: k }); return;
       case 'skip': dispatch(ctx, { t: 'answer', v: null }); return;
@@ -2868,6 +2888,114 @@
     if (hurt) bits.push(esc(st.players[hurt.i].name) + ' ' + [hurt.d ? '<b>' + hurt.d + '◇</b>' : '', hurt.di ? hurt.di + '● a turn' : ''].filter(Boolean).join(', '));
     return bits.length ? 'Played now: ' + bits.join(', ') + ' (' + cost + '●)' : 'Played now: no change to anyone’s ◇ or ● (' + cost + '●).';
   }
+  /* ---------------- the Genius's counsel ---------------- */
+  // "Ask the Genius" (Claudenspiel): on your turn against bots, the Genius thinks for you exactly as it does for itself
+  // (KBots.advise: your fair view, hidden cards guessed) and shows its plan as numbered steps on the board, with its
+  // reasons. The steps advance as you follow them; anything else sets the counsel aside. Each ask is tallied in the
+  // game state (st.counsel), for the Chronicle and the deed Own Counsel.
+  function canCounsel(ctx) {
+    var st = ctx.state; if (ctx.online || ctx.kind !== 'game' || typeof KBots === 'undefined' || !KBots.advise) return false;
+    return fixedSeat(ctx) != null && hasBots(st) && myTurn(ctx) && !!st.turn && st.turn.started && !st.pending && !st.res && !st.reveal && st.winner == null;
+  }
+  function counselNow(ctx) { var c = ctx.counsel; return c && c.state === ctx.state ? c : null; }
+  function askGenius(ctx) {
+    if (!canCounsel(ctx)) return;
+    var st = ctx.state, p = st.cur; ctx.counsel = { state: st, thinking: true }; ctx.ui.hand = null; ctx.ui.mode = null; render();
+    setTimeout(function () {
+      if (ctx.state !== st) { ctx.counsel = null; render(); return; }
+      var adv = null; try { adv = KBots.advise(st, p); } catch (e) { adv = null; }
+      if (!adv) { ctx.counsel = null; toast('The Genius has nothing to add here.'); render(); return; }
+      st.counsel = Object.assign({}, st.counsel || {}); st.counsel[p] = (st.counsel[p] || 0) + 1; ctx.counselTally = st.counsel;
+      lsSet('cs.game', st);
+      ctx.counsel = { state: st, adv: adv, steps: adv.now.slice(), first: true }; SFX.play('ability', 'Tome'); render();
+    }, 40);
+  }
+  // The action keys that make two actions the same move.
+  function actKey(a) { return JSON.stringify([a.t, a.uid || null, a.k || null, a.v === undefined ? null : a.v, a.uids || null, a.from || null]); }
+  // After an action: if it was the counsel's next step, move on to the step after; otherwise the counsel is set aside.
+  function counselAfter(ctx, prev, a) {
+    var c = ctx.counsel; if (!c || c.thinking || c.state !== prev) { if (c && !c.thinking) ctx.counsel = null; return; }
+    if (c.steps.length && actKey(c.steps[0]) === actKey(a)) { c.steps.shift(); c.state = ctx.state; c.first = false;
+      if (a.t === 'endTurn' || (!c.steps.length && !c.adv.rest)) ctx.counsel = null; else if (!c.steps.length) c.done = true; }
+    else ctx.counsel = null;
+  }
+  // One step in words, on state st (before the step).
+  function counselStep(st, a) {
+    var nm = function (u) { return '<b>' + esc(E.rawDef(st, u).name) + '</b>'; };
+    var at = function (k) { var u = k && E.top(st, k); return u ? nm(u) + ' <span class="muted">(' + esc(k) + ')</span>' : 'the empty space <span class="muted">' + esc(k) + '</span>'; };
+    switch (a.t) {
+      case 'play': var L = E.legalCells(st, a.uid); return 'Play ' + nm(a.uid) + ' at ' + esc(a.k) + (L[a.k] != null ? ' (' + L[a.k] + '●)' : '');
+      case 'cast': return 'Play ' + nm(a.uid) + ' from your hand' + (E.isFree(st, a.uid) ? '' : ' (' + (+E.rawDef(st, a.uid).cost || 0) + '●)');
+      case 'claim': return 'Claim ' + at(a.k);
+      case 'ability': return 'Use the ability of ' + at(a.k);
+      case 'buyClaim': return 'Buy a second claim (' + E.CLAIM_PRICE + '●)';
+      case 'contest': return 'Contest ' + at(a.k) + ' (' + E.CONTEST_PRICE + '●)';
+      case 'burn': return 'Burn ' + nm(a.uid) + (a.k ? ', aimed at ' + at(a.k) : '');
+      case 'swap': return 'Discard ' + nm(a.uids[0]) + ' and ' + nm(a.uids[1]) + ', and draw 1';
+      case 'draw': return a.from === 'deck' ? 'Draw from the deck' : 'Take ' + nm(a.from) + ' from the market';
+      case 'endTurn': return 'End your turn';
+      case 'answer': var pd = st.pending, v = a.v;
+        if (!pd) return 'Answer the prompt';
+        if (pd.kind === 'cell') return '… choosing ' + (v ? at(v) : 'none');
+        if (pd.kind === 'suit') return '… choosing ' + esc(v);
+        if (pd.kind === 'player') return '… choosing ' + esc((st.players[v] || {}).name || v);
+        if (pd.kind === 'confirm') return '… answering ' + (v ? 'yes' : 'no');
+        if (Array.isArray(v)) return '… choosing ' + v.map(nm).join(', ');
+        return '… answering';
+    }
+    return esc(a.t);
+  }
+  // The counsel's steps from here, each with the board space it points at (for the numbered marks).
+  function counselPlan(ctx) {
+    var c = counselNow(ctx); if (!c || !c.adv) return null;
+    var s = ctx.state, out = [], n = 0;
+    c.steps.forEach(function (a) { if (!s) return; var k = a.k || (a.t === 'answer' && typeof a.v === 'string' && s.pending && s.pending.kind === 'cell' ? a.v : null);
+      if (a.t !== 'answer') n++; out.push({ a: a, n: n, k: k, sub: a.t === 'answer', html: counselStep(s, a) });
+      var r = E.apply(s, a); s = r.error ? null : r; });
+    return out;
+  }
+  function counselMarks(ctx) { var plan = counselPlan(ctx), m = {}; (plan || []).forEach(function (x) { if (x.k && !m[x.k]) m[x.k] = x.n; }); return m; }
+  function signed(n) { return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(Math.round(n)); }
+  // Why: what the plan does this turn (in the Genius's imagined game) and how it compares with its next-best idea.
+  function counselWhy(ctx, adv) {
+    var st = ctx.state, g = adv.gain, bits = [];
+    if (g) {
+      if (g.vp) bits.push('<b>' + signed(g.vp) + '◇</b>');
+      if (g.inc) bits.push(signed(g.inc) + '● a turn');
+      if (g.meeples < 0) bits.push(-g.meeples + ' meeple' + (g.meeples < -1 ? 's' : '') + ' down');
+      if (g.rival && (g.rival.vp || g.rival.inc)) bits.push(esc(st.players[g.rival.i].name) + ' ' + [g.rival.vp ? '<b>' + signed(g.rival.vp) + '◇</b>' : '', g.rival.inc ? signed(g.rival.inc) + '● a turn' : ''].filter(Boolean).join(', '));
+    }
+    var h = bits.length ? 'This turn: ' + bits.join(' · ') + '. ' : '';
+    var v = adv.value;
+    if (v != null) {
+      if (v >= 999) h += 'It sees you <b>winning</b> in every game it imagined.';
+      else if (v <= -999) h += 'It sees the game slipping away whatever you do; this loses least.';
+      else h += 'After the rivals reply, it reckons you ' + (Math.abs(v) < 0.5 ? '<b>level</b> with' : '<b>' + Math.abs(v).toFixed(0) + ' ' + (v > 0 ? 'ahead of' : 'behind') + '</b>') + ' the strongest rival <span class="muted">(◇, plus ● a turn and your archetype’s goal)</span>.';
+      if (adv.alt && adv.alt.value < 999 && v - adv.alt.value >= 0.5) {
+        var first = (adv.alt.acts || []).filter(function (a) { return a.t !== 'answer'; })[0];
+        h += ' Its next-best idea' + (first && first.t !== 'endTurn' ? ' (' + counselStep(adv.world || st, first).replace(/<span class="muted">.*?<\/span>/g, '').trim() + ')' : ' (ending the turn now)') + ' comes out <b>' + (v - adv.alt.value).toFixed(0) + '</b> worse.';
+      } else if (adv.alt) {
+        var cards = function (acts) { return (acts || []).filter(function (a) { return a.uid; }).map(function (a) { return a.uid; }).sort().join(); };
+        var altFirst = (adv.alt.acts || []).filter(function (a) { return a.t !== 'answer' && a.t !== 'endTurn'; })[0];
+        var altText = altFirst ? counselStep(adv.world || st, altFirst).replace(/<span class="muted">.*?<\/span>/g, '').trim() : 'ending the turn now';
+        h += cards(adv.alt.acts) === cards(adv.line) ? ' The same cards played elsewhere (' + altText + ') do about as well: here the cards matter more than the spot.' : ' A different plan (' + altText + ') comes out about as well, so this one is close: trust your own reading too.';
+      }
+    }
+    return h;
+  }
+  function counselBar(ctx) {
+    var c = counselNow(ctx); if (!c) return '';
+    var close = '<button class="linkbtn small" data-act="dropCounsel">Set aside</button>';
+    if (c.thinking) return '<div class="prompt counsel"><span class="candle" aria-hidden="true"><i></i></span> <i>The Genius is thinking about your turn…</i></div>';
+    if (c.done) return '<div class="prompt counsel"><span class="candle" aria-hidden="true"><i></i></span> <span>That was as far as the Genius could see before the draw. <button class="btn sm def" data-act="askGenius">Ask again</button></span>' + close + '</div>';
+    var plan = counselPlan(ctx) || [], h = '<div class="prompt counsel col"><div class="row"><span class="candle" aria-hidden="true"><i></i></span><b>The Genius would…</b><span class="grow"></span>' + close + '</div><ol class="csteps">';
+    plan.forEach(function (x, i) { h += '<li class="' + (i === 0 ? 'next' : '') + (x.sub ? ' sub' : '') + '">' + (x.sub ? '' : '<span class="cnum">' + x.n + '</span>') + x.html + '</li>'; });
+    if (c.adv.rest) h += '<li class="sub muted">… then it would look again once it has seen the draw.</li>';
+    h += '</ol>';
+    if (c.first) h += '<div class="small cwhy">' + counselWhy(ctx, c.adv) + '</div>';
+    return h + '</div>';
+  }
+
   /* ---------------- hover magnifier ---------------- */
   var hov = document.createElement('div'); hov.className = 'hovercard'; hov.setAttribute('aria-hidden', 'true'); document.body.appendChild(hov);
   var hovKey = null;

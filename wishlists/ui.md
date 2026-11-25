@@ -10,6 +10,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 
 ## Reading the game
 - ✅ 0.2 A score race bar above the board: every player's ◇ on one track to the target, and the last round announced.
+- ✅ 1.0-pre **Ask the Genius:** against bots, the Genius plans your turn from your view; numbered wax tags on the board, the steps tick off as you follow them, and its reasons in plain words. The Chronicle counts each ask.
 - ○ Add each player's likely pace (from the Genius's race model) to the race bar as a ghost marker.
 - ✅ 0.5 "Why is this good?" on hover in the hand: what the card would gain if played (and claimed) now, at its best space, worked out without peeking.
 - ✅ 1.0-pre The same hint for cards played from hand (Actions, Blessings): played in an imagined game with greedy choices, it reports your ◇, ● a turn and cards drawn, and what it costs the rival it hurts most.

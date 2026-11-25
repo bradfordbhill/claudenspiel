@@ -2,6 +2,28 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 25 November 2026 · 1.0-pre, ask the Genius
+
+**Why.** The Genius is the best player in the house: 73% against a tactician, strictly fair (it decides from its own seat's view, with everything hidden guessed). Until today it only ever played *against* you. The moonshot list has wanted it as a teacher since 0.1, and every piece it needs already existed: the fair imagined worlds, the candidate lines, the rollouts that rank them. A card game teaches best by showing a strong move *and the reason for it* at the moment you're stuck, and Dominion and Magic players learn exactly that way, by watching a better player think aloud. So: counsel.
+
+**What it does.** Against bots, **Ask the Genius** (the candle button under End turn, or K) runs `KBots.advise`: the Genius's own decision for your seat, with the same budget and the same fairness. It returns
+- the steps to take *now*, up to the first thing you'd learn (a draw), shown as numbered steps above the board and as wax-red numbers on the spaces they point at. Follow a step and it ticks off; do anything else and the counsel is set aside. If the plan reaches a draw, it stops and offers to think again;
+- the reasons: what the turn does for you this turn in its imagined game (◇, ● a turn, meeples spent, what it costs the rival it hurts most), where it reckons you'll stand against the strongest rival after they reply (its rollout value, the tactician's measure of ◇ + ● a turn + archetype goal), and how far behind its next-best idea comes;
+- prompts answered in dialogs say what the Genius would answer.
+
+**Measured** (35 positions from 12 two-player tactician games, every archetype, Genius budget as shipped):
+- Time to think: median 1.35 s, 90th percentile 2.4 s, worst 3.4 s. The candle burns while it thinks.
+- It disagrees with the tactician's first move in 17 of 35 positions, so it isn't just restating the obvious.
+- Its best line beats every different plan by half a point or more in 16; in 12 the runner-up was *the same cards at a mirror-image spot* (an exact tie); only 7 were genuinely close. The first version called all 19 ties "close", which would have taught people to distrust it, so the wording now separates the three: "comes out N worse", "the same cards elsewhere do about as well: the cards matter more than the spot", and "a different plan comes out about as well, so this is close".
+- 9 of 35 plans run past a draw, so stopping at the draw (as the Genius does for itself) and offering to ask again matters.
+
+**Fairness and progression.** Counsel uses only what your seat can see (`tests/cs15-counsel.js` scrambles the hidden cards and gets the same advice). It is only offered with one human at the table and bots, never pass-and-play, where it would show one player's options to the next. Asking is never hidden: each seat's asks are kept in the game (`st.counsel`, kept through undo) and the Chronicle names them. The charter for progression says it must never make anyone stronger at a table of equals, so the reward goes the other way: a new deed, **Own Counsel**, for beating a Genius without asking it once.
+
+**Open questions.**
+- The moonshot's second half: counsel that fades as you improve over the campaign (for example, offered freely in Act I, three asks a stop in Act II, none in Act III).
+- The Chronicle's missing piece: the Genius's better move at the game's two biggest moments. `advise` can now be run on any stored position, so this is mostly UI.
+- Counsel during prompts in the middle of someone else's turn (a reaction, a revealed hand) isn't offered yet.
+
 ## 24 November 2026 · 1.0-pre, clear marks, and a question closed
 
 **The 2-player Warmonger with the folio, measured properly.** Yesterday's open question rested on 300-game runs (0.70–0.80). Two things were wrong with them. `tools/sim2.js` left **contest off** unless `OPTS` said otherwise, though the game turns it on for 2–4 players. And at 2 players each archetype only sits in about 100 of 300 games, so a win index carries about ±0.10 of noise. On deals 900–1199 without contest the Warmonger read 0.72 with *and* without the folio. With contest, the same deals read 1.00 without the folio and 0.76 with it.

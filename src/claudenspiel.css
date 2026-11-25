@@ -305,3 +305,41 @@ html[data-marks="on"] .race .fill { background-origin: content-box; }
 .card .wm { position: absolute; inset: 22% 18% 26%; display: grid; place-items: center; opacity: .2; pointer-events: none; }
 .card .wm .suitico { width: 100%; height: 100%; stroke-width: 1.4; }
 .card.lighttext .wm { opacity: .3; }
+/* The Genius's counsel: a candlelit note above the board, numbered wax tags on the spaces it points at. */
+.btn.askg { display: inline-flex; align-items: center; gap: 4px; }
+.btn.askg .candle { margin-top: 5px; }
+.prompt.counsel { background: linear-gradient(180deg, #f6ecd0, #ead9b0); color: #2a1a10; border: 2px solid #6b4a1e; box-shadow: inset 0 0 0 1px #f9f1dc, 0 2px 0 #3a2410; align-items: stretch; flex-direction: column; gap: 3px; }
+.prompt.counsel:not(.col) { flex-direction: row; align-items: center; }
+.prompt.counsel .row { display: flex; align-items: center; gap: 6px; }
+.prompt.counsel > .row b, .prompt.counsel > .row + .csteps { font-size: 14px; }
+.prompt.counsel > .row b { font-family: 'Jacquard 24', serif; font-weight: 400; font-size: 21px; color: #5a1020; line-height: 1; }
+.prompt.counsel .candle { margin-top: 6px; }
+.prompt.counsel .muted { color: #6d5a40; }
+.prompt.counsel .linkbtn { color: #5a1020; }
+.csteps { margin: 0; padding: 0; list-style: none; display: grid; gap: 1px; }
+.csteps li { display: flex; align-items: center; gap: 6px; padding: 1px 4px; opacity: .72; }
+.csteps li.next { opacity: 1; background: rgba(180, 96, 42, .16); box-shadow: inset 2px 0 0 #b4602a; }
+.csteps li.sub { padding-left: 26px; font-size: 13px; }
+.cnum, .cmark { display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 2px; font: 12px/1 'DotGothic16', monospace; color: #fff3d6; background: #8a1f24; border: 1px solid #3a0c10; box-shadow: inset -1px -1px 0 #5a1020, inset 1px 1px 0 #c0463a; image-rendering: pixelated; }
+.cwhy { margin: 2px 0 0; padding-top: 3px; border-top: 1px dashed #b49a6a; line-height: 1.4; }
+.counselnote, .chroncounsel { display: flex; align-items: center; gap: 6px; }
+.counselnote .candle, .chroncounsel .candle { margin-top: 6px; }
+.cell.counselled { outline: 2px dashed #f0a86a; outline-offset: 1px; z-index: 3; }
+:root:not([data-motion="off"]) .cell.counselled { animation: cs-counsel 1.6s steps(4) infinite; }
+@keyframes cs-counsel { 0%, 100% { outline-color: #f0a86a; } 50% { outline-color: #ffe9a8; } }
+.cell .cmark { position: absolute; top: -7px; left: -7px; z-index: 6; min-width: 20px; height: 20px; font-size: 14px; pointer-events: none; }
+:root:not([data-motion="off"]) .cell .cmark { animation: cs-stamp .3s steps(3) both; }
+@keyframes cs-stamp { from { transform: scale(2); opacity: 0; } 60% { transform: scale(.9); opacity: 1; } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .cell.counselled, .cell .cmark { animation: none !important; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .prompt.counsel { background: linear-gradient(180deg, #2e2418, #241b12); color: #f3e6c8; border-color: #b4602a; box-shadow: inset 0 0 0 1px #4a3620, 0 2px 0 #0e0a06; } :root:not([data-theme="light"]) .prompt.counsel > .row b, :root:not([data-theme="light"]) .prompt.counsel .linkbtn { color: #f0a86a; } :root:not([data-theme="light"]) .prompt.counsel .muted { color: #b8a582; } }
+:root[data-theme="dark"] .prompt.counsel { background: linear-gradient(180deg, #2e2418, #241b12); color: #f3e6c8; border-color: #b4602a; box-shadow: inset 0 0 0 1px #4a3620, 0 2px 0 #0e0a06; }
+:root[data-theme="dark"] .prompt.counsel > .row b, :root[data-theme="dark"] .prompt.counsel .linkbtn { color: #f0a86a; }
+:root[data-theme="dark"] .prompt.counsel .muted { color: #b8a582; }
+/* Phones: the top bar keeps End turn in view with the counsel candle beside it. */
+@media (max-width: 900px), (max-height: 520px) {
+  .mtop { gap: 4px; }
+  .mtop .btn { padding-left: 6px; padding-right: 6px; min-width: 0; flex: none; }
+  .mtop .btn.askg { padding: 0 7px; }
+  .prompt.counsel .cwhy { font-size: 12px; }
+}
+@media (max-width: 420px) { .mtop .mstat { font-size: 14px; } .mtop .btn.def { padding-left: 4px; padding-right: 4px; } }

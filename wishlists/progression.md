@@ -20,6 +20,8 @@ How players grow with Claudenspiel. The rule: progress widens what you can do an
 
 ## Recognition
 - ✅ 0.3 The Book of Deeds: 19 achievements to start (Pyrrhic: win with your Foundation one enemy from Overwhelm; Five Suits: make a stack Ascend; Patience: win after taking back a meeple; Grave Robber: bury 10 cards in one game).
+- ✅ 1.0-pre Own Counsel (deed 21): beat a Genius without once asking it for counsel.
+- ○ Counsel that fades over the campaign: free in Act I, rationed in Act II, gone in Act III.
 - ○ Cosmetics: card backs, meeple styles (pewter, gold leaf, bone), board backdrops (dawn, the river ford, the city gate), a heraldic shield built from mastered archetypes.
 - ○ Painted cards: paint a card in Dithry once you've mastered it, and show your version to the table.
 
