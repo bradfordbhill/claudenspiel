@@ -291,7 +291,7 @@
     ctx.err = null; ctx.hist.push(ctx.state); if (ctx.hist.length > 80) ctx.hist.shift();
     var prevSt = ctx.state;
     var ended = ctx.kind === 'game' && ctx.state.winner == null && r.winner != null;
-    ctx.state = r;
+    hsRecord(ctx, prevSt, r, a); ctx.state = r;
     if (ended) { campaignEnd(r); earnDeeds(r); setTimeout(function () { if (app.game === ctx && app.page === 'game' && !app.modal && ctx.state.winner != null) chronicleModal(ctx); }, prefs.motion === 'off' ? 300 : prefs.motion === 'calm' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) ? 1500 : 4800); }
     if (ctx.kind === 'sandbox' && ctx.ui.autoCheck && /^sb(Place|Suit|Move|Remove|Bury|Unbury)$/.test(a.t)) { var r2 = E.apply(ctx.state, { t: 'sbCheck', quiet: true }); if (!r2.error) ctx.state = r2; }
     uiAfter(ctx, a); counselAfter(ctx, prevSt, a);
@@ -348,7 +348,7 @@
   }
   // Go back to the previous state in the history.
   function undo(ctx) { if (ctx.online || !ctx.hist.length) return; var was = ctx.state; ctx.state = ctx.hist.pop(); ctx.counsel = null;
-    if (hasBots(ctx.state)) { var n0 = ctx.hist.length; while (ctx.hist.length && botToAct(ctx.state) != null) ctx.state = ctx.hist.pop(); if (ctx.hist.length < n0) undoneBots(was, ctx.state); clearTimeout(ctx.botTimer); ctx.botTimer = null; ctx.botQueue = null; } if (was.counsel) ctx.state.counsel = was.counsel;   // taking a move back never takes back having asked the Genius
+    if (hasBots(ctx.state)) { var n0 = ctx.hist.length; while (ctx.hist.length && botToAct(ctx.state) != null) ctx.state = ctx.hist.pop(); if (ctx.hist.length < n0) undoneBots(was, ctx.state); clearTimeout(ctx.botTimer); ctx.botTimer = null; ctx.botQueue = null; } if (was.counsel) ctx.state.counsel = was.counsel; hsUndo(ctx);   // taking a move back never takes back having asked the Genius
     ctx.err = null; ctx.ui.hand = null; ctx.ui.picked = []; lsSet(ctx.kind === 'game' ? 'cs.game' : 'cs.sandbox', ctx.state); render(); }
   // Undo went back past bots' turns: say what they had done before it is taken back, so nothing vanishes unseen.
   function undoneBots(from, to) {
@@ -1559,7 +1559,7 @@
     var byR = {}; c.forEach(function (e) { if (e.r > 0) byR[e.r] = e.t; }); Object.keys(byR).forEach(function (r) { h += '<tr><td>' + r + '</td>' + byR[r].map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; });
     return h + '</table></details></div>';
   }
-  function chronicleModal(ctx) { app.modal = function () { var st = ctx.state, cb = campaignBlock(st); return modal('The Chronicle', (cb ? cb.html : '') + masteryGained(st) + chronicleHTML(st), '<button class="btn" data-act="closeModal">Close</button>' + (ctx.online ? '' : cb ? cb.btns : '<button class="btn def" data-act="rematch">Rematch</button>')); }; render(); }
+  function chronicleModal(ctx) { app.modal = function () { var st = ctx.state, cb = campaignBlock(st); return modal('The Chronicle', (cb ? cb.html : '') + masteryGained(st) + chronicleHTML(st) + hindsightHTML(ctx), '<button class="btn" data-act="closeModal">Close</button>' + (ctx.online ? '' : cb ? cb.btns : '<button class="btn def" data-act="rematch">Rematch</button>')); }; render(); }
   function modal(title, body, btns) { return '<div class="modalbg"><div class="modal raised" role="dialog" aria-label="' + esc(title) + '"><div class="titlebar">' + crest() + '<span>' + esc(title) + '</span></div><div class="body">' + body + '</div><div class="btns">' + (btns || '') + '</div></div></div>'; }
   // Dialogs: app.modal for one-off ones; otherwise revealed hands, "pass the device" between turns,
   // and engine prompts that aren't answered by clicking the board.
@@ -1880,7 +1880,7 @@
         '<li><b>Grounds:</b> terrain cards. You place them like a Structure, but nobody claims them and they never count as an enemy. <i>Marsh</i>: cards next to it need one more enemy to be Overwhelmed. <i>Battlefield</i>: one fewer. <i>Crossroads</i>: placing next to it costs 3● less. <i>Library</i>: placing a card next to it draws you a card, once a turn. <i>Barrow</i>: burying a card under a card next to it banks you 2◇. <i>Shrine</i>: cards next to it keep the Shrine’s peace (a gilded frame and ✠) and can’t be contested or Cursed.</li>' +
         '<li><b>Burn</b> (a New game option, on trial): every card has two uses. Once a turn you may burn a card from your hand instead of building it, for the one-time effect on its flame tag: ● (Goblet’s voice), cards (Tome), ◇ (Leaf), a second claim or a <i>ward</i> (Sceptre), war (Sword: rivals’ cards need one fewer enemy to be Overwhelmed this turn) or a burial (Bone). Some burns read the board, such as 1◇ per Ruined card. A warded card (dashed blue frame, ⛨) can’t be Ruined, Overwhelmed, contested or Cursed until its owner’s next turn. The dearer the card, the richer its burn: a Watchtower or a Hilltop Relic burns for 3◇.</li>' +
         '<li><b>Contest</b> (on by default for 2–4 players): once a turn, after placing a card, pay 8● of this turn’s ● to take a rival’s card next to it. Their meeple goes home and yours takes its place; it doesn’t use your claim. Foundations, Ascended and shared cards can’t be taken, and a Cryptkeeper’s buried cards move under its Mausoleum instead of changing hands.</li>' +
-        '<li><b>The Chronicle:</b> when a game ends, it tells the story: everyone’s ◇ after every turn, where the Ruins, contests and the last round fell, and the turning points. Open it again with <b>Chronicle</b> above the board.</li>' +
+        '<li><b>The Chronicle:</b> when a game ends, it tells the story: everyone’s ◇ after every turn, where the Ruins, contests and the last round fell, and the turning points. Against bots, <b>Look back with the Genius</b> replays each of your turns in imagined games and shows the two where its plan beat yours, on a little map. Open it again with <b>Chronicle</b> above the board.</li>' +
         '<li>A 116-card deck with two or three copies of the staples, and reworked cards: Orchard, Observatory, Obelisk, Fountain, Revenge, Repent and Brambles.</li></ul>' +
         '<p>Every rule can be switched off on the New game page.</p>' },
       { id: 'turn', title: 'A turn', html: '<ol>' +
@@ -2650,6 +2650,7 @@
       case 'handSort': { var so = ['drawn', 'suit', 'cost']; setPref('handSort', so[(so.indexOf(prefs.handSort || 'drawn') + 1) % so.length]); render(); return; }
       case 'undo': undo(ctx); return;
       case 'askGenius': askGenius(ctx); return;
+      case 'hindsight': runHindsight(app.game); return;
       case 'dropCounsel': ctx.counsel = null; render(); return;
       case 'claim': dispatch(ctx, { t: 'claim', k: k }); return;
       case 'ability': dispatch(ctx, { t: 'ability', k: k }); return;
@@ -2996,6 +2997,117 @@
     return h + '</div>';
   }
 
+  /* ---------------- the Genius's hindsight ---------------- */
+  // After a game against bots, the Genius looks back over the person's turns (KBots.hindsight): each turn's opening
+  // position is kept in memory as it is reached (ctx.starts, by the seat's turn number) and the moves made from it in the
+  // game state (st.hsMoves, so undo takes them back too). The Chronicle offers the review; it picks the two turns where the
+  // Genius's own plan comes out furthest ahead of what was played, and shows both on a small map of the board.
+  var HS_MIN = 4;   // below this the Genius's own rollouts disagree with themselves too often to call a turn worse (journal, 26 Nov)
+  function hsSeat(ctx) { return ctx && ctx.kind === 'game' && !ctx.online && hasBots(ctx.state) ? fixedSeat(ctx) : null; }
+  function hsRecord(ctx, prev, r, a) {
+    var p = hsSeat(ctx); if (p == null || prev.cur !== p) return;
+    var actor = a.t === 'answer' && prev.pending ? prev.pending.player : a.p != null ? a.p : prev.cur; if (actor !== p) return;
+    var n = prev.players[p].turns, starts = ctx.starts || (ctx.starts = {});
+    if (a.t !== 'startTurn') r.hsMoves = (prev.hsMoves || []).concat([{ n: n, a: a }]);
+    if (!starts[n] && r.winner == null && r.cur === p && r.turn && r.turn.started && !r.pending && !r.res && !r.reveal) starts[n] = { st: r, from: (r.hsMoves || []).length };
+  }
+  // Undo: forget the openings of turns that have been taken back.
+  function hsUndo(ctx) {
+    var p = hsSeat(ctx), st = ctx.state; if (p == null || !ctx.starts) return;
+    var T = st.players[p].turns, mine = st.cur === p;
+    Object.keys(ctx.starts).forEach(function (n) { var s = ctx.starts[n]; n = +n;
+      if (n > T || (n === T && mine && (!st.turn.started || (st.hsMoves || []).length < s.from))) delete ctx.starts[n]; });
+    ctx.hs = null;
+  }
+  function hsTurns(ctx) {
+    var st = ctx.state, mv = st.hsMoves || [];
+    return Object.keys(ctx.starts || {}).map(Number).sort(function (a, b) { return a - b; }).map(function (n) {
+      var s = ctx.starts[n]; return { n: n, s: s.st, acts: mv.slice(s.from).filter(function (m) { return m.n === n; }).map(function (m) { return m.a; }) };
+    }).filter(function (t) { return t.acts.length; });
+  }
+  function runHindsight(ctx) {
+    var p = hsSeat(ctx), turns = hsTurns(ctx); if (p == null || !turns.length || (ctx.hs && ctx.hs.running)) return;
+    var hs = ctx.hs = { running: true, i: 0, total: turns.length, list: [], state: ctx.state }; render();
+    (function step() {
+      if (ctx.hs !== hs) return;
+      if (hs.i >= turns.length) { hs.running = false; hs.done = true; hsDeed(ctx, p); SFX.play('ability', 'Tome'); render(); return; }
+      // Four imagined games for every turn, then eight for any turn that looks worse, so a turn is only called worse
+      // on the stronger evidence (with four, the Genius disagreed with its own play by 4 or more in 3 turns of 25).
+      var t = turns[hs.i], h = null; try { h = KBots.hindsight(t.s, p, t.acts, 4); if (h && !h.same && h.gap >= 2) h = KBots.hindsight(t.s, p, t.acts, 8); } catch (e) { h = null; }
+      if (h) hs.list.push({ n: t.n, r: t.s.round, s: t.s, acts: t.acts, h: h });
+      hs.i++; if (app.modal) render(); setTimeout(step, 30);
+    })();
+  }
+  // Clear Sight: win a game in which the hindsight finds no turn of yours the Genius would have played clearly better.
+  function hsDeed(ctx, p) {
+    var st = ctx.state, hs = ctx.hs; if (st.winner !== p || hs.list.length < 4 || hs.list.some(function (x) { return !x.h.same && x.h.gap >= HS_MIN; })) return;
+    var book = lsGet('cs.deeds') || {}; book.deeds = book.deeds || {}; if (book.deeds.sight) return;
+    book.deeds.sight = { at: Date.now(), by: st.players[p].name, arch: st.players[p].arch }; lsSet('cs.deeds', book);
+    setTimeout(function () { SFX.play('deed'); deedScroll('Deed earned', 'Clear Sight'); toast('📜 Deed earned: Clear Sight'); }, 400);
+  }
+  // A turn's steps, numbered, with the board space each points at.
+  function hsSteps(s, acts) {
+    var out = [], n = 0;
+    acts.forEach(function (a) { if (!s) return; if (a.t === 'endTurn') return;
+      var k = a.k || (a.t === 'answer' && typeof a.v === 'string' && s.pending && s.pending.kind === 'cell' ? a.v : null);
+      if (a.t !== 'answer') n++; out.push({ n: n, k: k, sub: a.t === 'answer', html: counselStep(s, a).replace(/<span class="muted">.*?<\/span>/g, '').replace(/ at -?\d+,-?\d+/, '').trim() });
+      var r = E.apply(s, a); s = r.error ? null : r; });
+    return out;
+  }
+  // A small map of the board as the turn began: cards in their suit's colour, owners' meeples, and numbered marks for
+  // the person's steps (their colour, top left) and the Genius's (wax red, bottom right).
+  function hsMap(st, mine, his, p) {
+    var ks = E.keys(st), marks = {}, all = ks.slice();
+    mine.forEach(function (x) { if (x.k) { (marks[x.k] = marks[x.k] || {}).m = marks[x.k].m || x.n; all.push(x.k); } });
+    his.forEach(function (x) { if (x.k) { (marks[x.k] = marks[x.k] || {}).g = marks[x.k].g || x.n; all.push(x.k); } });
+    if (!all.length) return '';
+    var xy = all.map(E.XY), mk = Object.keys(marks).map(E.XY), box = function (pts) { return { x0: Math.min.apply(null, pts.map(function (q) { return q[0]; })), x1: Math.max.apply(null, pts.map(function (q) { return q[0]; })), y0: Math.min.apply(null, pts.map(function (q) { return q[1]; })), y1: Math.max.apply(null, pts.map(function (q) { return q[1]; })) }; };
+    var b = box(xy);
+    if (mk.length && (b.x1 - b.x0 > 11 || b.y1 - b.y0 > 8)) { var m = box(mk); b = { x0: Math.max(b.x0, m.x0 - 3), x1: Math.min(b.x1, m.x1 + 3), y0: Math.max(b.y0, m.y0 - 2), y1: Math.min(b.y1, m.y1 + 2) }; }
+    var CW = 15, CH = 19, G = 3, W = (b.x1 - b.x0 + 1) * (CW + G) + G, H = (b.y1 - b.y0 + 1) * (CH + G) + G;
+    var X = function (x) { return G + (x - b.x0) * (CW + G); }, Y = function (y) { return G + (y - b.y0) * (CH + G); };
+    var h = '<svg class="hsmap" viewBox="0 0 ' + W + ' ' + H + '" width="' + W * 2 + '" style="max-width:100%" shape-rendering="crispEdges" role="img" aria-label="The board as the turn began, with both plans marked">';
+    for (var y = b.y0; y <= b.y1; y++) for (var x = b.x0; x <= b.x1; x++) {
+      var k = x + ',' + y, u = E.top(st, k);
+      if (!u) { if (marks[k]) h += '<rect class="hse" x="' + X(x) + '" y="' + Y(y) + '" width="' + CW + '" height="' + CH + '"/>'; continue; }
+      var c = st.cards[u], suit = E.suitOf(st, u), fill = c.ruined || c.overwhelmed ? '#4a4540' : SUITCOLOR[suit] || '#cbb994';
+      h += '<rect x="' + X(x) + '" y="' + Y(y) + '" width="' + CW + '" height="' + CH + '" fill="' + fill + '" class="hsc' + (c.ruined || c.overwhelmed ? ' dead' : '') + '"><title>' + esc(E.rawDef(st, u).name) + '</title></rect>';
+      (c.claimants || []).slice(0, 2).forEach(function (q, i) { var pl = st.players[q]; if (pl) h += '<rect x="' + (X(x) + CW - 6 - i * 6) + '" y="' + (Y(y) + 2) + '" width="4" height="5" fill="' + pl.color + '" class="hsmp"/>'; });
+    }
+    Object.keys(marks).forEach(function (k) { var q = E.XY(k); if (q[0] < b.x0 || q[0] > b.x1 || q[1] < b.y0 || q[1] > b.y1) return; var m = marks[k];
+      if (m.m) h += '<rect x="' + (X(q[0]) - 1) + '" y="' + (Y(q[1]) - 1) + '" width="9" height="9" fill="' + st.players[p].color + '" class="hstag"/><text x="' + (X(q[0]) + 3.5) + '" y="' + (Y(q[1]) + 6.5) + '" class="hsn" text-anchor="middle">' + m.m + '</text>';
+      if (m.g) h += '<rect x="' + (X(q[0]) + CW - 8) + '" y="' + (Y(q[1]) + CH - 8) + '" width="9" height="9" fill="#9b1c1c" class="hstag"/><text x="' + (X(q[0]) + CW - 3.5) + '" y="' + (Y(q[1]) + CH - 1.5) + '" class="hsn" text-anchor="middle">' + m.g + '</text>'; });
+    return h + '</svg>';
+  }
+  function hsGain(g) { if (!g) return ''; var b = []; if (g.vp) b.push(signed(g.vp) + '◇'); if (g.inc) b.push(signed(g.inc) + '● a turn'); return b.length ? ' <span class="hsgain">' + b.join(', ') + '</span>' : ''; }
+  function hsMoment(st, x, p) {
+    var h = x.h, mine = hsSteps(x.s, x.acts), his = hsSteps(h.world, h.gnow), more = h.line.filter(function (a) { return a.t !== 'answer' && a.t !== 'endTurn'; }).length > h.gnow.filter(function (a) { return a.t !== 'answer' && a.t !== 'endTurn'; }).length;
+    var list = function (steps) { return steps.length ? steps.map(function (s) { return '<li' + (s.sub ? ' class="sub"' : '') + '>' + (s.sub ? '' : '<span class="cnum">' + s.n + '</span>') + s.html + '</li>'; }).join('') : '<li class="sub">End the turn at once.</li>'; };
+    var why;
+    if (h.won[0] !== h.won[1] || h.lost[0] !== h.lost[1]) why = 'Of the ' + h.worlds + ' games it imagined from here, its way wins ' + h.won[0] + (h.lost[0] ? ' and loses ' + h.lost[0] : '') + '; yours wins ' + h.won[1] + (h.lost[1] ? ' and loses ' + h.lost[1] : '') + '.';
+    else { var d = function (v) { return Math.abs(v) < 0.5 ? 'level with' : Math.abs(v).toFixed(0) + ' ' + (v > 0 ? 'ahead of' : 'behind'); };
+      why = 'After the rivals reply, it reckons its way leaves you <b>' + d(h.best) + '</b> the strongest rival, and yours <b>' + d(h.mine) + '</b> <span class="muted">(◇, plus ● a turn and your archetype’s goal)</span>.'; }
+    return '<div class="hsm"><div class="hshead"><span class="rd">Round ' + x.r + '</span><span class="grow"></span><span class="hscost">' + (h.won[0] !== h.won[1] || h.lost[0] !== h.lost[1] ? 'it could decide the game' : 'its way, ' + Math.round(h.gap) + ' better') + '</span></div>' +
+      '<div class="hsbody"><div class="hsmapwrap">' + hsMap(x.s, mine, his, p) + '</div><div class="hsplans">' +
+      '<div class="hsplan you"><b><span class="swatch sm-' + p + '" style="background:' + st.players[p].color + '"></span> You</b>' + hsGain(h.gainMine) + '<ol class="csteps">' + list(mine) + '</ol></div>' +
+      '<div class="hsplan gen"><b><span class="candle" aria-hidden="true"><i></i></span>The Genius</b>' + hsGain(h.gain) + '<ol class="csteps">' + list(his) + (more ? '<li class="sub muted">… then it would look again after the draw.</li>' : '') + '</ol></div></div></div>' +
+      '<p class="small hswhy">' + why + '</p></div>';
+  }
+  function hindsightHTML(ctx) {
+    var p = hsSeat(ctx), st = ctx.state; if (p == null || st.winner == null || typeof KBots === 'undefined' || !KBots.hindsight) return '';
+    var turns = hsTurns(ctx), hs = ctx.hs && ctx.hs.state === st ? ctx.hs : null;
+    var h = '<h4 class="chronsub">Hindsight</h4><div class="hsbox">';
+    if (!turns.length) return h + '<p class="small muted">The Genius can only look back over turns played since the game was last opened.</p></div>';
+    if (!hs) return h + '<p class="small">The Genius can look back over your ' + turns.length + ' turn' + (turns.length > 1 ? 's' : '') + ', play each again from what you could see then, and show you the two where its own plan comes out furthest ahead. <span class="muted">About ' + Math.max(2, Math.round(turns.length * 1.5)) + ' seconds.</span></p><button class="btn sm def" data-act="hindsight"><span class="candle" aria-hidden="true"><i></i></span>Look back with the Genius</button></div>';
+    if (hs.running) return h + '<p class="small"><span class="candle" aria-hidden="true"><i></i></span><i>The Genius is looking back… turn ' + Math.min(hs.i + 1, hs.total) + ' of ' + hs.total + '</i></p><span class="hsbar"><span style="width:' + Math.round(100 * hs.i / hs.total) + '%"></span></span></div>';
+    var same = hs.list.filter(function (x) { return x.h.same; }).length, near = hs.list.filter(function (x) { return !x.h.same && x.h.gap < HS_MIN; }).length;
+    var top = hs.list.filter(function (x) { return !x.h.same && x.h.gap >= HS_MIN; }).sort(function (a, b) { return b.h.gap - a.h.gap; }).slice(0, 2).sort(function (a, b) { return a.r - b.r; });
+    h += '<p class="small">Of your ' + hs.list.length + ' turns, the Genius would have begun <b>' + same + '</b> as you did' + (near ? ', and played ' + near + ' more differently but no better' : '') + '.';
+    if (!top.length) h += ' It found no turn it would clearly have played better: <b>sound play</b>.</p>';
+    else h += ' ' + (top.length === 1 ? 'One turn stands out' : 'Two turns stand out') + ', by its reckoning:</p>' + top.map(function (x) { return hsMoment(st, x, p); }).join('');
+    return h + '<p class="small muted hsnote">Its numbers come from a handful of imagined games, so a gap under ' + HS_MIN + ' is too close to call. Your moves after a draw it couldn’t know about are played on as it would.</p></div>';
+  }
+
   /* ---------------- hover magnifier ---------------- */
   var hov = document.createElement('div'); hov.className = 'hovercard'; hov.setAttribute('aria-hidden', 'true'); document.body.appendChild(hov);
   var hovKey = null;
@@ -3069,6 +3181,8 @@
     if (b.classList.contains('tab')) SFX.play('page');
     else if (b.classList.contains('btn') && !/^(claim|startTurn|endTurn|buyClaim|contest|play|ability|burn)/.test(b.getAttribute('data-act') || '')) SFX.play('click');
   }, true);
+  // A hook for browser checks only (index.html?debug): the app, and the way moves reach the engine.
+  if (/[?&]debug\b/.test(location.search)) window.csDebug = { app: app, newCtx: newCtx, dispatch: dispatch, render: render };
   if (!lsGet('cs.notitle')) showTitle();
   maybePatchPopup();   // after an update: what's new
 })();

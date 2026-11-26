@@ -258,7 +258,7 @@ var KBots = (function () {
   // One imagined world for player p: what p can see (E.redact), with every hidden card replaced by a random card it
   // hasn't seen (the library, minus the board, the discard pile and its own hand), and a fresh random seed.
   function determinize(st0,p,R){
-    const st=E.redact(st0,p); st.log=[]; st.sharedDefs=true; delete st._botLog;
+    const st=E.redact(st0,p); st.log=[]; st.sharedDefs=true; delete st._botLog; delete st.hsMoves;
     const left={}; Object.keys(st.defs).forEach(id=>{ const d=st.defs[id]; if(d.type==='Foundation'||d.type==='Hidden') return; left[id]=(left[id]||0)+(+d.copies||0); });
     Object.keys(st.cards).forEach(u=>{ const id=st.cards[u].def; if(left[id]) left[id]--; });
     const pool=[]; Object.keys(left).forEach(id=>{ for(let i=0;i<left[id];i++) pool.push(id); });
@@ -337,6 +337,8 @@ var KBots = (function () {
       if(a.t==='endTurn'||a.t==='reclaim') { if(!(s.pending&&s.pending.player===p)) break; continue; }
       if(s.deck.length<before||(s.reveal&&s.reveal.to===p)||s.players[p].hand.some(u=>!hand.includes(u))) break; }
     return out; }
+  // The Genius's candidate whole turns from w0 (its turn under way, nothing pending): each opening played on like a tactician.
+  function mainLines(w0,p){ const stats=newStats(); return openings(w0,p).map(o=>{ let s=mainPhase(o.s,p,GENIUS.policy,stats), e=ap(s,{t:'endTurn'}); if(e&&e.pending) e=resolve(e,p,GENIUS.policy); return (e||s)._botLog||[]; }); }
   // The Genius's next actions in the real game st0 (its turn, nothing pending).
   function geniusDecide(st0,p){ const t0=now(), R=rng(seedOf(st0,p)), W=[]; for(let i=0;i<GENIUS.worlds;i++) W.push(determinize(st0,p,R));
     const w0=Object.assign({},W[0],{_botLog:[]}), pl=w0.players[p]; let lines;
@@ -345,7 +347,7 @@ var KBots = (function () {
       if(pl.meeples===0&&pl.foundationPlaced) E.kingdom(w0,p).map(k=>({k,c:w0.cards[E.top(w0,k)]})).filter(o=>!o.c.fixed&&!o.c.ascended)
         .map(o=>({k:o.k,w:E.cardValue(w0,o.k,p)+2*E.cardIncome(w0,o.k)})).sort((a,b)=>a.w-b.w).slice(0,2).forEach(o=>lines.push([{t:'reclaim',k:o.k}]));
       if(lines.length===1) return lines[0]; }
-    else { const stats=newStats(); lines=openings(w0,p).map(o=>{ let s=mainPhase(o.s,p,GENIUS.policy,stats), e=ap(s,{t:'endTurn'}); if(e&&e.pending) e=resolve(e,p,GENIUS.policy); return (e||s)._botLog||[]; }); }
+    else lines=mainLines(w0,p);
     const tot=lines.map(()=>0); let done=0;
     for(let i=0;i<W.length;i++){ if(i>0&&now()-t0>GENIUS.budget) break;
       lines.forEach((acts,j)=>{ tot[j]+=rollout(replay(W[i],acts),p); }); done++; }
@@ -403,12 +405,31 @@ var KBots = (function () {
     const cut=line.filter(a=>a.t!=='endTurn').length;
     return { now, line, rest: now.filter(a=>a.t!=='endTurn').length<cut, value: info.values[info.best], alt, gain, worlds: info.worlds, world: w }; }
 
+  // Hindsight (Claudenspiel): after the game, the Genius looks back at one of p's turns. st0 is the position when the
+  // turn began (started, nothing pending), acts what p actually did, up to the end of the turn. Its own candidate turns
+  // and p's are played out in the same imagined worlds (p's fair view, as counsel), with the same rollouts, so the two
+  // values compare. Where p's moves stop applying in an imagined world (a card drawn for real isn't there), the rest of
+  // the turn is played as the Genius would. Returns { worlds, won, lost ([the Genius's, p's] imagined wins and losses), mine, best, gap, line, acts, same, world, gain, gainMine } or null.
+  function hindsight(st0,p,acts,worlds){
+    if(!st0||st0.winner!=null||st0.cur!==p||!(st0.turn&&st0.turn.started)||st0.pending||st0.res) return null;
+    const R=rng(seedOf(st0,p)^0x5bd1e995), W=[]; for(let i=0;i<(worlds||GENIUS.worlds+1);i++) W.push(determinize(st0,p,R));
+    const w0=Object.assign({},W[0],{_botLog:[]}), cut=[]; for(const a of acts){ cut.push(a); if(a.t==='endTurn') break; }
+    const lines=mainLines(w0,p).filter(l=>l&&l.length); lines.push(cut); const me=lines.length-1, tot=lines.map(()=>0);
+    const won=lines.map(()=>0), lost=lines.map(()=>0);
+    W.forEach(w=>lines.forEach((l,j)=>{ const r=rollout(replay(w,l),p); tot[j]+=r; if(r>=999) won[j]++; if(r<=-999) lost[j]++; }));
+    let best=0; for(let j=0;j<me;j++) if(tot[j]>tot[best]) best=j;
+    const v=tot.map(x=>x/W.length), key=l=>l.filter(a=>a.t!=='endTurn').map(a=>JSON.stringify([a.t,a.uid||null,a.k||null,a.v===undefined?null:a.v])).join('|');
+    // The turn p could see before its first draw: if the Genius would have begun the same way, it isn't a different plan.
+    const before=l=>key(prefix(W[0],p,l)), same=me===0||before(lines[best])===before(cut)||v[best]<=v[me];
+    const gainOf=(l,s)=>{ const s0=E.scores(s), i0=E.income(s,p); for(const a of l){ const n=ap(s,a); if(!n) break; s=n; if(a.t==='endTurn') break; } return { vp:E.scores(s)[p].total-s0[p].total, inc:E.income(s,p)-i0 }; };
+    const b=same?me:best; return { worlds:W.length, won:[won[b],won[me]], lost:[lost[b],lost[me]], mine:v[me], best:Math.max(v[best],v[me]), gnow:prefix(W[0],p,same?cut:lines[best]), gap:Math.max(0,v[best]-v[me]), line:same?cut:lines[best], acts:cut, same, world:W[0], gain:gainOf(same?cut:lines[best],W[0]), gainMine:gainOf(cut,st0) }; }
+
   function plan(st0,style){
     if(style==='genius') return geniusDecide(st0,st0.cur);
     const st=Object.assign({},st0,{_botLog:[]}), end=turn(st,newStats(),st0.players.map(()=>style));
     return end&&end._botLog.length ? end._botLog : [{t:st0.turn&&st0.turn.started?'endTurn':'startTurn'}]; }
 
   return { STYLES: ['greedy', 'tactician', 'raider', 'warlord', 'genius'], GENIUS: GENIUS, RACE: RACE, plan: plan, choose: choose, resolve: resolve, turn: turn, newStats: newStats, evalState: evalState,
-    profile: profile, goal: goal, keepValue: keepValue, determinize: determinize, gEval: gEval, advise: advise };
+    profile: profile, goal: goal, keepValue: keepValue, determinize: determinize, gEval: gEval, advise: advise, hindsight: hindsight };
 })();
 if (typeof module !== 'undefined') module.exports = KBots;

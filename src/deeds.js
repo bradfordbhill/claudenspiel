@@ -48,6 +48,7 @@ var KDeeds = (function () {
     { id: 'seventy', name: 'Overflowing', text: 'Finish with 70◇ or more.', check: function (g) { return g.total >= 70; } },
     { id: 'road', name: 'The Long Road', text: 'Finish owning a card whose line (its unbroken row or column of cards) is 10 cards long or more.', check: function (g) { return g.longLine >= 10; } },
     { id: 'own', name: 'Own Counsel', text: 'Beat a Genius bot without once asking the Genius for counsel.', check: function (g) { return g.won && g.bots.indexOf('genius') >= 0 && !g.counsel; } },
+    { id: 'sight', name: 'Clear Sight', text: 'Win a game in which the Genius, looking back, finds no turn of yours it would clearly have played better (the Chronicle’s Hindsight, four turns or more).', check: function () { return false; } },
     { id: 'six', name: 'Six Crowns', text: 'Win with every archetype.', progress: true, check: function (g, book) { return Object.keys(book.wins || {}).length >= 6; } }
   ];
   // Archetype mastery: ten levels per archetype, earned by playing it. Each finished game as an archetype is worth

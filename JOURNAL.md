@@ -2,6 +2,36 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 26 November 2026 · 1.0-pre, hindsight
+
+**Why.** Counsel helps on the turn you ask, but most of what a card player learns comes *after* the game, looking back: which turn lost it. Chess players run the engine over the game; Magic players replay the turn they mis-sequenced. The Chronicle already told the story of a game but never said which of *your* decisions mattered. Yesterday's open question named the missing piece: the Genius's better move at the game's biggest moments. Every part existed (fair imagined worlds, candidate lines, rollouts), so this is mostly bookkeeping and a page.
+
+**What it does.** After a game against bots, the Chronicle offers **Look back with the Genius**. For each of your turns it takes the position as the turn began, from your seat's view, and plays its own candidate turns *and yours* through the same imagined games with the same rollouts (`KBots.hindsight`), so the two values compare like for like. It shows the two turns where its plan comes out furthest ahead, each with:
+- a small pixel map of the board as the turn began, your steps numbered in your colour, its steps in wax red;
+- both turns as numbered steps, with what each gained (◇, ● a turn);
+- how the race stood after the rivals replied, either way. When the two plans differ in whether the game is won or lost in some imagined game, it says that instead ("it could decide the game").
+It also counts the turns it would have begun the same way and the ones it played differently but no better. If no turn clears the bar it says "sound play". New deed, **Clear Sight**: win with no turn called clearly worse (four turns at least).
+
+**Bookkeeping.** Each turn's opening position is kept in memory as it is reached (`ctx.starts`); your moves go into the game state (`st.hsMoves`, so undo takes them back for free). Undo also drops the openings of turns it takes back. Turns played before a reload can't be reviewed, and the Chronicle says so. (A first try stored the moves as `st.moves`, which the engine already uses for moving cards: the browser check caught it, because the review found no moves.)
+
+**Measured: how often is the Genius wrong about itself?** `tools/hindsight.js` (new) plays games with a stand-in for the person in seat 0, then reviews every one of its turns. The gap between the Genius's plan and the turn played is in the units it judges by (◇ + ● a turn + archetype goal against the strongest rival). Five 2-player games each:
+
+| Seat 0 played by | Imagined games | Turns | Same plan | Gap ≥ 4 | Time a turn (median, 6 runs at once) |
+|---|---|---|---|---|---|
+| Genius | 4 | 29 | 21 | 3 | 1.7 s |
+| Genius | 8 | 29 | 23 | **1** | 3.2 s |
+| Tactician | 4 | 27 | 15 | 7 | 2.5 s |
+| Tactician | 8 | 27 | 13 | **10** | 3.8 s |
+
+With four games the Genius called three of its own turns 4 or more worse (5.3, 9.2, 33.6): its own noise. With eight, one (27.5, a turn where one of the eight imagined games turned on a win). So the review runs four for every turn and eight for any turn that looks 2 or more worse, and only shows gaps of **4** or more. A tactician's turns clear that bar about a third of the time, the Genius's about one time in thirty. Alone in the browser a turn takes about 1.2 s, so a 7-turn game is reviewed in roughly 10–15 s, with a candle and a progress bar.
+
+`tests/cs16-hindsight.js`: the Genius's own plan is never called clearly worse; ending a turn at once with cards to play is (in all but one position, where being 24 behind made banking the ● nearly as good); the answer is the same whatever the hidden cards; nothing is offered before a turn starts or for another seat.
+
+**Open questions.**
+- Hindsight for pass-and-play tables (each person's own turns, after the game). The fairness argument holds once the game is over; it's only time.
+- A turn replay: step through the position on the real board rather than a map. The UI wishlist has had "turn replay" for a while; the stored openings make it possible.
+- The campaign could use hindsight as its teacher: after a lost stop, the one turn that mattered most.
+
 ## 25 November 2026 · 1.0-pre, ask the Genius
 
 **Why.** The Genius is the best player in the house: 73% against a tactician, strictly fair (it decides from its own seat's view, with everything hidden guessed). Until today it only ever played *against* you. The moonshot list has wanted it as a teacher since 0.1, and every piece it needs already existed: the fair imagined worlds, the candidate lines, the rollouts that rank them. A card game teaches best by showing a strong move *and the reason for it* at the moment you're stuck, and Dominion and Magic players learn exactly that way, by watching a better player think aloud. So: counsel.

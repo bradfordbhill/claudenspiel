@@ -15,7 +15,7 @@ What Claudenspiel should look and feel like. ✅ done, ▶ next up, ○ later.
 - ✅ 0.5 "Why is this good?" on hover in the hand: what the card would gain if played (and claimed) now, at its best space, worked out without peeking.
 - ✅ 1.0-pre The same hint for cards played from hand (Actions, Blessings): played in an imagined game with greedy choices, it reports your ◇, ● a turn and cards drawn, and what it costs the rival it hurts most.
 - ○ Turn replay: step through the last round's moves on the board, like a chess move list.
-- ✅ 1.0-pre (the chart and the story) ○ (the Genius's view) **The Chronicle**, a post-game report: each player's ◇ after every turn as a stepped pixel line, marks where Ruins, Overwhelms, contests and the last round happened, and the turning points in words (lead changes, the biggest turns). Still to come: the Genius's suggested better move at the two biggest moments.
+- ✅ 1.0-pre **The Chronicle**, a post-game report: each player's ◇ after every turn as a stepped pixel line, marks where Ruins, Overwhelms, contests and the last round happened, and the turning points in words (lead changes, the biggest turns). ✅ 1.0-pre **Hindsight:** after a game against bots, the Genius looks back over your turns and shows the two where its plan comes out furthest ahead, on a small map with both plans numbered.
 - ✅ 1.0-pre (shapes and suit marks) ○ (stronger suit textures) **Colour-blind mode, "Clear marks":** every seat gets a pixel shape (dot, bar, plus, peak, cross, ring) on its meeples, swatches and race lane and its own dash in the Chronicle; every board card shows its suit large and faint behind the text. Still to come: the dithered suit textures made stronger, so suits differ by pattern as well.
 
 ## Feel: ground rules

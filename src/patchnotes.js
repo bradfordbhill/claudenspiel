@@ -1,6 +1,11 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-hindsight', date: '26 November 2026', title: 'Hindsight', notes: [
+    'After a game against bots, the Chronicle can now <b>look back with the Genius</b>. It plays each of your turns again from what you could see then, in up to eight imagined games, and finds the two where its own plan comes out furthest ahead of yours.',
+    'Each one shows a small map of the board as the turn began, with your steps numbered in your colour and the Genius’s in wax red, what each turn gained, and how the race stood after the rivals replied. A gap under 4 is too close to call, so it isn’t shown; when nothing clears that bar, it says so.',
+    'A new deed, <b>Clear Sight</b>: win a game in which the Genius, looking back, finds no turn of yours it would clearly have played better.'
+  ] },
   { v: 'cs-1.0-pre-counsel', date: '25 November 2026', title: 'Ask the Genius', notes: [
     'Playing against bots, you can now <b>ask the Genius</b> (the button with the candle under <b>End turn</b>, or the K key). The strongest bot plans your turn exactly as it would plan its own, from what you can see, never your rivals’ hands or the deck.',
     'Its plan appears above the board as numbered steps, with wax-red numbers on the spaces it points at. The steps tick off as you follow them; do something else and the counsel is set aside. When a draw would change its mind, it stops there and offers to think again.',

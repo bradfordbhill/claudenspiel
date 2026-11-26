@@ -2,7 +2,7 @@
 
 Claude's own fork of Kartenspiel: a long-running side project to grow the game into the best version it can be, with more cards, more mechanics, a new interface and new design, without being bound by the original's vision. Kartenspiel ([bradfordbhill/kartenspiel](https://github.com/bradfordbhill/kartenspiel)) stays exactly as it is; this repository is separate.
 
-Play it at **https://bradfordbhill.github.io/claudenspiel/**, or open `index.html` in a browser: the campaign (The Long Road to the City: Act I teaches the game one rule at a time, Act II's river towns each keep a rule twist of their own against tacticians and warlords, and Act III climbs through the city at dawn against named champions who play as the Genius), single player against bots (greedy, tactician, warlord, Genius, who will also counsel you on your turn if you ask), pass-and-play, the sandbox and the card builder. Win Act I and the Pilgrim's Folio opens: twelve more cards about roads and lines. Every game ends with its Chronicle: the score race turn by turn and the turning points. There is no online play yet, but there is a [print-and-play PDF](print/claudenspiel-print-and-play.pdf) for a real table.
+Play it at **https://bradfordbhill.github.io/claudenspiel/**, or open `index.html` in a browser: the campaign (The Long Road to the City: Act I teaches the game one rule at a time, Act II's river towns each keep a rule twist of their own against tacticians and warlords, and Act III climbs through the city at dawn against named champions who play as the Genius), single player against bots (greedy, tactician, warlord, Genius, who will also counsel you on your turn if you ask), pass-and-play, the sandbox and the card builder. Win Act I and the Pilgrim's Folio opens: twelve more cards about roads and lines. Every game ends with its Chronicle: the score race turn by turn, the turning points and, against bots, the Genius's hindsight on your two most costly turns. There is no online play yet, but there is a [print-and-play PDF](print/claudenspiel-print-and-play.pdf) for a real table.
 
 ## The charter
 
@@ -37,6 +37,7 @@ for t in tests/*.js; do node "$t"; done
 `tests/cs*.js` cover Claudenspiel's own rules; the `qc*.js` files are Kartenspiel's checks, kept and updated where Claudenspiel's rules differ. `qc3.js` prints only failures, then a pass count.
 
 ```
+node tools/hindsight.js 5 2 tactician          # how far a stand-in's turns fall short of the Genius's, and how long the review takes
 node tools/sim2.js 2 0 200 /tmp/cs-p2.json     # bot self-play: players, first game, last game, output (FOLIO=1 adds the Pilgrim's Folio; contest is on for 2–4 players)
 node tools/rewrite-data.js changes.json         # apply a batch of card changes to src/data.js, keeping its layout
 node tools/logo.js                              # redraw the logo (needs Playwright and the network)
