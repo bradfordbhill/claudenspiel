@@ -24,7 +24,8 @@ var KDeeds = (function () {
       banked2: mine(/ banks 2◇ /), bought: mine(/ pays \d+● for a second claim/), grounds: log.filter(function (l) { var m = GROUNDS.exec(l); return m && m[1] === me; }).length,
       startedLastRound: !!(st.lastRound && st.lastRound.by === p), lastRound: !!st.lastRound,
       counsel: (st.counsel && st.counsel[p]) || 0,
-      longLine: E.longestLine ? kd.reduce(function (a, k) { return Math.max(a, E.longestLine(st, k).length); }, 0) : 0
+      longLine: E.longestLine ? kd.reduce(function (a, k) { return Math.max(a, E.longestLine(st, k).length); }, 0) : 0,
+      river: E.downRun ? kd.reduce(function (a, k) { return Math.max(a, E.downRun(st, k, 1).length); }, 0) : 0
     };
   }
   var L = [
@@ -49,7 +50,8 @@ var KDeeds = (function () {
     { id: 'road', name: 'The Long Road', text: 'Finish owning a card whose line (its unbroken row or column of cards) is 10 cards long or more.', check: function (g) { return g.longLine >= 10; } },
     { id: 'own', name: 'Own Counsel', text: 'Beat a Genius bot without once asking the Genius for counsel.', check: function (g) { return g.won && g.bots.indexOf('genius') >= 0 && !g.counsel; } },
     { id: 'sight', name: 'Clear Sight', text: 'Win a game in which the Genius, looking back, finds no turn of yours it would clearly have played better (the Chronicle’s Hindsight, four turns or more).', check: function () { return false; } },
-    { id: 'six', name: 'Six Crowns', text: 'Win with every archetype.', progress: true, check: function (g, book) { return Object.keys(book.wins || {}).length >= 6; } }
+    { id: 'six', name: 'Six Crowns', text: 'Win with every archetype.', progress: true, check: function (g, book) { return Object.keys(book.wins || {}).length >= 6; } },
+    { id: 'river', name: 'Head of the River', text: 'Finish owning a card with six or more cards downstream of it (the unbroken run straight south).', check: function (g) { return g.river >= 6; } }
   ];
   // Archetype mastery: ten levels per archetype, earned by playing it. Each finished game as an archetype is worth
   // 1 mark, a win 2 more, and reaching the archetype's goal (its fantasy, not its score) 2 more. Levels unlock a

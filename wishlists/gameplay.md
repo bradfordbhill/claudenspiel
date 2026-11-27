@@ -29,6 +29,8 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ○ Cryptkeeper and Philosopher with the folio at 3 players (1.12–1.36 in every run): paired test on 500+ deals.
 - ○ Wayside Inn (1.37–1.48): a trim to 10● +2● changed nothing; needs a paired in-and-out test.
 
+- ○ The River Folio: Tollhouse at 3 players (1.35) and Showboat at 3◇ (1.62 on only 61 games) need 1,500-game runs; both folios together are unmeasured.
+
 ## Economy (● barely matters today: one claim a turn is the real limit, and about half of all ● goes unspent)
 - ✅ 0.2 A second claim: once a turn, pay 10● (this turn's ●, not Reserves) to claim once more.
 - ✅ 0.2 Banking: each full 6● left unspent becomes 1◇ at the end of your turn (at most 2◇).

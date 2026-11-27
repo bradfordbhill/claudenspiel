@@ -3728,6 +3728,56 @@ var KData = (function () {
   // The deck's card definitions with the folio shuffled in (cards already in the library by the same id are kept as they are).
   function withFolio(lib) { var have = {}; lib.forEach(function (d) { have[d.id] = 1; }); return lib.concat(FOLIO.filter(function (d) { return !have[d.id]; })); }
 
-  return { SUITS: SUITS, TYPES: TYPES, ALL4: ALL4, STARTER: STARTER, BURNS: BURNS, FOLIO: FOLIO, withFolio: withFolio, make: c };
+  // The River Folio (Claudenspiel 1.0): twelve cards about the river towns, two a suit, opened by winning Act II. Its word is
+  // *downstream*: the river runs north to south, and a card's downstream is the unbroken run of cards straight south of it
+  // in its column (upstream, the run north). A Ruin breaks it, as it breaks a line. So a column is a river: Mill Races want
+  // its head, Water Meadows its mouth, and a Fire Ship launched at the top burns its way down.
+  var RIVER = [
+    c({ id: 'mill-race', name: 'Mill Race', suit: 'Leaf', cost: 7, income: 2, copies: 2, sees: { area: 'downstream' }, score: { kind: 'downstream', n: 2, max: 8 },
+      text: '2◇ for each card downstream of it (the unbroken run of cards straight south of it; a Ruin breaks it), up to 8◇.',
+      note: 'Build it at the head of the river and let everyone else’s cards turn its wheel.' }),
+    c({ id: 'water-meadow', name: 'Water Meadow', suit: 'Leaf', cost: 5, income: 1, copies: 2, sees: { area: 'upstream' }, score: { kind: 'upstream', n: 1, m: 1, suit: 'Leaf', max: 8 },
+      text: '1◇ for each card upstream of it (the unbroken run straight north of it), and 1◇ more for each Leaf card among them, up to 8◇.',
+      note: 'The mouth of the river, where everything upstream settles as silt. A Mill Race’s natural other end.' }),
+    c({ id: 'tollhouse', name: 'Tollhouse', suit: 'Sceptre', cost: 10, income: 3, copies: 2, sees: { area: 'cross' }, score: { kind: 'lineRivals', n: 2, max: 8 },
+      text: '2◇ for each card a rival owns in its row line and column line (up to 8◇).',
+      note: 'The river’s law: every barge that passes pays. It wants to sit where rival Kingdoms run into yours.' }),
+    c({ id: 'bridge-toll', name: 'Bridge Toll', suit: 'Sceptre', type: 'Action', cost: 4, onPlay: [{ do: 'perGain', gain: 'ap', of: 'border', n: 2, max: 10 }],
+      text: 'Gain 2● for each card a rival owns next to your Kingdom (up to 10●).', note: 'Neighbours pay to cross. Cheap, and rich on a crowded border.' }),
+    c({ id: 'showboat', name: 'Showboat', suit: 'Goblet', cost: 9, income: 4, sees: { area: 'column', suit: 'Goblet' }, score: { kind: 'columnSuit', n: 3, suit: 'Goblet', max: 9 },
+      text: '3◇ for each other Goblet card upstream or downstream of it (its column line), up to 9◇.', note: 'Music drifts down the water; the Hedonist builds the party along the bank.' }),
+    c({ id: 'regatta', name: 'Regatta', suit: 'Goblet', type: 'Action', cost: 5, copies: 2, onPlay: [{ do: 'gainAP', n: 3 }, { do: 'perGain', gain: 'draw', of: 'mine', suit: 'Goblet', n: 1, per: 2, max: 2 }],
+      text: 'Gain 3●. Draw a card for every two Goblet cards in your Kingdom (up to 2).', note: 'A day on the water: a little money for anyone, a full hand for a court of Goblets.' }),
+    c({ id: 'fire-ship', name: 'Fire Ship', suit: 'Sword', type: 'Action', cost: 6, copies: 2, onPlay: [{ do: 'ruin', area: 'downstream', oppOwned: true }],
+      text: 'Play it on an empty space. Ruin a card a rival owns downstream of it (the unbroken run straight south of that space).',
+      note: 'Set it alight upstream and let the current carry it. The longer a rival’s river, the further it reaches.' }),
+    c({ id: 'ford-garrison', name: 'Ford Garrison', suit: 'Sword', cost: 8, income: 2, copies: 2, sees: { area: 'colAll' }, score: { kind: 'columnRuined', n: 3, max: 9 },
+      text: '3◇ for each Ruined card anywhere in its column (gaps and Ruins don’t stop it), up to 9◇.',
+      note: 'Hold the ford and the wrecks float past you. It pays for Ruins a Fire Ship leaves behind.' }),
+    c({ id: 'boatmans-coin', name: 'Boatman’s Coin', suit: 'Bone', type: 'Action', cost: 2, copies: 2, onPlay: [{ do: 'buryFromHand', n: 1 }, { do: 'gainAP', n: 3 }],
+      text: 'Bury a card from your hand under your Foundation, then gain 3●.', note: 'Pay the ferryman and he pays you back. A buried card for the Cryptkeeper, a little ● for everyone.' }),
+    c({ id: 'silt-barrow', name: 'Silt Barrow', suit: 'Bone', cost: 7, income: 2, sees: { area: 'colAll' }, score: { kind: 'columnBuried', n: 1, max: 8 },
+      text: '1◇ for each card buried under any card in its column (gaps don’t stop it), up to 8◇.', note: 'The river carries its dead down to one bank. Every burial in the column silts up here.' }),
+    c({ id: 'water-clock', name: 'Water Clock', suit: 'Tome', cost: 9, income: 3, copies: 2, sees: { area: 'column' }, score: { kind: 'columnSuits', n: 2, max: 8 },
+      text: '2◇ for each different suit in its column line (itself included, whoever owns the cards), up to 8◇.', note: 'It keeps time by what flows past. A Philosopher’s instrument that rivals help wind.' }),
+    c({ id: 'the-ferry', name: 'The Ferry', suit: 'Tome', type: 'Action', cost: 4, onPlay: [{ do: 'draw', n: 1 }, { do: 'ferry' }],
+      text: 'Draw a card. Then you may carry one of your cards (not your Foundation, nothing buried under it) to an empty space in its row or column next to another card.',
+      note: 'The only way across the water: move a card to where it scores, or out of a rival’s reach.' })
+  ];
+  var RIVER_BURNS = {
+    'mill-race': [{ k: 'bank', n: 1 }, { k: 'coin', n: 2 }], 'water-meadow': [{ k: 'per', of: 'mine', suit: 'Leaf', n: 1, max: 3 }],
+    'tollhouse': [{ k: 'coin', n: 5 }, { k: 'draw', n: 1 }], 'bridge-toll': [{ k: 'cheap', n: 4 }],
+    'showboat': [{ k: 'per', of: 'board', suit: 'Goblet', n: 1, max: 4 }], 'regatta': [{ k: 'draw', n: 2 }],
+    'fire-ship': [{ k: 'sword' }, { k: 'coin', n: 2 }], 'ford-garrison': [{ k: 'per', of: 'ruined', n: 1, max: 4 }],
+    'boatmans-coin': [{ k: 'bury' }, { k: 'coin', n: 1 }], 'silt-barrow': [{ k: 'bury' }, { k: 'bank', n: 1 }],
+    'water-clock': [{ k: 'per', of: 'suits', n: 1, max: 4 }], 'the-ferry': [{ k: 'draw', n: 2 }]
+  };
+  if (typeof process !== 'undefined' && process.env && process.env.RIVER_DROP) RIVER = RIVER.filter(function (d) { return process.env.RIVER_DROP.split(',').indexOf(d.id) < 0; });
+  RIVER.forEach(function (d) { d.folio = 'river'; d.burn = RIVER_BURNS[d.id]; BURNS[d.id] = RIVER_BURNS[d.id]; });
+  function withRiver(lib) { var have = {}; lib.forEach(function (d) { have[d.id] = 1; }); return lib.concat(RIVER.filter(function (d) { return !have[d.id]; })); }
+  // A deck with any of the folios: which = { folio: bool, river: bool }.
+  function withFolios(lib, which) { which = which || {}; var out = lib; if (which.folio) out = withFolio(out); if (which.river) out = withRiver(out); return out; }
+
+  return { SUITS: SUITS, TYPES: TYPES, ALL4: ALL4, STARTER: STARTER, BURNS: BURNS, FOLIO: FOLIO, withFolio: withFolio, RIVER: RIVER, withRiver: withRiver, withFolios: withFolios, make: c };
 })();
 if (typeof module !== 'undefined') module.exports = KData;

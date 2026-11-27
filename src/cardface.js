@@ -27,7 +27,8 @@ var KFace = (function () {
     return m[k] || k;
   }
   // The Pilgrim's Folio's mark: a small pixel waymark (a road running to the horizon) after the card's name.
-  function folioMark(d) { return d && d.folio ? '<i class="folio-mark" title="The Pilgrim’s Folio"></i>' : ''; }
+  // The River Folio's: a small pixel river under a dusk sky.
+  function folioMark(d) { return !d || !d.folio ? '' : d.folio === 'river' ? '<i class="river-mark" title="The River Folio"></i>' : '<i class="folio-mark" title="The Pilgrim’s Folio"></i>'; }
   // A card's score rule as readable text.
   function scoreText(s) {
     if (!s) return '';
@@ -51,6 +52,13 @@ var KFace = (function () {
       case 'perSurroundSuit': return n + '◇ per ' + s.suit + ' around it';
       case 'perSurroundRuined': return n + '◇ per Ruined card around it';
       case 'perAdjacentOwner': return n + '◇ per player beside it';
+      case 'downstream': return n + '◇ per card downstream' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'upstream': return n + '◇ per card upstream, +' + m + ' per ' + s.suit + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'columnSuit': return n + '◇ per ' + s.suit + ' in its column line' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'columnSuits': return n + '◇ per suit in its column line' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'columnRuined': return n + '◇ per Ruin in its column' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'columnBuried': return n + '◇ per buried card in its column' + (s.max ? ' (max ' + s.max + ')' : '');
+      case 'lineRivals': return n + '◇ per rival card in its lines' + (s.max ? ' (max ' + s.max + ')' : '');
       default: return '';
     }
   }

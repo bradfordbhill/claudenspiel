@@ -218,9 +218,26 @@ var KEngine = (function () {
       case 'perSurroundSuit': return capped(s, n * n8(k).filter(function (x) { var t = top(st, x); return t && !st.cards[t].ruined && hasSuit(st, t, s.suit); }).length);
       case 'perSurroundRuined': return capped(s, n * n8(k).filter(function (x) { var t = top(st, x); return t && st.cards[t].ruined; }).length);
       case 'perAdjacentOwner': { var who = {}; nb.forEach(function (x) { var t = top(st, x); if (t && !st.cards[t].ruined) st.cards[t].claimants.forEach(function (o) { who[o] = 1; }); }); return capped(s, n * Object.keys(who).length); }
+      // The River Folio (Claudenspiel 1.0): the river runs north to south. Downstream is the unbroken run straight south of a
+      // card, upstream the run north (a Ruin breaks both); its column line is both with itself; colAll is its whole column.
+      case 'downstream': return capped(s, n * downRun(st, k, 1).length);
+      case 'upstream': { var ups = downRun(st, k, -1); return capped(s, n * ups.length + m * ups.filter(function (x) { return hasSuit(st, top(st, x), s.suit); }).length); }
+      case 'columnSuit': return capped(s, n * lineRun(st, k, 0, 1).filter(function (x) { return x !== k && hasSuit(st, top(st, x), s.suit); }).length);
+      case 'columnSuits': return capped(s, n * lineSuits(st, lineRun(st, k, 0, 1)));
+      case 'columnRuined': return capped(s, n * colAll(st, k).filter(function (x) { return st.cards[top(st, x)].ruined; }).length);
+      case 'columnBuried': return capped(s, n * colAll(st, k).concat([k]).reduce(function (a, x) { return a + Math.max(0, st.board[x].length - 1); }, 0));
+      case 'lineRivals': return capped(s, n * lineRun(st, k, 1, 0).concat(lineRun(st, k, 0, 1)).filter(function (x) { if (x === k) return false; var t = st.cards[top(st, x)]; return !t.ruined && t.claimants.some(function (o) { return o !== p; }); }).length);
       default: return 0;
     }
   }
+  // The River Folio: the unbroken run of cards straight south (dir 1) or north (dir -1) of k, k excluded. A Ruin breaks it.
+  function downRun(st, k, dir) {
+    var q = XY(k), out = [], y;
+    for (y = q[1] + dir; ; y += dir) { var t = top(st, K(q[0], y)); if (!t || (st.opts.brokenRoads && st.cards[t].ruined)) break; out.push(K(q[0], y)); }
+    return out;
+  }
+  // Every occupied cell in k's column, gaps or not, k excluded.
+  function colAll(st, k) { var x0 = XY(k)[0]; return keys(st).filter(function (x) { return x !== k && XY(x)[0] === x0; }); }
   function capped(s, v) { return s.max ? Math.min(+s.max, v) : v; }
   // The unbroken run of occupied cells through k along (dx, dy), k included, west/north first.
   function lineRun(st, k, dx, dy) {
@@ -621,6 +638,7 @@ var KEngine = (function () {
     else if (a === 'emptyAround3') out = keys(st).filter(function (k) { return n4(k).filter(function (x) { return !top(st, x); }).length >= 3; });
     else if (a === 'westOfOwn') out = kingdom(st, p).map(function (k) { var q = XY(k); return K(q[0] - 1, q[1]); });
     else if (a === 'east1') { var q = XY(src); out = [K(q[0] + 1, q[1])]; }
+    else if (a === 'downstream') out = src ? downRun(st, src, 1) : [];   // Fire Ship
     else if (a === 'ring3') { var r = XY(src); out = [K(r[0] + 3, r[1]), K(r[0] - 3, r[1]), K(r[0], r[1] + 3), K(r[0], r[1] - 3)]; }
     else out = keys(st);
     return out.filter(function (k, i) { return out.indexOf(k) === i && k !== src && top(st, k); });
@@ -1068,6 +1086,7 @@ var KEngine = (function () {
       if (s.of === 'mine') cnt = kingdom(st, p).filter(function (x) { return hasSuit(st, top(st, x), s.suit); }).length;
       else if (s.of === 'board') cnt = keys(st).filter(function (x) { var t = top(st, x); return !st.cards[t].ruined && hasSuit(st, t, s.suit); }).length;
       else if (s.of === 'region') cnt = regionCells(st, p).length;
+      else if (s.of === 'border') { var kb = kingdom(st, p), seen = {}; kb.forEach(function (k) { n4(k).forEach(function (x) { var t = top(st, x); if (t && kb.indexOf(x) < 0 && !st.cards[t].ruined && st.cards[t].claimants.some(function (o) { return o !== p; })) seen[x] = 1; }); }); cnt = Object.keys(seen).length; }   // Bridge Toll
       var amt = (+s.base || 0) + (+s.n || 1) * Math.floor(cnt / (+s.per || 1)); if (s.max) amt = Math.min(+s.max, amt);
       if (s.gain === 'ap') { pl.ap += amt; log(st, pl.name + ' gains ' + amt + '●.'); }
       else if (s.gain === 'draw') { var got = draw(st, p, amt); log(st, pl.name + ' draws ' + got + '.'); }
@@ -1092,12 +1111,37 @@ var KEngine = (function () {
       if (ans) { st.board[ans] = st.board[res.srcKey]; delete st.board[res.srcKey]; log(st, rawDef(st, res.src).name + ' moves to ' + ans + '.'); res.srcKey = ans; (st.moves = st.moves || []).push(ans); }
       return 'done';
     },
+    // The Ferry (the River Folio): carry one of your cards (not a Foundation, nothing buried under it, not Ruined) to an
+    // empty space in its row or column that touches another card. Two prompts: the card, then where it lands.
+    ferry: function (st, res, s, ans) {
+      var sub = res.sub || (res.sub = {}), p = res.player;
+      if (sub.stage === 'to') {
+        if (ans) { st.board[ans] = st.board[sub.from]; delete st.board[sub.from]; log(st, rawDef(st, top(st, ans)).name + ' is carried across the water to ' + ans + '.'); (st.moves = st.moves || []).push(ans); }
+        return 'done';
+      }
+      if (ans === undefined) {
+        var mine = ferryable(st, p);
+        if (!mine.length) { log(st, 'No card of yours the ferry can carry.'); return 'done'; }
+        return pend(res, { kind: 'cell', options: mine, prompt: 'The Ferry: choose a card of yours to carry (or skip).', verb: 'ferry', optional: true });
+      }
+      if (!ans) return 'done';
+      sub.from = ans; sub.stage = 'to';
+      return pend(res, { kind: 'cell', options: ferryTo(st, ans), prompt: 'Carry it to which space?', verb: 'move', empty: true, optional: true });
+    },
     // Anything not automated: show the text and let the players resolve it by hand.
     manual: function (st, res, s, ans) {
       if (ans === undefined) return pend(res, { kind: 'manual', prompt: s.text || 'Resolve this effect by hand, then click Done.' });
       return 'done';
     }
   };
+  // The Ferry: the cards p may carry, and where one can land (an empty space in its row or column, touching another card).
+  function ferryable(st, p) { return kingdom(st, p).filter(function (k) { var u = top(st, k), c = st.cards[u]; return st.board[k].length === 1 && !c.ruined && !c.fixed && !c.ascended && !isFoundation(st, u) && ferryTo(st, k).length; }); }
+  function ferryTo(st, k) {
+    var q = XY(k), b = bounds(st), out = [];
+    for (var x = b.minX - 1; x <= b.maxX + 1; x++) out.push(K(x, q[1]));
+    for (var y = b.minY - 1; y <= b.maxY + 1; y++) out.push(K(q[0], y));
+    return out.filter(function (x) { return x !== k && !top(st, x) && n4(x).some(function (y) { return y !== k && top(st, y); }); });
+  }
   // Indexes of the other players still in the game.
   function others(st, p) { return st.players.map(function (q, i) { return i; }).filter(function (i) { return i !== p && !st.players[i].out; }); }
 
@@ -1248,7 +1292,7 @@ var KEngine = (function () {
     var st = {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
-      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, folio: !!setup.folio, brokenRoads: setup.brokenRoads !== false, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
+      opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, folio: !!setup.folio, river: !!setup.river, brokenRoads: setup.brokenRoads !== false, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
         burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
@@ -1288,7 +1332,7 @@ var KEngine = (function () {
     if (d.type !== 'Action' && d.type !== 'Blessing' && d.type !== 'Curse') return true;
     if (d.curse && d.curse.mode === 'top') return true;
     var AREA = ['ruin', 'setSuit', 'curse', 'removeCurse', 'discardDownTo', 'copy'];
-    return (d.onPlay || []).some(function (s) { return s.do === 'move' || (AREA.indexOf(s.do) >= 0 && (!s.area || s.area === 'adjacent' || s.area === 'east1' || s.area === 'ring3')); });
+    return (d.onPlay || []).some(function (s) { return s.do === 'move' || (AREA.indexOf(s.do) >= 0 && (!s.area || s.area === 'adjacent' || s.area === 'east1' || s.area === 'ring3' || s.area === 'downstream')); });
   }
   // Start resolving `steps` for card uid at cell k (null when played from hand).
   function startRes(st, kind, uid, k, steps) {
@@ -1614,6 +1658,11 @@ var KEngine = (function () {
       // the Pilgrim's Folio: the longest line, or both lines (row and column runs)
       case 'line': cells = longestLine(st, k); break;
       case 'cross': cells = lineRun(st, k, 1, 0).concat(lineRun(st, k, 0, 1)); break;
+      // the River Folio
+      case 'downstream': cells = downRun(st, k, 1); break;
+      case 'upstream': cells = downRun(st, k, -1); break;
+      case 'column': cells = lineRun(st, k, 0, 1); break;
+      case 'colAll': cells = colAll(st, k); break;
     }
     cells = cells.filter(function (x) { return x !== k; });
     var counted = cells.filter(function (x) { var t = top(st, x); return t && (!sv.suit || hasSuit(st, t, sv.suit)); });
@@ -1689,7 +1738,7 @@ var KEngine = (function () {
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
     burnBlock: burnBlock, BURN: BURN, burnSteps: burnSteps, burnText: burnText, defBurn: defBurn, defBurnText: defBurnText, burnStepText: burnStepText, burnNeedsCell: burnNeedsCell, burnGain: burnGain, warded: warded, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
-    shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, lineRun: lineRun, longestLine: longestLine, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
+    shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, lineRun: lineRun, longestLine: longestLine, downRun: downRun, colAll: colAll, ferryable: ferryable, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
   };
 })();
 if (typeof module !== 'undefined') module.exports = KEngine;

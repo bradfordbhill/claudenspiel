@@ -2,13 +2,13 @@
 // OPTS='{"burn":true}' sets rules for every game; SECS=1000 sets the time limit (default 255 s).
 // Contest is on for 2–4 players, as in the game's New game page (OPTS='{"contest":false}' turns it off). Before
 // 24 November 2026 it was off here unless OPTS said otherwise, so older journal numbers without OPTS are contest-free.
-// FOLIO=1 shuffles the Pilgrim's Folio into every deck.
+// FOLIO=1 shuffles the Pilgrim's Folio into every deck; RIVER=1 the River Folio.
 // Usage: node tools/sim2.js <players> <first game> <last game> <output.json> [lineup]
 //   lineup (optional) fixes styles instead of rotating them, e.g. "Warmonger=warlord,*=greedy".
 //   An archetype named in it plays in every game.
 const D=require('../src/data.js'), E=require('../src/engine.js'), B=require('../src/bots.js'), fs=require('fs');
 // CARDS='{"mausoleum":{"score":{...}}}' patches card definitions for every game (for trying a change before writing it).
-if(process.env.CARDS){ const ch=JSON.parse(process.env.CARDS); D.STARTER.concat(D.FOLIO).forEach(c=>{ if(ch[c.id]) Object.assign(c,ch[c.id]); }); }
+if(process.env.CARDS){ const ch=JSON.parse(process.env.CARDS); D.STARTER.concat(D.FOLIO,D.RIVER).forEach(c=>{ if(ch[c.id]) Object.assign(c,ch[c.id]); }); }
 const ARCH=['Archbishop','Hedonist','Warmonger','Cryptkeeper','Gardener','Philosopher'], STRATS=['greedy','tactician','raider'];
 // lineup = { Archetype: style, '*': style } or null (rotate styles as before).
 function game(n,g,stats,lineup){
@@ -16,7 +16,7 @@ function game(n,g,stats,lineup){
   if(lineup) { const must=Object.keys(lineup).filter(a=>a!=='*'); combos=combos.filter(c=>must.every(a=>c.includes(a))); }
   const c=combos[g%combos.length], rot=Math.floor(g/combos.length)%n; const archs=c.slice(rot).concat(c.slice(0,rot));
   const strats=archs.map((a,i)=>lineup ? (lineup[a]||lineup['*']||'greedy') : STRATS[(g+i*(n===3?1:2)+Math.floor(g/combos.length))%3]);
-  let st=E.newGame(process.env.FOLIO?D.withFolio(D.STARTER):D.STARTER,{players:archs.map((a,i)=>({name:'P'+i,arch:a})),seed:5000+g+n*1000,seatTokens:process.env.SEATTOK!=null?JSON.parse(process.env.SEATTOK):undefined,target:process.env.TARGET?+process.env.TARGET:undefined,contest:n<=4,...JSON.parse(process.env.OPTS||'{}')}); let guard=0;
+  let st=E.newGame(D.withFolios(D.STARTER,{folio:!!process.env.FOLIO,river:!!process.env.RIVER}),{players:archs.map((a,i)=>({name:'P'+i,arch:a})),seed:5000+g+n*1000,seatTokens:process.env.SEATTOK!=null?JSON.parse(process.env.SEATTOK):undefined,target:process.env.TARGET?+process.env.TARGET:undefined,contest:n<=4,...JSON.parse(process.env.OPTS||'{}')}); let guard=0;
   while(st.winner==null && st.round<=30 && guard++<400){ if(st.pending) { st=B.resolve(st,st.cur,strats[st.cur],strats); if(!st) break; continue; } const s=B.turn(st,stats,strats); if(!s) break; st=s; }
   return {st,archs,strats}; }
 // Command line: play games [from, to) (stopping after ~255 s) and save results for analyze2.js.

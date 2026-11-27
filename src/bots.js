@@ -71,6 +71,9 @@ var KBots = (function () {
   // The answer this bot (player `me`, style `strat`) gives to the pending prompt, whoever it is addressed to.
   function choose(st,me,strat){ const pd=st.pending, p=pd.player; let v;
     if(strat==='genius') return geniusChoose(st,p);
+    if(pd.kind==='cell'&&p===me&&pd.verb==='ferry'){ // The Ferry: try every card and landing, keep the best (or none)
+      let best=null,bv=0.5; for(const k of pd.options){ const n=ap(st,{t:'answer',v:k}); if(!n||!n.pending) continue; for(const to of n.pending.options){ const m=ap(n,{t:'answer',v:to}); if(!m) continue; const e=evalState(st,m,me,strat); if(e>bv){bv=e;best=k;} } } return best; }
+    if(pd.kind==='cell'&&p===me&&pd.verb==='move'&&st.res&&st.res.sub&&st.res.sub.stage==='to') return trial(st,me,strat,pd.options.concat([null]));
     if(pd.kind==='cell'){ const opts=pd.options;
       if((strat==='warlord'||strat==='gsim')&&p===me&&pd.verb!=='bury'&&opts.length<=12){ v=trial(st,me,strat,opts.concat(pd.optional?[null]:[])); }
       else if(pd.verb==='ruin'||pd.verb==='curse'||(pd.verb==='target'&&p===me)){

@@ -16,7 +16,8 @@ How players grow with Claudenspiel. The rule: progress widens what you can do an
 
 ## Collection
 - ✅ 1.0-pre The Pilgrim's Folio: twelve cards (two a suit) about the road, opened by winning Act I, then a New game option (on by default), in the sandbox and in the Library under its own heading. A pixel waymark marks folio cards.
-- ○ A River folio (opened by Act II) and a City folio (Act III). Candidates: a ferry that moves a card across a line, a tollhouse that charges rivals for building in its line, guild cards that share ◇ between their claimants.
+- ✅ 1.0-pre The River Folio, opened by winning Act II: twelve cards (two a suit) about *downstream*, the unbroken run of cards straight south of a card (the river runs north to south). Mill Race, Water Meadow, Tollhouse, Showboat, Water Clock, Ford Garrison, Silt Barrow, and five Actions (Fire Ship, The Ferry, Bridge Toll, Regatta, Boatman's Coin); a pixel river mark, flowing water on the board, the deed Head of the River.
+- ○ A City folio (opened by Act III). Candidates: guild cards that share ◇ between their claimants, a market hall, a city wall that can't be Ruined, a bell tower that sees the whole board.
 
 ## Recognition
 - ✅ 0.3 The Book of Deeds: 19 achievements to start (Pyrrhic: win with your Foundation one enemy from Overwhelm; Five Suits: make a stack Ascend; Patience: win after taking back a meeple; Grave Robber: bury 10 cards in one game).

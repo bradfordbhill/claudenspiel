@@ -2,6 +2,56 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 27 November 2026 · 1.0-pre, the River Folio
+
+**Why.** The last nine days went into the Genius: counsel, hindsight, the champions of Act III. All of it makes Claudenspiel a better place to *learn* the game, but nothing new to *play*. A deckbuilder lives on its expansions: a fresh set of cards with one new word, whose combinations with the old ones nobody has found yet, is what makes a regular group come back to the table (Dominion's Seaside, Carcassonne's river tiles). The progression wishlist has carried "a River folio, opened by Act II" since the campaign shipped, so Act II now pays out like Act I.
+
+**The word: downstream.** The Pilgrim's Folio taught that a card can care about its *line*, the run of cards through it. A river is a line with a direction. The river runs north to south, top to bottom of the board. A card's **downstream** is the unbroken run of cards straight south of it, its **upstream** the run north, and its **column line** both. An empty space or a Ruin ends the river, as it ends a road. Direction is what's new: in a symmetric line game the best spot is the middle, but here the head and the mouth of a column want different cards. Every column becomes a little economy that both players feed.
+
+**The cards** (two a suit, 18 copies):
+
+| Card | Suit | Cost | What it does | Built for |
+|---|---|---|---|---|
+| Mill Race ×2 | Leaf | 7● | 2◇ per card downstream (up to 8) | the head of a column |
+| Water Meadow ×2 | Leaf | 5● | 1◇ per card upstream, +1 per Leaf among them (up to 8) | the mouth |
+| Tollhouse ×2 | Sceptre | 10● | 2◇ per rival card in its row and column lines (up to 8) | where Kingdoms meet |
+| Bridge Toll | Sceptre | 4● Action | 2● per rival card on your border (up to 10●) | a crowded border |
+| Showboat | Goblet | 9● | 3◇ per other Goblet in its column line (up to 9) | the Hedonist |
+| Regatta ×2 | Goblet | 5● Action | +3●; draw 1 per two Goblets you own (up to 2) | anyone; Goblets most |
+| Fire Ship ×2 | Sword | 6● Action | played on an empty space: Ruin a rival's card downstream of it | the Warmonger |
+| Ford Garrison ×2 | Sword | 8● | 3◇ per Ruin anywhere in its column (up to 9) | after a Fire Ship |
+| Boatman's Coin ×2 | Bone | 2● Action | bury a card from hand under your Foundation, +3● | the Cryptkeeper |
+| Silt Barrow | Bone | 7● | 1◇ per card buried anywhere in its column (up to 8) | the Cryptkeeper |
+| Water Clock ×2 | Tome | 9● | 2◇ per suit in its column line, whoever owns the cards (up to 8) | the Philosopher |
+| The Ferry | Tome | 4● Action | draw 1; carry one of your cards along its row or column to an empty space by another card | everyone |
+
+Some rules I followed in the design:
+- *Each pair has a giver and a taker.* Mill Race and Water Meadow want opposite ends of the same column, so they fight over it. Fire Ship makes the Ruins that Ford Garrison counts. Boatman's Coin buries the cards that Silt Barrow counts.
+- *War hits what it can reach.* Last week's lesson was that a Ruin anyone can cast helps whoever casts it, so the Warmonger gains nothing from more Ruins for everyone. Fire Ship only reaches *downstream* of the space it is launched from, so it hurts players who build long rivers, which are exactly this folio's best builders.
+- *The Ferry is the first card that moves an owned card a long way.* Choreography moves itself one step; the Ferry carries any card of yours (not a Foundation, nothing buried under it) along its row or column. It can lift a Mill Race to the head of a better river, or pull a card out of Overwhelm range. Moving a card next to enemies runs the usual Overwhelm checks. Bots weigh every pair of card and landing spot before they accept the ferry (`bots.js`), and a test checks a tactician carries a Mill Race to the head of a river.
+- *Gaps don't stop everything.* Ford Garrison and Silt Barrow count the whole column, gaps and Ruins included. A Ruin can't break the count of Ruins.
+
+**Measured: 2 players, 800 games** (deals 2000–2799, contest on, greedy, tactician and raider bots rotating, River Folio only), set against the 1,520-game no-folio baseline from 24 November:
+
+| 2 players | Archbishop | Cryptkeeper | Gardener | Hedonist | Philosopher | Warmonger | Spread |
+|---|---|---|---|---|---|---|---|
+| No folio (1,520) | 1.05 | 1.03 | 0.97 | 0.95 | 1.10 | 0.90 | 0.20 |
+| River Folio (800) | 1.03 | 1.08 | 1.05 | 0.95 | 0.99 | 0.90 | **0.18** |
+
+Every archetype is inside one standard error (about 0.06 here) of the baseline. The Philosopher's 1.10 → 0.99 is the largest change, probably because the river cards dilute the six-suit hunt. Card win indexes, for scale (Obelisk, the strongest base card, reads 1.39 in the same games): Ford Garrison 1.23, Tollhouse 1.23, Mill Race 1.19, Water Clock 1.14, Silt Barrow 1.04, Water Meadow 0.99, **Showboat 0.91**. Showboat averaged only 2.9◇ and was built in 55 games. It is a single 9● card that needs Goblets in one column, so it moved from 2◇ a Goblet (up to 8) to **3◇ (up to 9)** before the 3-player run.
+
+**Measured: 3 players, 682 games** (deals 3000–3681, with the Showboat change): Archbishop 0.90, Cryptkeeper 1.08, Gardener 0.94, Hedonist 0.92, Philosopher 1.03, Warmonger 1.14, **spread 0.24**. The last 3-player base-game reading was 0.27 on 257 games, so the folio doesn't widen it. More Ruins a game (1.95), mostly from Fire Ships, and the Warmonger is above par for once. Card win indexes: Tollhouse 1.35, Mill Race 1.30, Water Clock 1.22, Ford Garrison 1.12, Silt Barrow 1.09, Water Meadow 0.96 (Obelisk 1.62). Showboat reads 1.62, but on only 61 games with one on the board, so its value at 3◇ isn't settled yet. Tollhouse is the one to watch: at 3 players there are more rival cards in its lines.
+
+**Beauty.** River cards carry a 9 × 8 pixel river under a dusk sky (CSS data-URI, so the game stays one file), large in the Library's folio banner and on the print-and-play sheets. Select a river card on the board and every cell it looks along flows with stepped pixel water: blue bands that move south in eight steps, never smooth (the motion setting and reduced-motion stop it). New deed, **Head of the River**: finish owning a card with six or more cards downstream.
+
+`tests/cs17-river.js` (27 checks): each card's count, including gaps, caps and Ruins; Fire Ship's reach (rival cards only, downstream only); the Ferry's choices and landing; four bot games with both folios.
+
+**Open questions.**
+- How often bots cast Fire Ship and the Ferry, and whether a Fire Ship ever reaches far enough to matter. The simulator logs Ruins, not their source card.
+- The River Folio and the Pilgrim's Folio together: 40 extra copies make a 174-card deck. Do games run longer, and does the Warmonger fall behind again?
+- Act II's towns could use the River Folio themselves, a river custom at Ferrybridge or the Weir.
+- A City folio for Act III (guilds that share ◇, a market hall, a wall that can't be Ruined).
+
 ## 26 November 2026 · 1.0-pre, hindsight
 
 **Why.** Counsel helps on the turn you ask, but most of what a card player learns comes *after* the game, looking back: which turn lost it. Chess players run the engine over the game; Magic players replay the turn they mis-sequenced. The Chronicle already told the story of a game but never said which of *your* decisions mattered. Yesterday's open question named the missing piece: the Genius's better move at the game's biggest moments. Every part existed (fair imagined worlds, candidate lines, rollouts), so this is mostly bookkeeping and a page.

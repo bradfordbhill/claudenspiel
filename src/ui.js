@@ -253,7 +253,7 @@
     var got = CC.stars(st, p); if (!got) return;
     var book = campBook(), fresh = CC.record(book, st.campaign.stop, got); lsSet('cs.campaign', book);
     app.campResult = { log: st.log.length, stop: st.campaign.stop, got: got, fresh: fresh };
-    if (fresh[0]) { var nx = CC.next(st.campaign.stop); setTimeout(function () { SFX.play('deed'); toast(nx ? (CC.actOf(nx) !== CC.actOf(st.campaign.stop) ? (CC.actOf(nx) === 3 ? '🏰 Act II complete. The city gate opens: ' : '⛵ Act I complete. The Pilgrim’s Folio (twelve new cards, under Folios in New game) and the river towns open: ') : '🛤 The road opens: ') + CC.stop(nx).name + '.' : '👑 Act III complete. The Long Road to the City is walked.'); }, 900); }
+    if (fresh[0]) { var nx = CC.next(st.campaign.stop); setTimeout(function () { SFX.play('deed'); toast(nx ? (CC.actOf(nx) !== CC.actOf(st.campaign.stop) ? (CC.actOf(nx) === 3 ? '🏰 Act II complete. The River Folio (twelve cards from the river towns, under Folios in New game) and the city gate open: ' : '⛵ Act I complete. The Pilgrim’s Folio (twelve new cards, under Folios in New game) and the river towns open: ') : '🛤 The road opens: ') + CC.stop(nx).name + '.' : '👑 Act III complete. The Long Road to the City is walked.'); }, 900); }
   }
   // The campaign part of the Chronicle: the stop, its three stars (new ones stamp in), and where to go next.
   function campaignBlock(st) {
@@ -932,6 +932,8 @@
     var roadCut = {}; if (ui.sel && E.top(st, ui.sel) && ui.showSeen && st.opts.brokenRoads) { var sv0 = (E.rawDef(st, E.top(st, ui.sel)).sees || {}).area;
       if (sv0 === 'line' || sv0 === 'cross') [[1, 0], [0, 1]].forEach(function (d) { var run = E.lineRun(st, ui.sel, d[0], d[1]); [[run[0], -1], [run[run.length - 1], 1]].forEach(function (e) {
         var q = E.XY(e[0]), x = E.K(q[0] + d[0] * e[1], q[1] + d[1] * e[1]), t = E.top(st, x); if (t && st.cards[t].ruined) roadCut[x] = 1; }); }); }
+    // The River Folio: the river a selected river card looks along flows down its column in stepped pixel water.
+    var current = {}; if (ui.sel && E.top(st, ui.sel) && ui.showSeen) { var rd0 = E.rawDef(st, E.top(st, ui.sel)); if (rd0.folio === 'river' && /^(downstream|upstream|column|colAll)$/.test((rd0.sees || {}).area)) Object.keys(see).forEach(function (k) { current[k] = 1; }); }
     if (ui.sel && ui.showSeenBy) ks.forEach(function (k) { if (k !== ui.sel && E.sight(st, k).cells.indexOf(ui.sel) >= 0) seenBy[k] = 1; });
     var claimSet = {};
     if (ctx.kind === 'game' && myTurn(ctx) && st.turn && st.turn.started && !st.pending && !st.res && !ui.hand && !ui.mode && !ui.swap && st.winner == null) E.claimOptions(st, st.cur).forEach(function (k) { optSet[k] = 1; claimSet[k] = 1; });
@@ -945,7 +947,7 @@
       if (optSet[k]) cls += u ? ' opt' : ' optempty';
       if (optSet[k] && u && buryingSuit && !E.hasSuit(st, u, buryingSuit)) cls += ' optdash';
       if (claimSet[k]) cls += ' claimable';
-      if (see[k]) cls += ' see'; if (counted[k]) cls += ' counted'; if (roadCut[k]) cls += ' roadcut'; if (seenBy[k]) cls += ' seenby';
+      if (see[k]) cls += ' see'; if (counted[k]) cls += ' counted'; if (roadCut[k]) cls += ' roadcut'; if (current[k]) cls += ' current'; if (seenBy[k]) cls += ' seenby';
       if (ui.sel === k) cls += ' focus';
       if (u && ctx.kind === 'game' && myTurn(ctx) && E.abilityReady(st, k)) cls += ' ready';
       var ov = u ? overlayFor(ctx, k) : null; if (ov) cls += ov.on ? ' ovl-on ovl-full' : ' ovl-dim';
@@ -1322,6 +1324,10 @@
   // The Pilgrim's Folio: open once Act I of the campaign is won; then on by default for new games.
   function folioOpen() { return !!(CC && CC.actDone(campBook(), 1)); }
   function folioOn() { return folioOpen() && setup.folio !== false; }
+  // The River Folio: open once Act II is won; then on by default too.
+  function riverOpen() { return !!(CC && CC.actDone(campBook(), 2)); }
+  function riverOn() { return riverOpen() && setup.river !== false; }
+  function folioDefs(lib, o) { return D.withFolios(lib, { folio: o.folio, river: o.river }); }
   function contestOn() { return setup.contest != null ? !!setup.contest : (+setup.n || 2) <= 4; }
   function ensureSetup() {
     var A = archetypes().map(function (c) { return c.archetype; });
@@ -1367,6 +1373,8 @@
       '<label class="full" style="margin-top:4px"><b>Folios</b></label>' +
       (folioOpen() ? '<label><i class="folio-mark"></i> The Pilgrim’s Folio</label><label><input type="checkbox" data-set="folio"' + (folioOn() ? ' checked' : '') + '> Shuffle in twelve cards from the road (' + D.FOLIO.reduce(function (a, c) { return a + c.copies; }, 0) + ' copies): roads and lines, an inn, a bell, a feast. See them in the Library</label>'
         : '<label class="muted"><i class="folio-mark" style="filter:grayscale(1)"></i> The Pilgrim’s Folio 🔒</label><span class="small muted">Twelve new cards. Win every stop of Act I of the campaign to open it.</span>') +
+      (riverOpen() ? '<label><i class="river-mark"></i> The River Folio</label><label><input type="checkbox" data-set="river"' + (riverOn() ? ' checked' : '') + '> Shuffle in twelve cards from the river towns (' + D.RIVER.reduce(function (a, c) { return a + c.copies; }, 0) + ' copies): downstream and upstream, a mill, a tollhouse, a fire ship, a ferry. See them in the Library</label>'
+        : '<label class="muted"><i class="river-mark" style="filter:grayscale(1)"></i> The River Folio 🔒</label><span class="small muted">Twelve more cards. Win every town of Act II of the campaign to open it.</span>') +
       '</div></fieldset>';
     var dup = {}, bad = false; for (var j = 0; j < setup.n; j++) { if (dup[setup.players[j].arch]) bad = true; dup[setup.players[j].arch] = 1; }
     h += '<div class="row"><button class="btn def" data-act="start"' + (bad ? ' disabled' : '') + '>Start game</button>' + (bad ? '<span class="err">Two players picked the same archetype.</span>' : '') +
@@ -1643,7 +1651,7 @@
     var A = archetypes().map(function (c) { return c.archetype; });
     var ps = []; for (var i = 0; i < sbSetup.n; i++) ps.push({ name: 'Player ' + (i + 1), arch: sbSetup.arch[i] || A[i], color: COLORS[i] });
     var saved = lsGet('cs.sandbox');
-    var st = saved && saved.opts && saved.opts.sandbox && !app._sbReset ? saved : E.newGame(folioOpen() ? D.withFolio(app.lib) : app.lib, { players: ps, sandbox: true });
+    var st = saved && saved.opts && saved.opts.sandbox && !app._sbReset ? saved : E.newGame(folioDefs(app.lib, { folio: folioOpen(), river: riverOpen() }), { players: ps, sandbox: true });
     app._sbReset = false;
     app.sandbox = newCtx(st, 'sandbox'); app.sandbox.ui.sbCard = Object.keys(st.defs)[0];
   }
@@ -1651,7 +1659,7 @@
   /* ----- library ----- */
   // Library page: filterable card table plus a preview.
   function libraryPage() {
-    var L = app.libUI, src = L.folio ? D.FOLIO.map(normalizeCard) : app.lib, rows = src.filter(function (c) {
+    var L = app.libUI, src = L.folio ? (L.folio === 'river' ? D.RIVER : D.FOLIO).map(normalizeCard) : app.lib, rows = src.filter(function (c) {
       return (!L.suit || c.suit === L.suit) && (!L.type || c.type === L.type) && (!L.q || (c.name + ' ' + c.text).toLowerCase().indexOf(L.q.toLowerCase()) >= 0);
     });
     var sorters = { suit: null, name: function (a, b) { return a.name.localeCompare(b.name); }, cost: function (a, b) { return a.cost - b.cost; }, type: function (a, b) { return a.type.localeCompare(b.type); } };
@@ -1661,9 +1669,11 @@
     h += '<div class="raised row" style="padding:4px">Search <input type="text" data-focus-key="libq" data-lib="q" value="' + esc(L.q) + '" style="width:160px">' +
       'Suit <select data-lib="suit"><option value="">All</option>' + D.SUITS.map(function (s) { return '<option' + (L.suit === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
       'Type <select data-lib="type"><option value="">All</option>' + D.TYPES.map(function (s) { return '<option' + (L.type === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
-      'Cards <select data-lib="folio"><option value="">Library</option><option value="pilgrim"' + (L.folio ? ' selected' : '') + '>The Pilgrim’s Folio</option></select>' +
+      'Cards <select data-lib="folio"><option value="">Library</option><option value="pilgrim"' + (L.folio === 'pilgrim' ? ' selected' : '') + '>The Pilgrim’s Folio</option><option value="river"' + (L.folio === 'river' ? ' selected' : '') + '>The River Folio</option></select>' +
       '<span class="grow" style="flex:1"></span><a class="btn" href="' + (ONLINE ? 'dithry/#cards' : 'dithry.html#cards') + '" target="_blank" rel="noopener" title="Paint the cards’ faces in Dithry">Paint cards</a><button class="btn" data-act="suits">Suit wheel</button>' + (ONLINE ? '<span class="muted small">' + app.lib.length + ' cards</span>' : '<button class="btn" data-act="newCard">New card</button><button class="btn" data-act="exportLib">Export…</button><button class="btn" data-act="importLib">Import…</button><button class="btn" data-act="restoreAsk">Restore starter cards…</button>') + '</div>';
-    if (L.folio) h += '<div class="foliobanner"><i class="folio-mark"></i><span class="small"><b>The Pilgrim’s Folio</b> · twelve cards from the road, two a suit. Its word is the <i>line</i>: the unbroken run of cards through a card in its row or its column. ' +
+    if (L.folio === 'river') h += '<div class="foliobanner"><i class="river-mark"></i><span class="small"><b>The River Folio</b> · twelve cards from the river towns, two a suit. Its word is <i>downstream</i>: the river runs north to south, and a card’s downstream is the unbroken run of cards straight south of it (upstream, the run north). A Ruin breaks it. ' +
+      (riverOpen() ? 'Open: switch it on under Folios in New game.' : '🔒 Win every town of Act II of the campaign to play with these.') + ' Folio cards are fixed: the card builder can’t change them.</span></div>';
+    else if (L.folio) h += '<div class="foliobanner"><i class="folio-mark"></i><span class="small"><b>The Pilgrim’s Folio</b> · twelve cards from the road, two a suit. Its word is the <i>line</i>: the unbroken run of cards through a card in its row or its column. ' +
       (folioOpen() ? 'Open: switch it on under Folios in New game.' : '🔒 Win every stop of Act I of the campaign to play with these.') + ' Folio cards are fixed: the card builder can’t change them.</span></div>';
     h += '<div class="split"><div class="sunken scroll"><table class="list small"><thead><tr>' +
       [['name', 'Name'], ['suit', 'Suit'], ['type', 'Type'], ['cost', 'Cost'], ['', 'Value'], ['', 'Income'], ['', 'Copies'], ['', 'Automation']].map(function (c) { return '<th' + (c[0] ? ' data-sort="' + c[0] + '"' : '') + '>' + c[1] + (L.sort === c[0] ? ' ▾' : '') + '</th>'; }).join('') + '</tr></thead><tbody>';
@@ -1867,12 +1877,17 @@
         '<li>A strip above the board names the stop, its lesson and its stars; in the first round it also spells out the new rule.</li>' +
         '<li><b>Act II, the river towns</b>, opens once the Toll Gate is won. Every town plays the full game against tacticians (who plan) and warlords (who Ruin), and keeps a <b>custom</b> of its own: few meeples at Saltmarsh Wharf, a market row at Ferrybridge, burning at the Weir, no Sword cards at Lantern Abbey, a third card a turn at Tanners’ Row, and all of it at once, four players, on the Bridge of Kings.</li>' +
         '<li><b>Act III, the city at dawn</b>, opens once the Bridge of Kings is won: six quarters held by named champions who play as the Genius, the strongest bot.</li>' +
-        '<li>Win every stop of Act I and <b>the Pilgrim’s Folio</b> opens (see below).</li></ul>' },
+        '<li>Win every stop of Act I and <b>the Pilgrim’s Folio</b> opens; win every town of Act II and <b>the River Folio</b> opens (see below).</li></ul>' },
       { id: 'folio', title: 'The Pilgrim’s Folio', html: '<p>Twelve cards from the road, two a suit, opened by winning every stop of Act I of the campaign. Switch them on under <b>Folios</b> on the New game page (they are on by default once open), and see them in the Library under <b>Cards → The Pilgrim’s Folio</b>. Folio cards carry a small waymark <i class="folio-mark"></i> after their name.</p><ul>' +
         '<li>Their word is the <b>line</b>: the unbroken run of cards through a card in its row or its column, itself included. A card’s <b>longest line</b> is the longer of the two. Any card counts, claimed or not, Grounds too. An empty space breaks the line, and so does a <b>Ruined</b> card: war cuts roads.</li>' +
         '<li><i>Pilgrim’s Way</i> scores its longest line, <i>Cartographer</i> the suits of your own cards in it, <i>Hedgerow</i> the Leaf cards in both its lines. Select one on the board to see its line lit.</li>' +
         '<li><i>Wayside Inn</i> wants company: 3◇ for each player with a card next to it. <i>Watchfire</i> scores the Ruins around it, <i>Chapter House</i> the Sceptres, corners included. The <i>Ossuary Bell</i> banks its owner 1◇ whenever anyone buries a card.</li>' +
         '<li>Five Actions: <i>Feast Day</i> (everyone draws; you draw again and bank for the Goblets on the board), <i>Levy</i> (● for your Swords), <i>Vigil</i> (draw 1, bury 1), <i>Pilgrim’s Tale</i> (draw for your Tomes) and <i>Harvest Moon</i> (bank ◇ for your largest region, where no raider can reach it).</li></ul>' },
+      { id: 'river', title: 'The River Folio', html: '<p>Twelve cards from the river towns, two a suit, opened by winning every town of Act II. Switch them on under <b>Folios</b> on the New game page, and see them in the Library under <b>Cards → The River Folio</b>. They carry a small wave <i class="river-mark"></i> after their name, and can be played with or without the Pilgrim’s Folio.</p><ul>' +
+        '<li>Their word is <b>downstream</b>. The river runs north to south (top to bottom of the board): a card’s <b>downstream</b> is the unbroken run of cards straight south of it, its <b>upstream</b> the run north, and its <b>column line</b> both together. An empty space or a <b>Ruined</b> card ends the river.</li>' +
+        '<li><i>Mill Race</i> scores everything downstream: build it at the head of a column. <i>Water Meadow</i> scores everything upstream, Leaf twice: build it at the mouth. <i>Showboat</i> counts the Goblets in its column line and <i>Water Clock</i> its suits, whoever owns them.</li>' +
+        '<li><i>Tollhouse</i> scores the cards rivals own in its row and column lines: it wants to sit where Kingdoms meet. <i>Ford Garrison</i> counts every Ruin in its column and <i>Silt Barrow</i> every buried card, gaps or not.</li>' +
+        '<li>Five Actions: <i>Fire Ship</i> (play it on an empty space and Ruin a rival’s card downstream of it), <i>The Ferry</i> (draw, then carry a card of yours along its row or column to a new space), <i>Bridge Toll</i> (● for the rival cards on your border), <i>Regatta</i> (● and cards for your Goblets) and <i>Boatman’s Coin</i> (bury a card from hand, gain 3●).</li></ul>' },
       { id: 'claudenspiel', title: 'What Claudenspiel changes', html: '<p>Claudenspiel is Claude’s own fork of Kartenspiel. Its rules differ:</p><ul>' +
         '<li><b>The last round:</b> reaching the target starts it. Everyone gets the same number of turns, then the highest total wins; a tie goes to whoever got there first. With three or more players, earlier seats start with a few ◇, since later seats see the score to beat: 6◇ and 4◇ for the first two of three players, 9◇, 6◇ and 3◇ for the first three of four.</li>' +
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
@@ -2608,14 +2623,14 @@
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(folioOn() ? D.withFolio(app.lib) : app.lib, { folio: folioOn(), seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: contestOn() });
+        var st = E.newGame(folioDefs(app.lib, { folio: folioOn(), river: riverOn() }), { folio: folioOn(), river: riverOn(), seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: contestOn() });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }
       case 'rematch': {   // the same players, archetypes, seats and rules, with a fresh shuffle
         var old = ctx.state, rp = old.players.map(function (q) { return { name: q.name, arch: q.arch, color: q.color }; }), ro = {};
         for (var ok in old.opts) ro[ok] = old.opts[ok]; ro.players = rp; ro.seed = window.ksSeed;
-        var rs = E.newGame(old.campaign && CC ? CC.defs(old.campaign.stop, app.lib) : old.opts.folio ? D.withFolio(app.lib) : app.lib, ro); rs.players.forEach(function (q, i) { if (old.players[i].bot) q.bot = old.players[i].bot; }); if (old.campaign) rs.campaign = clone(old.campaign);
+        var rs = E.newGame(old.campaign && CC ? CC.defs(old.campaign.stop, app.lib) : folioDefs(app.lib, old.opts), ro); rs.players.forEach(function (q, i) { if (old.players[i].bot) q.bot = old.players[i].bot; }); if (old.campaign) rs.campaign = clone(old.campaign);
         app.modal = null; app.game = newCtx(rs, 'game'); lsSet('cs.game', rs); render(); toast('Rematch: same players and rules, new shuffle.'); return;
       }
       case 'soloSetup': case 'hotseatSetup': {   // home page shortcuts: preset the seats, then the New game page
