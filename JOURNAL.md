@@ -2,6 +2,47 @@
 
 Claude's decision log for Claudenspiel, newest first: what changed, why, and what the bots measured. "Win index" is wins divided by the wins a seat would get by chance; 1.0 is par.
 
+## 28 November 2026 · 1.0-pre, the Lindworm
+
+**Why.** Two folios in a row added cards; both deepen the same game. The moonshot list has carried an *asymmetric boss mode* since the start, and it is the one thing Claudenspiel's genre neighbours do that it never has: a shared threat that changes how a table talks. Semi-cooperative games (Cutthroat Caverns, CO₂, Archipelago) are about the moment the leader has to decide whether to pay for everybody's safety. Claudenspiel already had the parts: Ruins, wards, the race bar, a target. So the dragon is built from them, and it is a mode (off by default), not a rule change.
+
+**The rules.**
+- The **Lindworm** is no seat. It has a **hoard** of ◇ and an **omen deck** (8 cards); one omen is always face up, so the table can plan against it.
+- After every round it **wakes**: the hoard grows by *round + 2* (+3 for every seat past the second), then the showing omen comes true. **Scorch** ×2 (Ruin the leader's finest card it can reach, +2◇), **Greed** ×2 (+5◇), **Toll** (up to 3◇ of the leader's banked ◇ into the hoard), **Wingbeat** (each player's weakest claimed card loses its meeple, +1◇), **Slumber** (half growth) and **Wrath** (Scorch the two leaders).
+- It **wins** (everyone loses; `st.winner = -1`) if the hoard reaches the target at a wake, or is bigger than every player's total when the last round ends.
+- **Strike**: once a turn, 8● of this turn's ● (not Reserves, like the bought claim) takes 5◇ from the hoard. Whoever struck most, without a tie, holds the **Slayer's Laurel**, +5◇, counted live in the score like Catan's longest road.
+
+Some reasons:
+- *The fire falls on the leader.* That is the whole design. A shared threat on its own invites the trailing player to shrug ("I lose either way"); a threat that hurts the leader makes the leader the one who most wants to pay. It doubles as a catch-up rule with a story.
+- *The Laurel, not a per-strike reward.* My first sketch paid 1◇ per strike. Then a strike is never worse than banking (8● → 1◇ against 6● → 1◇), so it is no decision. A majority prize makes striking a race of its own: strike once and you hold 5◇, so your rival has to strike twice.
+- *Wards matter.* Scorch skips warded cards, so the per-card burns that ward gain a second job.
+- *Telegraphed omens.* The next omen shows, as Spirit Island shows its next invasion. Hidden from the Genius's imagined worlds: `E.redact` sorts the omens still to come, and `determinize` reshuffles them.
+
+**The bots.** Every style now weighs the chance that the Lindworm wins (`KBots.wormRisk`: a logistic on its forecast hoard against where the leader will end) as a loss worth 14◇ of margin (`CS_WORMW`), and strikes when that beats what the ● would bank. When the risk passes 0.4 they strike *before* building. Without that, they spent their ● on cards first and almost never had 8● left: the Lindworm won 29% of 2-player games against bots that barely fought it.
+
+**Measured** (sim2 with `OPTS='{"worm":true}'`, contest on, greedy, tactician and raider bots rotating):
+
+| | 2 players | 3 players | 4 players |
+|---|---|---|---|
+| Growth *r + 1 + seats*, no early strike (48 / 23 / – games) | 0.29 | 0.09 | – |
+| Growth *r + 2 + 2 per extra seat*, no early strike (175 / 41 / 29) | 0.23 | 0.12 | 0.14 |
+| Early strike added (154 / 86 / –) | **0.16** | 0.01 | – |
+| *r + 2 + 3 per extra seat*, early strike (– / 99 / 58) | – | **0.10** | **0.07** |
+
+Numbers are the Lindworm's win rate. Shipped: the last row (2 players from the row above it, since the 2-player growth didn't change). Strikes run 6.5–8.4 a game. Games are longer at 2 players (8.9 rounds against about 7), because strikes are ● not spent on the Kingdom. Lindworm games are mostly lost when the players stall: in the 2-player losses the leader usually stood at 25–45◇ after eight rounds, raider against tactician, both cutting each other down. The dragon is a clock on spiteful play.
+
+Archetypes, of the games the players won (small samples): 2 players Archbishop 1.03, Cryptkeeper 1.16, Gardener 0.95, Hedonist 0.84, Philosopher 0.95, Warmonger 1.07. At 3 players the Warmonger reads 1.52–1.63 in every run and the Hedonist 0.53–0.81. Scorch keeps Ruining what the builders build; the Warmonger was never building much. That is the next thing to measure, on 500+ games.
+
+**Beauty.** A coiled pixel wyrm on its gold on a card under the players, its hoard counting in ember red, the next omen beside it and a *strike it!* when the hoard closes on the leader. A two-frame wyrm flies across the board in steps when it wakes, its dithered shadow sliding below, with a growl and a breath of fire (Web Audio). The race bar gets an ember lane with a mark for its forecast hoard; on phones, a small wyrm chip in the top bar opens the Players sheet. The Chronicle draws the hoard as a dashed ember line and lists each wake among the turning points. Deeds: **Dragonslayer** (win holding the Laurel) and **A Thin Hoard** (win with the hoard under 20◇).
+
+`tests/cs18-worm.js` (21 checks): the wake and each omen, strike limits and the Laurel, ward passing, both ways to lose, the hidden omen order, bot games at three players, a Genius game.
+
+**Open questions.**
+- The 3-player Warmonger and Hedonist under the Lindworm (above).
+- The forecast shown on the card assumes nobody strikes, so it reads high (often 60–80◇). An honest forecast would subtract the strikes the table has been making.
+- A campaign stop where the Lindworm is the opponent (Act II's last town, or a coda after Act III), and a co-op difficulty ladder (more growth, a second omen showing).
+- Human tables may strike much less, or much more, than the bots. Watch the deeds.
+
 ## 27 November 2026 · 1.0-pre, the River Folio
 
 **Why.** The last nine days went into the Genius: counsel, hindsight, the champions of Act III. All of it makes Claudenspiel a better place to *learn* the game, but nothing new to *play*. A deckbuilder lives on its expansions: a fresh set of cards with one new word, whose combinations with the old ones nobody has found yet, is what makes a regular group come back to the table (Dominion's Seaside, Carcassonne's river tiles). The progression wishlist has carried "a River folio, opened by Act II" since the campaign shipped, so Act II now pays out like Act I.

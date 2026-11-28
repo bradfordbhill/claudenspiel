@@ -19,6 +19,9 @@ var KEngine = (function () {
   var DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
   var SUITS = ['Sceptre', 'Goblet', 'Sword', 'Bone', 'Leaf', 'Tome'];
   var BANK_RATE = 6, BANK_MAX = 2, CLAIM_PRICE = 10, CONTEST_PRICE = 8;
+  // The Lindworm (opts.worm): a strike costs STRIKE_PRICE● of this turn's ● and takes STRIKE_WOUND◇ from its hoard;
+  // whoever struck it most often (no ties) holds the Slayer's Laurel, worth LAUREL◇.
+  var STRIKE_PRICE = 8, STRIKE_WOUND = 5, LAUREL = 5;
   // Each seat's starting ◇ (the seat handicap) by table size: 2 players are already even.
   var SEAT_TOKENS = { 2: [0, 0], 3: [6, 4, 0], 4: [9, 6, 3, 0], 5: [12, 9, 6, 3, 0] };   // Claudenspiel's economy: banking and the bought claim
 
@@ -294,8 +297,8 @@ var KEngine = (function () {
   function scores(st) {
     return st.players.map(function (pl, p) {
       var rows = kingdom(st, p).map(function (k) { var v = cardValue(st, k, p) + volcanicBonus(st, k); return { k: k, v: v }; });
-      var cards = rows.reduce(function (a, r) { return a + r.v; }, 0);
-      return { cards: cards, tokens: pl.tokens, total: cards + pl.tokens, rows: rows };
+      var cards = rows.reduce(function (a, r) { return a + r.v; }, 0), laurel = laurelOf(st) === p ? LAUREL : 0;
+      return { cards: cards, tokens: pl.tokens, laurel: laurel, total: cards + pl.tokens + laurel, rows: rows };
     });
   }
   // ● available = this turn's ● plus Reserves (Warcamp). spend() uses ● first, then Reserves.
@@ -1216,7 +1219,7 @@ var KEngine = (function () {
       var later = st.players.some(function (q, i) { return i > p && !q.out; });
       if (!later) {
         var best = -1, who = null; st.players.forEach(function (q, i) { if (q.out) return; var t = sc[i].total; if (t > best || (t === best && i === st.lastRound.by)) { best = t; who = i; } });
-        chronicle(st, p); st.winner = who; log(st, 'The last round is over. ' + st.players[who].name + ' wins with ' + best + '◇!'); return;
+        chronicle(st, p); if (st.worm && st.worm.hoard > best) { wormWins(st, 'The last round is over, and the Lindworm’s hoard of ' + st.worm.hoard + '◇ outweighs every Kingdom (the best is ' + best + '◇). Everyone loses.'); return; } st.winner = who; log(st, 'The last round is over. ' + st.players[who].name + ' wins with ' + best + '◇!'); return;
       }
     }
     nextPlayer(st);
@@ -1229,7 +1232,7 @@ var KEngine = (function () {
     if (st.opts.sandbox) return;
     var chron = st.chron || (st.chron = []), hdr = '— ' + st.players[p].name + '’s turn', ev = [];
     for (var i = st.log.length - 1; i >= 0 && st.log[i].indexOf(hdr) !== 0; i--) if (NOTABLE.test(st.log[i])) ev.unshift(st.log[i].replace(/ at -?\d+,-?\d+ is /, ' is ').replace(/: the last round begins.*$/, ': the last round begins.'));
-    chron.push({ r: st.round, p: p, t: scores(st).map(function (s) { return s.total; }), ev: ev.slice(0, 4) });
+    chron.push({ r: st.round, p: p, t: scores(st).map(function (s) { return s.total; }), ev: ev.slice(0, 4), h: st.worm ? st.worm.hoard : undefined });
   }
 
   /* ---------- turn flow ---------- */
@@ -1260,7 +1263,7 @@ var KEngine = (function () {
   function nextPlayer(st) {
     chronicle(st, st.cur);
     var n = st.players.length, i = st.cur;
-    for (var t = 0; t < n; t++) { i = (i + 1) % n; if (i === 0) { st.round++; if (st.opts.audits && (st.round - 1) % st.opts.audits === 0) audit(st); if (st.opts.seasons && (st.round - 1) % st.opts.seasonLength === 0) { reckon(st); if (st.winner != null) return; } } if (!st.players[i].out) break; }
+    for (var t = 0; t < n; t++) { i = (i + 1) % n; if (i === 0) { if (st.worm && !st.lastRound && wakeWorm(st, st.round)) return; st.round++; if (st.opts.audits && (st.round - 1) % st.opts.audits === 0) audit(st); if (st.opts.seasons && (st.round - 1) % st.opts.seasonLength === 0) { reckon(st); if (st.winner != null) return; } } if (!st.players[i].out) break; }
     st.cur = i; st.players[i].turns++; beginTurn(st);
   }
   // A Reckoning (the second edition's first pillar, opts.seasons): at the end of each season every player banks what
@@ -1286,6 +1289,75 @@ var KEngine = (function () {
     log(st, 'Audit after round ' + (st.round - 1) + ': ' + (got.length ? got.join(', ') + ' each bank ' + prize + '◇.' : 'no majorities.'));
   }
 
+  /* ---------- the Lindworm (opts.worm) ----------
+     A semi-cooperative mode. The Lindworm is no player: it has a hoard of ◇ and a deck of omens, one always showing.
+     After every round it wakes: the hoard grows (more each round) and the showing omen comes true. If its hoard ever
+     reaches the target, or when the last round ends it is larger than every player's total, the Lindworm wins and
+     everybody loses (st.winner = -1, st.wormWon). Players can strike it (the 'strike' action); the one who struck most
+     holds the Slayer's Laurel. Every Scorch falls on the leader, so the player out in front is the one most pressed to
+     pay for the common defence. */
+  var OMENS = {
+    scorch: { name: 'Scorch', text: 'Fire falls on the leader’s finest card: it is Ruined. The hoard grows 2◇ more.' },
+    greed: { name: 'Greed', text: 'The Lindworm gathers: the hoard grows 5◇ more.' },
+    toll: { name: 'Toll', text: 'The leader pays up to 3◇ of their banked ◇ into the hoard.' },
+    wingbeat: { name: 'Wingbeat', text: 'A gale: each player’s least valuable claimed card loses its meeple. The hoard grows 1◇ more.' },
+    slumber: { name: 'Slumber', text: 'The Lindworm sleeps: the hoard grows only half as much.' },
+    wrath: { name: 'Wrath', text: 'Fire falls on the finest card of each of the two leaders.' }
+  };
+  var OMEN_DECK = ['scorch', 'scorch', 'greed', 'greed', 'toll', 'wingbeat', 'slumber', 'wrath'];
+  // How much the hoard grows after round r: one more each round, and three more for every seat past the second (the
+  // more players, the more strikes and the faster the race). Measured: see JOURNAL.md, 28 November 2026.
+  function wormGrowth(st, r) { return r + 2 + 3 * Math.max(0, st.players.length - 2); }
+  function initWorm(st) { st.worm = { hoard: 0, deck: shuffle(OMEN_DECK.slice(), st), next: null, last: null, struck: {}, wakes: 0 }; st.worm.next = st.worm.deck.shift(); }
+  function wormOmen(st) { if (!st.worm.deck.length) st.worm.deck = shuffle(OMEN_DECK.slice(), st); return st.worm.deck.shift(); }
+  function laurelOf(st) {
+    if (!st.worm) return null; var best = 0, who = null, tie = false;
+    Object.keys(st.worm.struck).forEach(function (q) { var n = st.worm.struck[q]; if (st.players[q] && st.players[q].out) return; if (n > best) { best = n; who = +q; tie = false; } else if (n === best) tie = true; });
+    return tie ? null : who;
+  }
+  // The players in order of total, highest first (ties: earlier seat first).
+  function leaders(st) { var sc = scores(st); return st.players.map(function (q, i) { return i; }).filter(function (i) { return !st.players[i].out; }).sort(function (a, b) { return sc[b].total - sc[a].total || a - b; }); }
+  // The card the Lindworm burns: p's most valuable card that can be Ruined and isn't warded.
+  function finestCard(st, p) {
+    var best = null, bv = -1;
+    kingdom(st, p).forEach(function (k) { var u = top(st, k); if (st.cards[u].ruined || untargetable(st, u) || isGrounds(st, u) || protectedStack(st, k)) return; var v = cardValue(st, k, p) + 2 * cardIncome(st, k); if (v > bv) { bv = v; best = k; } });
+    return best;
+  }
+  function scorch(st, p) {
+    var k = finestCard(st, p); if (!k) { log(st, 'The Lindworm’s fire finds nothing of ' + st.players[p].name + '’s to burn.'); return; }
+    st.worm.burnt = (st.worm.burnt || []).concat([k]);
+    log(st, 'The Lindworm breathes fire on ' + rawDef(st, top(st, k)).name + '.');
+    ruinAt(st, k, null, 'ruin');
+  }
+  // The Lindworm wakes after round r. Returns true if it has won.
+  function wakeWorm(st, r) {
+    var w = st.worm, id = w.next, grow = wormGrowth(st, r), lead = leaders(st), before = w.hoard;
+    w.burnt = []; w.wakes++;
+    log(st, '🐉 The Lindworm wakes after round ' + r + ': ' + OMENS[id].name + '.');
+    if (id === 'slumber') grow = Math.ceil(grow / 2);
+    if (id === 'greed') grow += 5;
+    if (id === 'scorch') { grow += 2; if (lead.length) scorch(st, lead[0]); }
+    if (id === 'wrath') lead.slice(0, 2).forEach(function (q) { scorch(st, q); });
+    if (id === 'toll' && lead.length) { var lp = st.players[lead[0]], tk = Math.max(0, Math.min(3, lp.tokens || 0)); lp.tokens -= tk; grow += tk; log(st, lp.name + ' pays the Lindworm ' + tk + '◇.'); }
+    if (id === 'wingbeat') { grow += 1; lead.forEach(function (q) { var low = null, lv = 1e9; kingdom(st, q).forEach(function (k) { var u = top(st, k), c = st.cards[u]; if (c.fixed || c.ruined || c.claimants.length !== 1 || protectedStack(st, k)) return; var v = cardValue(st, k, q); if (v < lv) { lv = v; low = k; } }); if (low) { returnMeeples(st, top(st, low)); log(st, 'The gale lifts ' + st.players[q].name + '’s meeple off ' + rawDef(st, top(st, low)).name + '.'); } }); }
+    w.hoard += grow;
+    w.last = { id: id, round: r, grew: w.hoard - before, burnt: w.burnt.slice() };
+    log(st, 'The hoard grows to ' + w.hoard + '◇ (+' + (w.hoard - before) + ').');
+    afterBoardChange(st, null);
+    w.next = wormOmen(st);
+    var ce = st.chron && st.chron[st.chron.length - 1]; if (ce) { ce.ev = ce.ev.concat(['🐉 The Lindworm wakes: ' + OMENS[id].name + (w.burnt.length ? ', and burns ' + w.burnt.map(function (k) { return rawDef(st, top(st, k)).name; }).join(' and ') : '') + '.']).slice(-5); ce.h = w.hoard; ce.t = scores(st).map(function (s) { return s.total; }); }
+    if (w.hoard >= st.opts.target) { wormWins(st, 'The Lindworm’s hoard reaches ' + w.hoard + '◇. It takes the land, and everyone loses.'); return true; }
+    return false;
+  }
+  function wormWins(st, msg) { st.winner = -1; st.wormWon = true; log(st, msg); }
+  // How large the hoard will likely be when the game ends, from the leader's pace: for the race bar and the bots.
+  function wormForecast(st) {
+    if (!st.worm) return 0; var sc = scores(st), lead = 0; st.players.forEach(function (q, i) { if (!q.out) lead = Math.max(lead, sc[i].total); });
+    var T = +st.opts.target || 52, r = st.round, pace = Math.max(5, lead / Math.max(1, r - 0.5)), left = st.lastRound ? 0 : Math.max(0, Math.ceil((T - lead) / pace)), h = st.worm.hoard;
+    for (var i = 0; i < left; i++) h += wormGrowth(st, r + i) + 1.5;
+    return Math.round(h);
+  }
+
   // Fresh game state. `defs` is the card library; `setup` holds the players and rule options
   // (see opts). A sandbox has no deck or turns.
   function newGame(defs, setup) {
@@ -1293,7 +1365,7 @@ var KEngine = (function () {
       v: 1, defs: {}, players: [], cur: 0, round: 1, deck: [], discard: [], market: [], board: {}, cards: {}, uid: 1,
       turn: null, res: null, pending: null, reveal: null, log: [], winner: null, seed: (setup.seed || Date.now()) % 2147483647,
       opts: { handSize: setup.handSize || 4, meeples: setup.meeples || 8, target: setup.target || 52, sandbox: !!setup.sandbox, enforceWeak: setup.enforceWeak !== false, lastRound: setup.lastRound !== false, banking: setup.banking !== false, flatIncome: setup.flatIncome || 0, market: setup.market || 0, burn: !!setup.burn, seasons: setup.seasons || 0, seasonLength: setup.seasonLength || 2, seasonRelease: !!setup.seasonRelease, audits: setup.audits || 0, auditPrize: setup.auditPrize || 4, seatTokens: setup.seatTokens != null ? (Array.isArray(setup.seatTokens) ? setup.seatTokens : +setup.seatTokens) : null, buyClaim: setup.buyClaim !== false, foundationBy: setup.foundationBy || 3, drawPerTurn: setup.drawPerTurn != null ? +setup.drawPerTurn : 2, autoEnd: setup.autoEnd !== false, seatStart: setup.seatStart === true, contest: !!setup.contest, folio: !!setup.folio, river: !!setup.river, brokenRoads: setup.brokenRoads !== false, hallowed: !!setup.hallowed, graveFollows: setup.graveFollows !== false,
-        burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false }
+        burySuitOW: setup.burySuitOW !== false, defense: setup.defense !== false, adjDiscount: setup.adjDiscount !== false, noWander: setup.noWander !== false, ascension: setup.ascension !== false, worm: !!setup.worm && !setup.sandbox }
     };
     defs.forEach(function (d) { var c = clone(d); c.art = ''; st.defs[d.id] = c; });
     // A card instance: a uid like "c12" plus its in-play state, pointing at a definition id.
@@ -1310,6 +1382,7 @@ var KEngine = (function () {
       shuffle(st.deck, st);
       st.players.forEach(function (pl, i) { draw(st, i, st.opts.handSize); });
       if (st.opts.market) refillMarket(st);
+      if (st.opts.worm) initWorm(st);
       // Seat handicap (Claudenspiel): with the last round, later seats see the score to beat, so earlier seats start
       // with opts.seatTokens◇ for every seat after them.
       // seatTokens is ◇ per later seat, or a list with each seat's ◇; the default list depends on the table size.
@@ -1587,6 +1660,19 @@ var KEngine = (function () {
         var g = draw(st, p, 1); log(st, sp.name + ' discards 2 cards and draws ' + g + '.'); return st;
       }
 
+      // Strike the Lindworm (opts.worm): once a turn, pay STRIKE_PRICE● of this turn's ● (not Reserves): its hoard loses
+      // STRIKE_WOUND◇. Each strike counts toward the Slayer's Laurel.
+      case 'strike': {
+        if (!st.worm) return err(st, 'There is no Lindworm in this game.');
+        if (st.pending || st.res) return err(st, 'Finish the current effect first.');
+        if (!st.turn.started) return err(st, 'Start your turn first.');
+        if (st.turn.struck) return err(st, 'You can strike the Lindworm once a turn.');
+        var sp = st.players[p]; if ((sp.ap || 0) < STRIKE_PRICE) return err(st, 'A strike costs ' + STRIKE_PRICE + '● of this turn’s ● (Reserves can’t pay for it).');
+        if (st.worm.hoard <= 0) return err(st, 'The Lindworm has no hoard to lose.');
+        sp.ap -= STRIKE_PRICE; st.turn.struck = true; var wd = Math.min(STRIKE_WOUND, st.worm.hoard); st.worm.hoard -= wd; st.worm.struck[p] = (st.worm.struck[p] || 0) + 1;
+        log(st, sp.name + ' strikes the Lindworm for ' + STRIKE_PRICE + '●: its hoard falls to ' + st.worm.hoard + '◇ (−' + wd + ').'); return st;
+      }
+
       // End-of-turn effects, then the win check, then the next player.
       case 'endTurn': {
         if (st.pending || st.res) return err(st, 'Finish the current effect first.');
@@ -1709,6 +1795,7 @@ var KEngine = (function () {
     if (st.pending && st.pending.player !== seat && st.pending.kind === 'hand') st.pending.options = [];
     st.reactions = (st.reactions || []).map(function (r) { return r.p === seat ? r : { p: r.p, kind: r.kind }; });
     Object.keys(inHand).forEach(function (u) { delete st.cards[u]; });
+    if (st.worm) st.worm.deck.sort();   // the omens still to come are face down: their order is hidden
     st.defs[HIDDEN.id] = clone(HIDDEN); st.seed = 0;
     return st;
   }
@@ -1738,7 +1825,8 @@ var KEngine = (function () {
     newGame: newGame, apply: apply, scores: scores, income: income, cardValue: cardValue, volcanicBonus: volcanicBonus,
     burnBlock: burnBlock, BURN: BURN, burnSteps: burnSteps, burnText: burnText, defBurn: defBurn, defBurnText: defBurnText, burnStepText: burnStepText, burnNeedsCell: burnNeedsCell, burnGain: burnGain, warded: warded, legalCells: legalCells, needsPlacement: needsPlacement, protectedStack: protectedStack, funds: funds, curseFx: curseFx, hasSuit: hasSuit, onSuitBuried: onSuitBuried, valueParts: valueParts, bankedBreakdown: bankedBreakdown, abilityReady: abilityReady, isFree: isFree, untargetable: untargetable, playBlock: playBlock, sight: sight, bounds: bounds, top: top, keys: keys, def: def, rawDef: rawDef,
     suitOf: suitOf, isCursed: isCursed, isCovered: isCovered, noIncome: noIncome, overwhelmCount: overwhelmCount, enemies: enemies,
-    shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, lineRun: lineRun, longestLine: longestLine, downRun: downRun, colAll: colAll, ferryable: ferryable, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS
+    shrinePeace: shrinePeace, groundsAround: groundsAround, archInfo: archInfo, largestRegion: largestRegion, isGrounds: isGrounds, CLAIM_PRICE: CLAIM_PRICE, CONTEST_PRICE: CONTEST_PRICE, contestOptions: contestOptions, lineRun: lineRun, longestLine: longestLine, downRun: downRun, colAll: colAll, ferryable: ferryable, BANK_RATE: BANK_RATE, BANK_MAX: BANK_MAX, kingdom: kingdom, claimOptions: claimOptions, redact: redact, cardIncome: cardIncome, n4: n4, K: K, XY: XY, SUITS: SUITS,
+    OMENS: OMENS, OMEN_DECK: OMEN_DECK, STRIKE_PRICE: STRIKE_PRICE, STRIKE_WOUND: STRIKE_WOUND, LAUREL: LAUREL, laurelOf: laurelOf, wormForecast: wormForecast, wormGrowth: wormGrowth, leaders: leaders, finestCard: finestCard
   };
 })();
 if (typeof module !== 'undefined') module.exports = KEngine;

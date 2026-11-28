@@ -68,6 +68,10 @@ What Claudenspiel's rules and cards should become. ✅ done (with the release), 
 - ○ A seventh suit. Candidates: Coin (trade and debts) or Star (prophecy: cards that score at game end). Needs a seventh archetype.
 
 ## Interaction
+- ✅ 1.0-pre **The Lindworm** (a New game mode): a dragon with a hoard and an omen deck wakes after every round (Scorch, Greed, Toll, Wingbeat, Slumber, Wrath); strike it for 8●, the most strikes hold the Slayer's Laurel (+5◇). The bots win against it about 84–93% of the time.
+- ○ The Lindworm: the 3-player Warmonger (1.5–1.6) and Hedonist (0.5–0.8) on 500+ games.
+- ○ The Lindworm as a campaign opponent, and a difficulty ladder (faster growth, two omens showing).
+- ○ An honest forecast on the Lindworm's card (it ignores the strikes the table has been making).
 - ○ Shared claims: claim a card someone already holds by paying its cost; both score it at half value.
 - ○ Treaties: two players agree not to Ruin each other's cards for a round; breaking it costs ◇. Gives 3–5 player games diplomacy.
 - ○ Hidden objectives: one each, worth 6◇ at the end (e.g. "own 4 suits", "Ruin 3 cards").

@@ -25,6 +25,7 @@ var KDeeds = (function () {
       startedLastRound: !!(st.lastRound && st.lastRound.by === p), lastRound: !!st.lastRound,
       counsel: (st.counsel && st.counsel[p]) || 0,
       longLine: E.longestLine ? kd.reduce(function (a, k) { return Math.max(a, E.longestLine(st, k).length); }, 0) : 0,
+      worm: !!st.worm, wormWon: !!st.wormWon, struck: st.worm ? st.worm.struck[p] || 0 : 0, laurel: st.worm && E.laurelOf ? E.laurelOf(st) === p : false, hoard: st.worm ? st.worm.hoard : 0,
       river: E.downRun ? kd.reduce(function (a, k) { return Math.max(a, E.downRun(st, k, 1).length); }, 0) : 0
     };
   }
@@ -51,6 +52,8 @@ var KDeeds = (function () {
     { id: 'own', name: 'Own Counsel', text: 'Beat a Genius bot without once asking the Genius for counsel.', check: function (g) { return g.won && g.bots.indexOf('genius') >= 0 && !g.counsel; } },
     { id: 'sight', name: 'Clear Sight', text: 'Win a game in which the Genius, looking back, finds no turn of yours it would clearly have played better (the Chronicle’s Hindsight, four turns or more).', check: function () { return false; } },
     { id: 'six', name: 'Six Crowns', text: 'Win with every archetype.', progress: true, check: function (g, book) { return Object.keys(book.wins || {}).length >= 6; } },
+    { id: 'slayer', name: 'Dragonslayer', text: 'Win a game with the Lindworm while holding the Slayer’s Laurel.', check: function (g) { return g.won && g.worm && g.laurel; } },
+    { id: 'starved', name: 'A Thin Hoard', text: 'Win a game with the Lindworm with its hoard under 20◇.', check: function (g) { return g.won && g.worm && g.hoard < 20; } },
     { id: 'river', name: 'Head of the River', text: 'Finish owning a card with six or more cards downstream of it (the unbroken run straight south).', check: function (g) { return g.river >= 6; } }
   ];
   // Archetype mastery: ten levels per archetype, earned by playing it. Each finished game as an archetype is worth

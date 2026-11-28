@@ -379,3 +379,33 @@ html[data-marks="on"] .race .fill { background-origin: content-box; }
 @keyframes river-flow { from { background-position: 0 0; } to { background-position: 0 16px; } }
 @media (prefers-reduced-motion: reduce) { .cell.see.current::before { animation: none; } }
 :root[data-motion="off"] .cell.see.current::before { animation: none; }
+
+/* ---- The Lindworm (opts.worm) ---- */
+.wormcard { margin-top: 6px; padding: 5px 6px; border: 2px solid #1a0806; background: repeating-linear-gradient(135deg, rgba(122, 26, 20, .14) 0 2px, transparent 2px 4px), var(--field); display: grid; gap: 3px; }
+.wormcard .wormhead { display: flex; align-items: center; gap: 8px; }
+.wormcard .wormhead .bignum { color: #a8301c; }
+.wormcard .wormhead .wormpix { flex: none; }
+.wormcard .omen { border-left: 3px solid #e8923a; padding-left: 5px; }
+.wormcard .omenname { font-weight: 700; color: #a8301c; }
+.wormcard .strike { justify-self: start; background: #7a1a14; color: #ffe8c0; border-color: #e8923a; }
+.wormcard.danger { border-color: #e8923a; box-shadow: inset 0 0 0 1px #a8301c; }
+:root[data-motion="full"] .wormcard.danger .wormpix { animation: cs-wormbreath 1.6s steps(4) infinite; }
+@keyframes cs-wormbreath { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+.wormcard.won { background: repeating-linear-gradient(135deg, rgba(232, 146, 58, .25) 0 2px, transparent 2px 4px), var(--field); }
+:root[data-theme="dark"] .wormcard .wormhead .bignum, :root[data-theme="dark"] .wormcard .omenname { color: #f08a5a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wormcard .wormhead .bignum, :root:not([data-theme="light"]) .wormcard .omenname { color: #f08a5a; } }
+.race .wormlane .lname { color: #a8301c; font-weight: 700; }
+.race .wormlane .fill { background: repeating-linear-gradient(90deg, #a8301c 0 3px, #e8923a 3px 4px); }
+.race .wormlane .ghost { position: absolute; top: -2px; bottom: -2px; width: 3px; background: repeating-linear-gradient(0deg, #e8923a 0 2px, transparent 2px 3px); }
+.fx.wyrm { pointer-events: none; image-rendering: pixelated; }
+.fx.wyrm svg { display: block; position: absolute; left: 0; top: 0; }
+.fx.wyrm .f1 { animation: cs-wingbeat .28s steps(1) infinite; }
+.fx.wyrm .f0 { animation: cs-wingbeat .28s steps(1) infinite reverse; }
+@keyframes cs-wingbeat { 0% { opacity: 1; } 50% { opacity: 0; } }
+.fx.wyrmshadow { width: 84px; height: 10px; pointer-events: none; background: radial-gradient(#000 1px, transparent 1.5px) 0 0 / 3px 3px; clip-path: ellipse(50% 50%); }
+.worm-mark { display: inline-block; width: 16px; height: 9px; vertical-align: middle; background: #a8301c; clip-path: polygon(0 60%, 30% 40%, 45% 0, 60% 40%, 85% 30%, 100% 45%, 85% 60%, 55% 70%, 30% 100%, 25% 70%); }
+svg.chron .wormline { fill: none; stroke: #c8401c; stroke-width: 2; stroke-dasharray: 4 2; }
+svg.chron .wormline.win { stroke-width: 3; }
+.prompt.wormwin { border-color: #a8301c; }
+.chronpts .k-worm .ico { filter: none; }
+.mworm { display: inline-flex; align-items: center; gap: 2px; color: #a8301c; font-weight: 700; background: none; border: 0; padding: 0 2px; }

@@ -2,6 +2,7 @@
 // OPTS='{"burn":true}' sets rules for every game; SECS=1000 sets the time limit (default 255 s).
 // Contest is on for 2–4 players, as in the game's New game page (OPTS='{"contest":false}' turns it off). Before
 // 24 November 2026 it was off here unless OPTS said otherwise, so older journal numbers without OPTS are contest-free.
+// OPTS='{"worm":true}' plays with the Lindworm (each game records its hoard, strikes and whether it won).
 // FOLIO=1 shuffles the Pilgrim's Folio into every deck; RIVER=1 the River Folio.
 // Usage: node tools/sim2.js <players> <first game> <last game> <output.json> [lineup]
 //   lineup (optional) fixes styles instead of rotating them, e.g. "Warmonger=warlord,*=greedy".
@@ -30,7 +31,7 @@ if(require.main===module){
     games.push({n,g,rounds:st.round,winner:st.winner,archs,strats,scores:sc.map(s=>s.total),income:st.players.map((q,i)=>E.income(st,i)),out:st.players.map(q=>q.out),
       ruins:cnt(/ is Ruined/), over:cnt(/ is Overwhelmed/), curses:cnt(/ is tucked under| covers |Curse/)-cnt(/destroyed|absorbs/), defended:cnt(/absorbs/), ascended:cnt(/ASCENDS/), elim:cnt(/out of the game/),
       ruinsBy:st.players.map(q=>cnt(new RegExp(' is Ruined by '+q.name+'\\.$'))), overBy:st.players.map(q=>cnt(new RegExp(' is Overwhelmed by '+q.name+'\\.$'))),
-      warcamp:st.players.map(q=>L.filter(l=>l.startsWith(q.name+' banks ')&&l.endsWith('(Warcamp).')).reduce((s,l)=>s+(+(l.match(/banks (\d+)/)||[0,0])[1]),0))});
+      worm:st.worm?{won:!!st.wormWon,hoard:st.worm.hoard,struck:st.worm.struck,laurel:E.laurelOf(st),wakes:st.worm.wakes,burns:cnt(/The Lindworm breathes fire/)}:null, warcamp:st.players.map(q=>L.filter(l=>l.startsWith(q.name+' banks ')&&l.endsWith('(Warcamp).')).reduce((s,l)=>s+(+(l.match(/banks (\d+)/)||[0,0])[1]),0))});
     st.players.forEach((q,p)=>E.kingdom(st,p).forEach(k=>{ const id=st.cards[E.top(st,k)].def; const r=cards[id]=cards[id]||{v:[],i:[],win:0,any:0,exp:0}; r.v.push(E.cardValue(st,k,p)); r.i.push(E.cardIncome(st,k)); r.any++; r.exp+=1/n; if(p===st.winner) r.win++; })); }
   fs.writeFileSync(out,JSON.stringify({games,stats,cards})); console.log('done',games.length,'games in',((Date.now()-t0)/1000).toFixed(0)+'s');
 }

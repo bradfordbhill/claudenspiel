@@ -112,7 +112,14 @@ var KBots = (function () {
   // How much better st is than st0 for player p: own ◇ and ● gained, progress toward its archetype's goal,
   // minus what opponents gained. A player paid for War (Warcamp) values it like a warlord, whatever its style.
   let SAFETY=+(typeof process!=='undefined'&&process.env&&process.env.CS_SAFETY!=null?process.env.CS_SAFETY:0);   // off: measured, careful play is no stronger (51.6% vs 50.6% over 494 paired games), and it smothers War
+  // The Lindworm (opts.worm): the chance its hoard wins, from its forecast against where the leader will end. A loss to it is
+  // a loss for everyone, so every bot weighs it (WORM_W◇ of margin for a sure loss).
+  const WORM_W=+(typeof process!=='undefined'&&process.env&&process.env.CS_WORMW!=null?process.env.CS_WORMW:14);
+  function wormRisk(st){ if(!st.worm) return 0; if(st.wormWon) return 1; if(st.winner!=null) return 0;
+    const T=+st.opts.target||52, lead=oppBest(st,-1), end=st.lastRound?lead:Math.max(T+3,lead); return 1/(1+Math.exp(-(E.wormForecast(st)-end)/4)); }
   function evalState(st0,st,p,strat){ if(strat==='gsim') return gEval(st,p)-gEval(st0,p);
+    if(st.worm) return evalState0(st0,st,p,strat) - WORM_W*(wormRisk(st)-wormRisk(st0)); return evalState0(st0,st,p,strat); }
+  function evalState0(st0,st,p,strat){
     const rem=6, g=profile(st,p);
     // Claudenspiel: SAFETY weighs the bot's own cards at risk of Overwhelm (CS_SAFETY in the simulator; 0 by default).
     let mine=(tot(st,p)-tot(st0,p)) + 0.5*(E.income(st,p)-E.income(st0,p))*rem/3 + (goal(st,p)-goal(st0,p)) + SAFETY*(danger(st0,p)-danger(st,p));
@@ -175,6 +182,7 @@ var KBots = (function () {
   // plays anything that helps, since ● left at the end of a turn is lost anyway.
   function mainPhase(st,p,strat,stats){ const pl=()=>st.players[p], gs=strat==='gsim', cells=strat==='quick'?8:gs?16:14;
     st=marketDraws(st,p); st=burnCard(st,p,strat,stats);
+    if(st.worm&&wormRisk(st)>0.4) st=strikeWorm(st,p,strat,stats);   // the Lindworm close to winning: strike before building
     if(!pl().foundationPlaced){ const s=placeFoundation(st,p,strat); if(s) st=s; }
     if(strat!=='greedy'&&strat!=='quick') st=useAbilities(st,p,strat,stats);
     for(let it=0; it<6; it++){ let best=null,bv=gs?0.05:0.5; const cash=E.funds(pl());
@@ -186,7 +194,7 @@ var KBots = (function () {
       if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; } }
     if(!st.turn.claimed){ const c=bestClaim(st,p,strat); if(c) st=c; }
     if(strat!=='greedy'&&strat!=='quick') st=useAbilities(st,p,strat,stats); else st=useAbilities(st,p,'greedy',stats);
-    st=burnCard(st,p,strat,stats); st=buyClaim(st,p,strat,stats); st=contestCard(st,p,strat,stats);
+    st=burnCard(st,p,strat,stats); st=buyClaim(st,p,strat,stats); st=contestCard(st,p,strat,stats); st=strikeWorm(st,p,strat,stats);
     return swapDead(st,p,stats); }
   // Claudenspiel: what laying a Grounds card does, which the ◇-and-● scoring can't see: Marsh shelters the bot's own cards
   // that are close to Overwhelm, Battlefield exposes rivals' cards, Crossroads opens cheap spaces next to its own.
@@ -231,6 +239,10 @@ var KBots = (function () {
   function contestCard(st,p,strat,stats){ let best=null,bv=strat==='gsim'?1:1.3;
     E.contestOptions(st,p).forEach(k=>{ const s=ap(st,{t:'contest',k}); if(!s) return; const v=evalState(st,s,p,strat); if(v>bv){bv=v;best=s;} });
     if(!best) return st; stats.contested=(stats.contested||0)+1; return best; }
+  // The Lindworm: strike when the lower risk (and the Slayer's Laurel) beats what the 8● would bank.
+  function strikeWorm(st,p,strat,stats){ if(!st.worm||!st.turn||st.turn.struck||(st.players[p].ap||0)<E.STRIKE_PRICE) return st;
+    const s=ap(st,{t:'strike'}); if(!s) return st; const bar=strat==='gsim'?0.3:(st.opts.banking?1.0:0.2);
+    if(evalState(st,s,p,strat)>bar){ stats.struck=(stats.struck||0)+1; return s; } return st; }
   // Claudenspiel: pay for a second claim when the best claim is worth more than the ● would bank (10● ≈ 1.7◇).
   function buyClaim(st,p,strat,stats){ if(!st.opts.buyClaim||!st.turn.claimed||st.turn.boughtClaim) return st;
     const s=ap(st,{t:'buyClaim'}); if(!s) return st; const c=bestClaim(s,p,strat); if(!c) return st;
@@ -269,6 +281,7 @@ var KBots = (function () {
     const ids=Object.keys(left), pick=()=>pool.length?pool.pop():ids[Math.floor(R()*ids.length)];
     Object.keys(st.cards).forEach(u=>{ if(st.defs[st.cards[u].def]&&st.defs[st.cards[u].def].type==='Hidden') st.cards[u].def=pick(); });
     st.deck=st.deck.map((_,i)=>{ const u='w'+i; st.cards[u]={uid:u,def:pick(),suit:null,ruined:false,overwhelmed:false,claimants:[],tokens:0,copyOf:null,prevClaimants:null,fixed:false}; return u; });
+    if(st.worm){ const d=st.worm.deck; for(let i=d.length-1;i>0;i--){ const j=Math.floor(R()*(i+1)); const t=d[i]; d[i]=d[j]; d[j]=t; } }
     st.seed=1+Math.floor(R()*2147483000);
     return st; }
   // ◇ the player could lose: its cards one enemy away from being Overwhelmed (its Foundation most of all).
@@ -295,12 +308,13 @@ var KBots = (function () {
       const cash=E.income(st,q)+(pl.reserve||0), cards=pl.hand.filter(u=>!E.playBlock(st,q,u)&&(+E.rawDef(st,u).cost||0)<=cash).length;
       const pace=(RACE.base*(cards||!RACE.afford?1:RACE.afford)+RACE.perCard*Math.min(cards,RACE.cap)+RACE.perInc*Math.min(E.income(st,q),30))*(pl.meeples>0?1:0.6);
       const tau=Math.max(0,T-s)/pace*N + (q-st.cur+N)%N, z=Math.exp(-RACE.lambda*tau); Z+=z; if(q===p) mine=z; });
-    return Z?100*mine/Z:0; }
+    return Z?100*mine/Z*(1-wormRisk(st)):0; }
   // Finish p's turn in an imagined world (if it is still p's turn), then let everyone else take theirs; score the
   // position when p's next turn comes round, or the win or loss if the game ends first.
   // How the Genius judges a position: 'race' (gEval, its fitted win chance) or 'diff' (the tactician's measure: own ◇ and
   // ● per turn against the strongest rival's). GENIUS.policy plays out its own lines, GENIUS.opp imagines its rivals.
-  function diffEval(st,p){ if(st.winner!=null) return st.winner===p?1000:-1000; const sc=E.scores(st), v=q=>sc[q].total+E.income(st,q)+goal(st,q);
+  function diffEval(st,p){ if(st.winner!=null) return st.winner===p?1000:-1000; if(st.worm) return diffEval0(st,p)-2*WORM_W*wormRisk(st); return diffEval0(st,p); }
+  function diffEval0(st,p){ const sc=E.scores(st), v=q=>sc[q].total+E.income(st,q)+goal(st,q);
     let mx=-1e9; st.players.forEach((q,i)=>{ if(i!==p&&!q.out) mx=Math.max(mx,v(i)); }); return v(p)-(mx>-1e9?mx:0); }
   function judge(st,p){ return GENIUS.judge==='diff'?diffEval(st,p):gEval(st,p); }
   function rollout(s,p){ const pol=GENIUS.policy, strats=s.players.map((_,i)=>i===p?pol:GENIUS.opp), stats=newStats(); let g=0;
@@ -432,7 +446,7 @@ var KBots = (function () {
     const st=Object.assign({},st0,{_botLog:[]}), end=turn(st,newStats(),st0.players.map(()=>style));
     return end&&end._botLog.length ? end._botLog : [{t:st0.turn&&st0.turn.started?'endTurn':'startTurn'}]; }
 
-  return { STYLES: ['greedy', 'tactician', 'raider', 'warlord', 'genius'], GENIUS: GENIUS, RACE: RACE, plan: plan, choose: choose, resolve: resolve, turn: turn, newStats: newStats, evalState: evalState,
+  return { STYLES: ['greedy', 'tactician', 'raider', 'warlord', 'genius'], GENIUS: GENIUS, wormRisk: wormRisk, RACE: RACE, plan: plan, choose: choose, resolve: resolve, turn: turn, newStats: newStats, evalState: evalState,
     profile: profile, goal: goal, keepValue: keepValue, determinize: determinize, gEval: gEval, advise: advise, hindsight: hindsight };
 })();
 if (typeof module !== 'undefined') module.exports = KBots;

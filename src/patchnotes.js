@@ -1,6 +1,13 @@
 /* Claudenspiel patch notes, newest first (Claudenspiel's own; Kartenspiel keeps its own in its repository).
    v must be new for each entry. Players who have played before see the newest one in a "What's new" window. */
 var KPatch = [
+  { v: 'cs-1.0-pre-lindworm', date: '28 November 2026', title: 'The Lindworm', notes: [
+    'A new mode under <b>Modes</b> on the New game page: <b>the Lindworm</b>, a dragon that plays against the whole table. It is no player. It has a hoard of ◇ and a deck of omens, and one omen always shows, so you can see what is coming.',
+    'After every round it wakes: its hoard grows (a little more each round) and the omen comes true. <b>Scorch</b> burns the leader’s finest card, <b>Wrath</b> the two leaders’, <b>Toll</b> takes up to 3◇ of the leader’s banked ◇, <b>Wingbeat</b> lifts a meeple off everyone’s weakest card, <b>Greed</b> fattens the hoard and <b>Slumber</b> lets you breathe. A warded card is passed over.',
+    'If its hoard reaches the target, or is bigger than every player’s total when the last round ends, <b>the Lindworm wins and everyone loses</b>. Once a turn you can <b>strike</b> it: 8● of this turn’s ● takes 5◇ from its hoard. Whoever has struck it most holds the <b>Slayer’s Laurel</b>, worth 5◇.',
+    'The fire falls on whoever is ahead, so the leader has the most reason to pay for the common defence: in the bots’ games the Lindworm wins about one game in six with two players and one in ten with three or four.',
+    'A pixel wyrm crosses the board when it wakes; its hoard runs its own lane on the race bar with a mark for where it is heading, and the Chronicle draws it as an ember line. Two new deeds: <b>Dragonslayer</b> and <b>A Thin Hoard</b>.'
+  ] },
   { v: 'cs-1.0-pre-river', date: '27 November 2026', title: 'The River Folio', notes: [
     'Win every town of Act II of the campaign and <b>the River Folio</b> opens: twelve new cards from the river towns, two a suit, with a little pixel river after their names. Play them on their own or together with the Pilgrim’s Folio (both are under <b>Folios</b> on the New game page).',
     'The folio’s word is <b>downstream</b>. The river runs north to south, top to bottom of the board: a card’s downstream is the unbroken run of cards straight south of it, its upstream the run north. An empty space or a Ruin ends the river. Select a river card on the board and its column flows with pixel water.',

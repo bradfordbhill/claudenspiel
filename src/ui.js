@@ -64,6 +64,13 @@
     return '<svg class="pix ' + (cls || '') + '" width="' + w * px + '" height="' + h * px + '" viewBox="0 0 ' + w + ' ' + h + '" shape-rendering="crispEdges"' + (label ? ' role="img" aria-label="' + label + '"' : ' aria-hidden="true"') + '>' + r + '</svg>';
   }
   var ART_PAL = { k: '#2a1600', y: '#f2c230', Y: '#fff2a8', o: '#b07a10', r: '#b01818', b: '#1c3fa0', w: '#8a5a20', g: '#cfe6ee', s: '#e8b838', W: '#ffffff' };
+  // The Lindworm, two frames of its flight (wings up, wings down), flying east.
+  var WYRM_PAL = { k: '#1a0806', r: '#7a1a14', R: '#a8301c', o: '#e8923a', Y: '#ffe060', w: '#4a1210', y: '#d8a020', g: '#8a5a10' };
+  var WYRM = [
+    ['..........kk............', '.........kwwk...........', '........kwwwwk..........', '.......kwwrwwwk.........', '......kwwrrrwwwk........', '.kk..kwrrrrrrrwwk...kk..', 'kRRkkrrrrrrrrrrrrkkkRYk.', '.kRRRoooooooRRRRRRRRRRk.', '..kkRRRRRRRRRRRRRRRkkRRk', '....kkkkkRRkkkRRkkk..kk.', '.........kk...kk........', '........................'],
+    ['........................', '........................', '........................', '.kk.................kk..', 'kRRk...............kRYk.', '.kRRkkkkkkkkkkkkkkkRRRk.', '..kRRoooooooRRRRRRRRRRRk', '...kkRRrrrrrrrrrRRRkkRRk', '.....kwwrrrrrrrwk...kk..', '......kwwwrrrwwk........', '.......kwwwwwwk.........', '........kkkkkk..........']];
+  // The Lindworm at rest, coiled on its hoard: the portrait on its card under the players.
+  var WYRM_SIT = ['..............kkkk......', '.............kRRRRk.....', '............kRRRYRRk....', '...........kRRRRRRRRkk..', '...........kRRkkkRRRRok.', '..........kRRk...kkooook', '..........kRRk......kk..', '.....kk...kRRk..........', '....kRRk..kRRRk.........', '...kRrrRk..kRRRk........', '...kRk.kRk..kRRRk.......', '...kRk..kRkkkRRRk.......', '....kRk..kRRRRRk........', '.....kRkkkoooRRk........', '......kRRRRRRRk.ky......', '....kykkkkkkkkkyYyk.....', '...kyYyyykyyyyyyyyyk....', '..kyyyyYyyyyYyyyyYyyk...', '.kgyyyyyyyyyyyyyyyyygk..', 'kkkkkkkkkkkkkkkkkkkkkkk.'];
   // the title-bar crest: a shield, per pale gules and azure, edged in gold
   var CREST = ['kkkkkkkkkkk', 'kyyyyyyyyyk', 'kyrrrrbbbyk', 'kyrrrrbbbyk', 'kyrrrrbbbyk', 'kyrrrrbbbyk', 'kyrrrrbbbyk', 'kyrrrrbbbyk', '.kyrrrbbyk.', '..kyrrbyk..', '...kyyyk...', '....kkk....'];
   // the "Next turn" message-box icon: an hourglass, sand running down
@@ -411,6 +418,10 @@
       lose: function () { tone('sawtooth', 98, 1.6, 0.06); noise('lowpass', 300, 1.5, 0.15); },
       turn: function () { tone('sine', 1320, 0.5, 0.08); tone('sine', 1980, 0.4, 0.04, 0.01); tone('sine', 1320, 0.6, 0.05, 0.22); },
       // Contest: two blades meet, ring off-key, and a meeple clatters home.
+      // The Lindworm wakes: a low growl that rises and falls, with a breath of fire.
+      roar: function () { tone('sawtooth', 62, 1.4, 0.07, 0, 0.7); tone('sawtooth', 93, 1.1, 0.05, 0.1, 0.6); noise('lowpass', 420, 1.3, 0.22, 0.05); noise('bandpass', 1400, 0.7, 0.12, 0.55); },
+      // A strike: a spear into scale, a dull thud and a ring.
+      strike: function () { noise('lowpass', 700, 0.12, 0.4); tone('triangle', 330, 0.5, 0.08, 0.02, 0.8); tone('sine', 990, 0.35, 0.03, 0.03); },
       clash: function () { [0, 0.16].forEach(function (t, i) { noise('highpass', 5200, 0.06, 0.5, t); tone('triangle', 1870 + i * 210, 0.55, 0.09, t, 0.98); tone('sine', 2950 + i * 330, 0.4, 0.05, t + 0.005); tone('sine', 4410, 0.2, 0.03, t + 0.01); });
         for (var i = 0; i < 3; i++) noise('bandpass', 900 - i * 120, 0.05, 0.25, 0.45 + i * 0.07); },
       // Burying: a spade into earth for Bone cards and anything under a Foundation; otherwise a heavy book closing.
@@ -463,10 +474,12 @@
       Object.keys(b.board).forEach(function (k) { var sb = b.board[k], sa = a.board[k]; if (!sa || sb.length <= sa.length || sb[0] !== sa[0]) return;
         var nu = sb.filter(function (u) { return sa.indexOf(u) < 0; })[0]; if (nu == null) return; var nd = E.rawDef(b, nu), td = E.rawDef(b, sb[0]);
         ev.push({ t: 'bury', k: k, suit: nd.suit, earth: nd.suit === 'Bone' || td.type === 'Foundation' }); });
+      if (act.t === 'strike' && b.turn && b.turn.struck && !(a.turn && a.turn.struck)) ev.push({ t: 'strike', n: a.worm.hoard - b.worm.hoard });
+      if (b.worm && a.worm && b.worm.wakes > a.worm.wakes) ev.push({ t: 'wake', omen: b.worm.last.id, grew: b.worm.last.grew });
       if (b.lastRound && !a.lastRound) ev.push({ t: 'lastround' });
       if (a.cur !== b.cur && b.winner == null && !b.players[b.cur].bot && a.players[a.cur].bot) ev.push({ t: 'yourturn' });
       if (a.cur !== b.cur && b.winner == null) ev.push({ t: 'handover', p: b.cur });
-      if (b.winner != null && a.winner == null) ev.push({ t: 'end', winner: b.winner, arch: b.players[b.winner].arch, humanWon: !b.players[b.winner].bot, anyHuman: b.players.some(function (q) { return !q.bot; }) });
+      if (b.winner != null && a.winner == null) ev.push({ t: 'end', winner: b.winner, worm: b.winner < 0, arch: b.winner < 0 ? null : b.players[b.winner].arch, humanWon: b.winner >= 0 && !b.players[b.winner].bot, anyHuman: b.players.some(function (q) { return !q.bot; }) });
       return ev;
     }
     // Animation pieces: floating text, gems and marbles flying to the score piles, crumbling cards, Curse smoke and tucked cards.
@@ -632,6 +645,14 @@
       var iv = setInterval(function () { v++; node.nodeValue = v; if (v >= to) clearInterval(iv); }, Math.max(30, Math.min(90, 600 / n))); }
     function banner(text) { var b = rectOf('.boardwrap'); if (!b) return; var d = piece('banner', esc(text), b.left + b.width / 2, b.top + 24);
       d.animate([{ transform: 'translate(-50%,-18px) scaleY(.1)', opacity: 0 }, { transform: 'translate(-50%,0) scaleY(1)', opacity: 1, offset: .2 }, { transform: 'translate(-50%,0) scaleY(1)', opacity: 1, offset: .85 }, { transform: 'translate(-50%,-6px)', opacity: 0 }], { duration: 2600, easing: 'steps(12)', fill: 'both' }).onfinish = function () { d.remove(); }; }
+    // The Lindworm in flight: a two-frame pixel wyrm beats its wings across the board in steps, its shadow sliding below.
+    function wyrm() {
+      var b = rectOf('.boardwrap'); if (!b) return;
+      var y = b.top + b.height * 0.28, d = piece('wyrm', pix(WYRM[0], WYRM_PAL, 4, 'f0') + pix(WYRM[1], WYRM_PAL, 4, 'f1'), b.left - 110, y);
+      var sh = piece('wyrmshadow', '', b.left - 100, y + b.height * 0.36);
+      d.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + (b.width * 0.5 + 55) + 'px,-14px)', offset: .5 }, { transform: 'translate(' + (b.width + 120) + 'px,-36px)' }], { duration: 2000, easing: 'steps(28)', fill: 'both' }).onfinish = function () { d.remove(); };
+      sh.animate([{ transform: 'translate(0,0)', opacity: 0 }, { opacity: .55, offset: .15 }, { opacity: .55, offset: .85 }, { transform: 'translate(' + (b.width + 120) + 'px,0)', opacity: 0 }], { duration: 2000, easing: 'steps(28)', fill: 'both' }).onfinish = function () { sh.remove(); };
+    }
     // Victory: the winner's Kingdom lights up card by card, smallest first, the most valuable last; then their banner.
     function glory(w) {
       var st = cur() && cur().state; if (!st || !st.players[w]) return;
@@ -655,6 +676,8 @@
         else if (e.t === 'cursed') SFX.play('curse');
         else if (e.t === 'lastround') SFX.play('bell');
         else if (e.t === 'contest') SFX.play('clash');
+        else if (e.t === 'wake') SFX.play('roar');
+        else if (e.t === 'strike') SFX.play('strike');
         else if (e.t === 'bury') SFX.play('bury', e.earth);
         else if (e.t === 'ascend') SFX.play('ascend');
         else if (e.t === 'yourturn') SFX.play('turn');
@@ -671,7 +694,9 @@
         if (e.t === 'bank') { var jr = rectOf('[data-fx="jar"]'), pr = rectOf('[data-fx="pile-' + e.p + '"]'); if (jr) popup('+' + e.n + '◇ banked', 'vp', jr, 0); if (jr && pr && !calm) { pr.p = e.p; fly('vp', jr, pr, e.n * 3, 200); } }
         if (e.t === 'lastround') banner('🔔 The last round');
         if (e.t === 'handover' && !calm) handover(e.p);
-        if (e.t === 'end' && !calm) { glory(e.winner); if (e.anyHuman && !e.humanWon) dusk(); }
+        if (e.t === 'end' && !calm) { if (e.worm) { wyrm(); dusk(); setTimeout(function () { banner('🐉 The Lindworm wins'); }, 1400); } else { glory(e.winner); if (e.anyHuman && !e.humanWon) dusk(); } }
+        if (e.t === 'wake') { if (!calm) wyrm(); banner('🐉 ' + E.OMENS[e.omen].name + ': the hoard grows ' + e.grew + '◇'); }
+        if (e.t === 'strike') { var rl = rectOf('.race .wormlane') || center(); popup('⚔ −' + e.n + '◇ from the hoard', 'contest', rl, 0); if (!calm) { var rh = rectOf('.race .wormlane .fill'); if (rh) puff(rh, '#e86030', 60); } }
         if (e.t === 'contest') { var rk = cellRect(e.k), cst = cur() && cur().state; if (rk) { popup('⚔ Contested!', 'contest', rk, 0);
             if (!calm && cst) { var lc = (cst.players[e.loser] && cst.players[e.loser].color) || '#888'; ousted(rk, lc); puff(rk, cst.players[e.p].color || '#888', 350); } } }
         if (e.t === 'ascend' && !calm) { var ra = cellRect(e.k); if (ra) helix(ra); }
@@ -1046,6 +1071,8 @@
       return '<div class="lane' + (i === st.cur ? ' cur' : '') + (pl.out ? ' out' : '') + '" title="' + esc(pl.name) + ': ' + t + '◇ of ' + T + '◇"><span class="lname">' + esc(pl.name) + '</span>' +
         '<span class="track"><span class="fill sm-' + i + '" style="width:' + w + '%;background-color:' + pl.color + '"></span><span class="goal" style="left:' + Math.round(100 * T / top) + '%"></span></span><b>' + t + '◇</b></div>';
     }).join('');
+    if (st.worm) { var wh = st.worm.hoard, fc = E.wormForecast(st);
+      lanes += '<div class="lane wormlane" title="The Lindworm: ' + wh + '◇ hoarded, likely ' + fc + '◇ by the end"><span class="lname">🐉 Lindworm</span><span class="track"><span class="fill" style="width:' + Math.max(1, Math.round(100 * Math.min(wh, top) / top)) + '%"></span><span class="ghost" style="left:' + Math.min(99, Math.round(100 * Math.min(fc, top) / top)) + '%"></span><span class="goal" style="left:' + Math.round(100 * T / top) + '%"></span></span><b>' + wh + '◇</b></div>'; }
     return '<div class="race raised" role="img" aria-label="Score race to ' + T + '◇">' + lanes + (st.lastRound ? '<div class="lastround">🔔 Last round: ' + esc(st.players[st.lastRound.by].name) + ' reached ' + T + '◇</div>' : '') + '</div>';
   }
 
@@ -1184,9 +1211,21 @@
         '<div class="pbody"><span data-fx="pile-' + i + '">' + jewelPile(sc[i].total) + '</span><div class="pstats"><div class="bignum" title="Victory points: cards ' + sc[i].cards + ' + tokens ' + sc[i].tokens + '">' + sc[i].total + '<span class="unit">◇</span></div>' +
         '<div class="small">♟ ' + pl.meeples + ' meeples' + (ctx.kind === 'game' ? ' · ' + pl.hand.length + ' in hand' : '') + (pl.reserve > 0 ? ' · ' + pl.reserve + '● Reserves' : '') + '</div></div></div></div>';
     });
-    h += '</div>';
+    h += '</div>' + wormPanel(ctx);
     if (ctx.kind === 'game') h += '<p class="small muted" style="margin:4px 0 0">' + (st.opts.lastRound ? 'Reaching ' + st.opts.target + '◇ starts the last round; then the highest total wins.' : 'First to ' + st.opts.target + '◇ at the end of their turn wins.') + ' Banked tokens are included.</p>';
     return h;
+  }
+  // The Lindworm's card under the players: its hoard and forecast, the omen showing, the Laurel, and the Strike button.
+  function canStrike(ctx) { var st = ctx.state; return !!st.worm && myTurn(ctx) && st.winner == null && !!st.turn && st.turn.started && !st.turn.struck && !st.pending && !st.res && (st.players[st.cur].ap || 0) >= E.STRIKE_PRICE && st.worm.hoard > 0; }
+  function wormPanel(ctx) {
+    var st = ctx.state, w = st.worm; if (!w || ctx.kind !== 'game') return '';
+    var T = +st.opts.target || 52, fc = E.wormForecast(st), lau = E.laurelOf(st), om = E.OMENS[w.next], lead = Math.max.apply(null, E.scores(st).map(function (x) { return x.total; })), danger = st.winner == null && (w.hoard >= lead - 6 || (st.lastRound && w.hoard >= lead - 12));
+    var counts = st.players.map(function (p, i) { return w.struck[i] ? esc(p.name) + ' ' + w.struck[i] : ''; }).filter(Boolean).join(' · ');
+    return '<div class="wormcard' + (danger ? ' danger' : '') + (st.wormWon ? ' won' : '') + '"><div class="wormhead">' + pix(WYRM_SIT, WYRM_PAL, 2, 'wormpix', 'The Lindworm on its hoard') +
+      '<div><b>The Lindworm</b> <span class="small muted">· its hoard</span><div class="bignum">' + w.hoard + '<span class="unit">◇</span></div><div class="small wormfc" title="Its likely hoard when the game ends, if nobody strikes: it grows more every round">likely ' + fc + '◇ by the end' + (danger ? ' — <b>strike it!</b>' : '') + '</div></div></div>' +
+      (st.winner == null ? '<div class="omen small" title="The omen comes true when the round ends"><span class="omenname">Next omen: ' + esc(om.name) + '</span> ' + esc(om.text) + '</div>' : '') +
+      '<div class="small muted">' + (lau != null ? '🏅 The Slayer’s Laurel (+' + E.LAUREL + '◇): ' + esc(st.players[lau].name) + '. ' : '🏅 The Slayer’s Laurel (+' + E.LAUREL + '◇): nobody yet. ') + (counts ? 'Strikes: ' + counts + '.' : '') + '</div>' +
+      (canStrike(ctx) ? '<button class="btn sm strike" data-act="strike" title="Once a turn: pay ' + E.STRIKE_PRICE + '● of this turn’s ● to take ' + E.STRIKE_WOUND + '◇ from its hoard. Whoever strikes most holds the Laurel">⚔ Strike the Lindworm (' + E.STRIKE_PRICE + '●)</button>' : '') + '</div>';
   }
   // Pick a color for a log line by matching its text.
   function logClass(l) {
@@ -1288,7 +1327,7 @@
     if ((app.page === 'game' || app.page === 'sandbox' || app.page === 'online') && c) {
       var st = c.state;
       if (c.err) return c.err;
-      if (st.winner != null) return st.players[st.winner].name + ' wins.';
+      if (st.winner != null) return st.winner < 0 ? 'The Lindworm wins.' : st.players[st.winner].name + ' wins.';
       if (c.online) return (N.room ? N.room.name + ' — ' : '') + 'round ' + st.round + ', ' + (st.cur === c.me ? 'your turn' : st.players[st.cur].name + '’s turn') + (N.status === 'on' ? '' : ' (reconnecting…)');
       if (isBot(st, st.cur)) return st.players[st.cur].name + ' is playing — round ' + st.round;
       if (app.page === 'game') return st.players[st.cur].name + ' — round ' + st.round + (st.turn.started ? ', ' + st.players[st.cur].ap + '● to spend' + (st.turn.claimed ? ', claim used' : ', claim available') : ', waiting to start the turn');
@@ -1370,6 +1409,8 @@
       '<label>Contest</label><label><input type="checkbox" data-set="contest"' + (contestOn() ? ' checked' : '') + '> Once a turn, pay 8● to take a rival’s card next to the one you just placed. A Cryptkeeper’s buried cards don’t go with it: they move under the Mausoleum. On by default for 2–4 players</label>' +
       '<label>Burn</label><label><input type="checkbox" data-set="burn"' + (setup.burn ? ' checked' : '') + '> Second edition, on trial: once a turn, burn a card from your hand for its own one-time effect (shown on a flame tag under each card)</label>' +
       '<label>Market</label><label><input type="checkbox" data-set="market"' + (setup.market ? ' checked' : '') + '> Second edition, on trial: three face-up cards; your turn’s draws can come from them or the deck</label>' +
+      '<label class="full" style="margin-top:4px"><b>Modes</b></label>' +
+      '<label><i class="worm-mark"></i> The Lindworm</label><label><input type="checkbox" data-set="worm"' + (setup.worm ? ' checked' : '') + '> Semi-cooperative: a dragon hoards ◇ and burns the leader’s best cards after every round. If its hoard reaches ' + (+setup.target || 52) + '◇, or beats every player when the game ends, everyone loses. Strike it for ' + E.STRIKE_PRICE + '●; whoever strikes most takes the Slayer’s Laurel (+' + E.LAUREL + '◇)</label>' +
       '<label class="full" style="margin-top:4px"><b>Folios</b></label>' +
       (folioOpen() ? '<label><i class="folio-mark"></i> The Pilgrim’s Folio</label><label><input type="checkbox" data-set="folio"' + (folioOn() ? ' checked' : '') + '> Shuffle in twelve cards from the road (' + D.FOLIO.reduce(function (a, c) { return a + c.copies; }, 0) + ' copies): roads and lines, an inn, a bell, a feast. See them in the Library</label>'
         : '<label class="muted"><i class="folio-mark" style="filter:grayscale(1)"></i> The Pilgrim’s Folio 🔒</label><span class="small muted">Twelve new cards. Win every stop of Act I of the campaign to open it.</span>') +
@@ -1411,7 +1452,7 @@
       if (ui.mode === 'move') return '<div class="prompt">Click an empty space to move the card from ' + esc(ui.moveFrom) + '. <button class="btn sm" data-act="cancelMode">Cancel</button></div>';
       return '';
     }
-    if (st.winner != null) return '<div class="prompt winner">' + pix(CROWN, ART_PAL, 2, '', 'Crown') + '<b>' + esc(st.players[st.winner].name) + ' wins!</b> ' + (ctx.online ? onlineAfterGame() : '<button class="btn sm" data-act="chronicle" title="How the game was won">Chronicle</button><button class="btn sm def" data-act="rematch" title="Same players and rules, new shuffle">Rematch</button><button class="btn sm" data-page="new">New game</button>') + '</div>';
+    if (st.winner != null) return '<div class="prompt winner' + (st.winner < 0 ? ' wormwin' : '') + '">' + (st.winner < 0 ? pix(WYRM_SIT, WYRM_PAL, 1, '', 'The Lindworm') + '<b>The Lindworm wins.</b> Its hoard of ' + st.worm.hoard + '◇ outweighs every Kingdom. ' : pix(CROWN, ART_PAL, 2, '', 'Crown') + '<b>' + esc(st.players[st.winner].name) + ' wins!</b> ') + (ctx.online ? onlineAfterGame() : '<button class="btn sm" data-act="chronicle" title="How the game was won">Chronicle</button><button class="btn sm def" data-act="rematch" title="Same players and rules, new shuffle">Rematch</button><button class="btn sm" data-page="new">New game</button>') + '</div>';
     if (ctx.online || hasBots(st)) { var ow = waitingPrompt(ctx); if (ow) return ow; }
     if (pd && pd.kind === 'cell') return '<div class="prompt"><b>' + esc(st.players[pd.player].name) + ':</b> ' + esc(pd.prompt) + ' ' + verb() + ' an orange-outlined ' + (pd.empty ? 'space' : 'card') + '.' + (pd.optional ? ' <button class="btn sm" data-act="skip">Skip</button>' : '') + (st.res && !ctx.online ? ' <button class="btn sm" data-act="cancelEffect" title="Referee: stop resolving this effect">Cancel effect</button>' : '') + '</div>';
     if (ui.autoEnding) return '<div class="prompt"><b>Out of ●.</b> Nothing left to play, claim or use, so your turn ends in a moment. <button class="btn sm" data-act="holdTurn">Wait, I’m not done</button></div>';
@@ -1510,7 +1551,7 @@
       if (j > 0 && L != null && L !== lead && lead != null) pts.push({ j: j, kind: 'lead', text: st.players[L].name + ' takes the lead, ' + e.t[L] + '◇ to ' + Math.max.apply(null, e.t.filter(function (v, i) { return i !== L; })) + '◇.' });
       if (L != null) lead = L;
       if (j > 0 && e.p >= 0) gains.push({ j: j, p: e.p, g: e.t[e.p] - c[j - 1].t[e.p] });
-      e.ev.forEach(function (x) { pts.push({ j: j, kind: /contests/.test(x) ? 'contest' : /ASCENDS/.test(x) ? 'ascend' : /last round/.test(x) ? 'bell' : 'ruin', text: x.replace(/ ASCENDS:.*$/, ' Ascends: five suits in one stack.') }); });
+      e.ev.forEach(function (x) { pts.push({ j: j, kind: /^🐉/.test(x) ? 'worm' : /contests/.test(x) ? 'contest' : /ASCENDS/.test(x) ? 'ascend' : /last round/.test(x) ? 'bell' : 'ruin', text: x.replace(/ ASCENDS:.*$/, ' Ascends: five suits in one stack.') }); });
     });
     gains.sort(function (a, b) { return b.g - a.g; }).slice(0, 2).forEach(function (g) { if (g.g >= 10) pts.push({ j: g.j, kind: 'gain', text: st.players[g.p].name + ' gains ' + g.g + '◇ in one turn.' }); });
     // Keep the story short: every lead change after the first, the big turns, the events; at most eight, in order.
@@ -1521,7 +1562,7 @@
   function chronicleSVG(st, story) {
     var c = st.chron || []; if (c.length < 2) return '';
     var n = st.players.length, W = 640, H = 250, L = 36, R = 132, T = 12, Bm = 30, N = c.length - 1;
-    var target = st.opts.seasons ? 0 : +st.opts.target || 0, mx = 0; c.forEach(function (e) { e.t.forEach(function (v) { mx = Math.max(mx, v); }); });
+    var target = st.opts.seasons ? 0 : +st.opts.target || 0, mx = 0, worm = c.some(function (e) { return e.h != null; }); c.forEach(function (e) { e.t.forEach(function (v) { mx = Math.max(mx, v); }); if (e.h != null) mx = Math.max(mx, e.h); });
     var ymax = Math.ceil(Math.max(mx, target) / 10) * 10 + 4, ymin = Math.min(0, Math.min.apply(null, c.map(function (e) { return Math.min.apply(null, e.t); })));
     var X = function (j) { return Math.round(L + (W - L - R) * j / N); }, Y = function (v) { return Math.round(T + (H - T - Bm) * (1 - (v - ymin) / (ymax - ymin))); };
     var h = '<svg class="chron" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Each player’s ◇ after every turn" shape-rendering="crispEdges">';
@@ -1531,8 +1572,10 @@
     c.forEach(function (e, j) { if (e.r > lastR && j > 0) { lastR = e.r; if ((e.r - 1) % every === 0) h += '<line class="tick" x1="' + X(j - 1) + '" x2="' + X(j - 1) + '" y1="' + (H - Bm) + '" y2="' + (H - Bm + 4) + '"/><text class="ax" x="' + X(j - 1) + '" y="' + (H - Bm + 16) + '" text-anchor="start">R' + e.r + '</text>'; } });
     h += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - Bm) + '" y2="' + (H - Bm) + '"/>';
     // the lines, winner drawn last so it sits on top
-    var order = st.players.map(function (p, i) { return i; }).filter(function (i) { return i !== st.winner; }); if (st.winner != null) order.push(st.winner);
+    var order = st.players.map(function (p, i) { return i; }).filter(function (i) { return i !== st.winner; }); if (st.winner != null && st.winner >= 0) order.push(st.winner);
     h += '<g class="lines">';
+    // the Lindworm's hoard, a dashed ember line under the players'
+    if (worm) { var hv = function (j) { return c[j].h != null ? c[j].h : 0; }, dw = 'M' + X(0) + ' ' + Y(hv(0)); for (var jw = 1; jw <= N; jw++) dw += 'H' + X(jw) + 'V' + Y(hv(jw)); h += '<path d="' + dw + '" class="wormline' + (st.wormWon ? ' win' : '') + '"/>'; }
     order.forEach(function (i) {
       var d = 'M' + X(0) + ' ' + Y(c[0].t[i]); for (var j = 1; j <= N; j++) d += 'H' + X(j) + 'V' + Y(c[j].t[i]);
       h += '<path d="' + d + '" stroke="' + st.players[i].color + '" class="pl sm-' + i + (i === st.winner ? ' win' : '') + (st.players[i].out ? ' out' : '') + '"/>';
@@ -1542,21 +1585,22 @@
       h += '<g class="mark m-' + k + '"><title>Round ' + e.r + ', ' + esc(st.players[e.p].name) + ': ' + esc(e.ev.join(' ')) + '</title><rect x="' + (x - 4) + '" y="' + (y - 4) + '" width="9" height="9" fill="' + st.players[e.p].color + '"/><rect class="pip" x="' + (x - 1) + '" y="' + (y - 1) + '" width="3" height="3"/></g>'; });
     h += '</g>';
     // direct labels at the right, nudged apart
-    var labs = st.players.map(function (p, i) { return { i: i, y: Y(c[N].t[i]) + 4 }; }).sort(function (a, b) { return a.y - b.y; });
+    var labs = st.players.map(function (p, i) { return { i: i, y: Y(c[N].t[i]) + 4 }; }).concat(worm ? [{ i: -1, y: Y(c[N].h || 0) + 4 }] : []).sort(function (a, b) { return a.y - b.y; });
     for (var q = 1; q < labs.length; q++) if (labs[q].y - labs[q - 1].y < 13) labs[q].y = labs[q - 1].y + 13;
-    labs.forEach(function (lb) { var pl = st.players[lb.i]; h += '<rect x="' + (W - R + 6) + '" y="' + (lb.y - 8) + '" width="8" height="8" fill="' + pl.color + '"/><text class="lab' + (lb.i === st.winner ? ' win' : '') + '" x="' + (W - R + 18) + '" y="' + lb.y + '">' + esc(pl.name.length > 12 ? pl.name.slice(0, 11) + '.' : pl.name) + ' ' + c[N].t[lb.i] + '</text>'; });
+    labs.forEach(function (lb) { if (lb.i < 0) { h += '<rect x="' + (W - R + 6) + '" y="' + (lb.y - 8) + '" width="8" height="8" fill="#c8401c"/><text class="lab' + (st.wormWon ? ' win' : '') + '" x="' + (W - R + 18) + '" y="' + lb.y + '">Lindworm ' + (c[N].h || 0) + '</text>'; return; } var pl = st.players[lb.i]; h += '<rect x="' + (W - R + 6) + '" y="' + (lb.y - 8) + '" width="8" height="8" fill="' + pl.color + '"/><text class="lab' + (lb.i === st.winner ? ' win' : '') + '" x="' + (W - R + 18) + '" y="' + lb.y + '">' + esc(pl.name.length > 12 ? pl.name.slice(0, 11) + '.' : pl.name) + ' ' + c[N].t[lb.i] + '</text>'; });
     // hover columns: every player's total after that turn
     for (var j2 = 1; j2 <= N; j2++) { var e2 = c[j2], x0 = Math.round((X(j2 - 1) + X(j2)) / 2), x1 = j2 < N ? Math.round((X(j2) + X(j2 + 1)) / 2) : X(j2) + 4;
       h += '<rect class="hc" x="' + x0 + '" y="' + T + '" width="' + Math.max(2, x1 - x0) + '" height="' + (H - T - Bm) + '"><title>Round ' + e2.r + ', after ' + esc(st.players[e2.p].name) + '’s turn\n' + st.players.map(function (p, i) { return p.name + ': ' + e2.t[i] + '◇'; }).map(esc).join('\n') + '</title></rect>'; }
     return h + '</svg>';
   }
-  var CHRON_ICON = { lead: '♛', gain: '▲', ruin: '✕', contest: '⚔', ascend: '✦', bell: '🔔' };
+  var CHRON_ICON = { worm: '🐉', lead: '♛', gain: '▲', ruin: '✕', contest: '⚔', ascend: '✦', bell: '🔔' };
   function chronicleHTML(st) {
     var c = st.chron || []; if (c.length < 2) return '<p class="muted">This game kept no chronicle (it was started before Claudenspiel 1.0).</p>';
     var s = chronicleStory(st), sc = E.scores(st).map(function (x) { return x.total; }), w = st.winner;
-    var others = sc.filter(function (v, i) { return i !== w && !st.players[i].out; }), margin = w != null && others.length ? sc[w] - Math.max.apply(null, others) : null;
+    var others = sc.filter(function (v, i) { return i !== w && !st.players[i].out; }), margin = w != null && w >= 0 && others.length ? sc[w] - Math.max.apply(null, others) : null;
     var h = '<div class="chronwrap">';
-    if (w != null) h += '<p class="chronhead"><span class="swatch sm-' + w + '" style="background:' + st.players[w].color + '"></span> <b>' + esc(st.players[w].name) + '</b> wins by ' + margin + '◇ after ' + c[c.length - 1].r + ' rounds, leading after ' + s.ledFor[w] + ' of ' + s.turns + ' turns' + (margin <= 3 ? ': a photo finish.' : s.ledFor[w] === s.turns ? ', wire to wire.' : s.ledFor[w] * 4 <= s.turns ? ': a late charge.' : '.') + '</p>';
+    if (w != null && w < 0) h += '<p class="chronhead">🐉 <b>The Lindworm wins</b> after ' + c[c.length - 1].r + ' rounds, with a hoard of ' + st.worm.hoard + '◇. ' + (Object.keys(st.worm.struck).length ? 'Strikes: ' + st.players.map(function (p, i) { return esc(p.name) + ' ' + (st.worm.struck[i] || 0); }).join(', ') + '.' : 'Nobody struck it once.') + '</p>';
+    else if (w != null) h += '<p class="chronhead"><span class="swatch sm-' + w + '" style="background:' + st.players[w].color + '"></span> <b>' + esc(st.players[w].name) + '</b> wins by ' + margin + '◇ after ' + c[c.length - 1].r + ' rounds, leading after ' + s.ledFor[w] + ' of ' + s.turns + ' turns' + (margin <= 3 ? ': a photo finish.' : s.ledFor[w] === s.turns ? ', wire to wire.' : s.ledFor[w] * 4 <= s.turns ? ': a late charge.' : '.') + '</p>';
     h += '<div class="chronplot sunken">' + chronicleSVG(st, s) + '</div>';
     h += '<div class="chronkey small">' + st.players.map(function (p, i) { return '<span><span class="swatch sm-' + i + '" style="background:' + p.color + '"></span>' + esc(p.name) + ' <span class="muted">(' + esc(p.arch) + ')</span></span>'; }).join('') + '</div>';
     if (s.pts.length) h += '<h4 class="chronsub">Turning points</h4><ol class="chronpts">' + s.pts.map(function (x) { return '<li class="k-' + x.kind + '"><span class="ico" aria-hidden="true">' + CHRON_ICON[x.kind] + '</span><span class="rd">Round ' + c[x.j].r + '</span><span>' + esc(x.text) + '</span></li>'; }).join('') + '</ol>';
@@ -1891,6 +1935,7 @@
       { id: 'claudenspiel', title: 'What Claudenspiel changes', html: '<p>Claudenspiel is Claude’s own fork of Kartenspiel. Its rules differ:</p><ul>' +
         '<li><b>The last round:</b> reaching the target starts it. Everyone gets the same number of turns, then the highest total wins; a tie goes to whoever got there first. With three or more players, earlier seats start with a few ◇, since later seats see the score to beat: 6◇ and 4◇ for the first two of three players, 9◇, 6◇ and 3◇ for the first three of four.</li>' +
         '<li><b>Banking:</b> at the end of your turn, every 6● you didn’t spend becomes 1◇, at most 2◇ a turn.</li>' +
+        '<li><b>The Lindworm</b> (a New game mode): a dragon plays against the whole table. It hoards ◇ and shows its next omen; after every round its hoard grows and the omen comes true (Scorch burns the leader’s finest unwarded card). If its hoard reaches the target, or beats every player when the last round ends, everyone loses. Once a turn, <b>Strike the Lindworm</b> for ' + E.STRIKE_PRICE + '● (this turn’s ●, not Reserves) to take ' + E.STRIKE_WOUND + '◇ from its hoard; whoever strikes most holds the Slayer’s Laurel, +' + E.LAUREL + '◇.</li>' +
         '<li><b>A second claim:</b> once a turn, after claiming, press <b>Buy a claim</b> and pay 10● to claim once more.</li>' +
         '<li><b>Grounds:</b> terrain cards. You place them like a Structure, but nobody claims them and they never count as an enemy. <i>Marsh</i>: cards next to it need one more enemy to be Overwhelmed. <i>Battlefield</i>: one fewer. <i>Crossroads</i>: placing next to it costs 3● less. <i>Library</i>: placing a card next to it draws you a card, once a turn. <i>Barrow</i>: burying a card under a card next to it banks you 2◇. <i>Shrine</i>: cards next to it keep the Shrine’s peace (a gilded frame and ✠) and can’t be contested or Cursed.</li>' +
         '<li><b>Burn</b> (a New game option, on trial): every card has two uses. Once a turn you may burn a card from your hand instead of building it, for the one-time effect on its flame tag: ● (Goblet’s voice), cards (Tome), ◇ (Leaf), a second claim or a <i>ward</i> (Sceptre), war (Sword: rivals’ cards need one fewer enemy to be Overwhelmed this turn) or a burial (Bone). Some burns read the board, such as 1◇ per Ruined card. A warded card (dashed blue frame, ⛨) can’t be Ruined, Overwhelmed, contested or Cursed until its owner’s next turn. The dearer the card, the richer its burn: a Watchtower or a Hilltop Relic burns for 3◇.</li>' +
@@ -2267,7 +2312,7 @@
     var h = '<div class="page mgame">';
     h += '<div class="mtop raised"><span class="swatch sm-' + me + '" style="background:' + pl.color + '"></span><b class="mname">' + esc(pl.name) + '</b>' +
       '<span class="mstat" title="Aktion points">' + (st.turn.started && st.cur === me ? pl.ap : '–') + '●</span><span class="mstat" title="Victory points">' + sc.total + '◇</span>' +
-      '<span class="mstat small" title="Meeples left">♟' + pl.meeples + '</span>' + meepleChip(ctx) + '<span class="grow"></span>' +
+      '<span class="mstat small" title="Meeples left">♟' + pl.meeples + '</span>' + meepleChip(ctx) + (st.worm ? '<button class="mstat small mworm" data-act="sheet" data-sheet="players" title="The Lindworm’s hoard (open Players to strike it)">' + pix(WYRM_SIT, WYRM_PAL, 1, '', '') + st.worm.hoard + '◇</button>' : '') + '<span class="grow"></span>' +
       '<button class="btn' + (ov === 'quick' ? ' on' : '') + '" data-act="ovQuick" title="Quickview overlay">◇●</button><button class="btn' + (ov === 'war' ? ' on' : '') + '" data-act="ovWar" title="War overlay">War</button>' +
       (ctx.online ? '' : '<button class="btn" data-act="undo"' + (ctx.hist.length ? '' : ' disabled') + '>Undo</button>') +
       (fixedSeat(ctx) != null && hasBots(st) && !ctx.online ? '<button class="btn askg" data-act="askGenius" aria-label="Ask the Genius"' + (canCounsel(ctx) ? '' : ' disabled') + '><span class="candle" aria-hidden="true"><i></i></span></button>' : '') +
@@ -2623,7 +2668,7 @@
       case 'fit': ctx.ui.fit = true; render(); return;
       case 'start': {
         var players = []; for (var i = 0; i < setup.n; i++) players.push({ name: setup.players[i].name.trim() || ('Player ' + (i + 1)), arch: setup.players[i].arch, color: COLORS[i] });
-        var st = E.newGame(folioDefs(app.lib, { folio: folioOn(), river: riverOn() }), { folio: folioOn(), river: riverOn(), seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: contestOn() });
+        var st = E.newGame(folioDefs(app.lib, { folio: folioOn(), river: riverOn() }), { folio: folioOn(), river: riverOn(), seed: window.ksSeed, players: players, handSize: +setup.handSize || 4, meeples: +setup.meeples || 8, target: +setup.target || 52, enforceWeak: setup.enforceWeak, foundationBy: +setup.foundationBy, drawPerTurn: setup.drawPerTurn === '' || setup.drawPerTurn == null ? 2 : +setup.drawPerTurn, autoEnd: setup.autoEnd, seatStart: setup.seatStart, burySuitOW: setup.burySuitOW, defense: setup.defense, adjDiscount: setup.adjDiscount, noWander: setup.noWander, ascension: setup.ascension, lastRound: setup.lastRound !== false, banking: setup.banking !== false, buyClaim: setup.buyClaim !== false, market: +setup.market ? 3 : 0, burn: !!setup.burn, contest: contestOn(), worm: !!setup.worm });
         st.players.forEach(function (pl, i) { var kind = setup.players[i].kind; if (kind && kind !== 'human') pl.bot = kind; });
         app.game = newCtx(st, 'game'); lsSet('cs.game', st); lsSet('cs.setup', setup); app.page = 'game'; render(); return;
       }
@@ -2647,6 +2692,7 @@
       case 'resume': { var sv = lsGet('cs.game'); if (sv) { app.game = newCtx(sv, 'game'); app.page = 'game'; render(); } return; }
       case 'startTurn': dispatch(ctx, { t: 'startTurn' }); return;
       case 'buyClaim': dispatch(ctx, { t: 'buyClaim' }); return;
+      case 'strike': dispatch(ctx, { t: 'strike' }); return;
       case 'contest': ctx.ui.mode = 'contest'; ctx.ui.hand = null; render(); return;
       case 'burn': { var bh = ctx.ui.hand; if (!bh) return; burnFrom = rectOfHand(bh); if (E.burnNeedsCell(ctx.state, bh)) { ctx.ui.mode = 'burnBone'; ctx.ui.burnUid = bh; ctx.ui.hand = null; render(); return; } ctx.ui.hand = null; dispatch(ctx, { t: 'burn', uid: bh }); return; }
       case 'reclaimMode': ctx.ui.mode = 'reclaim'; render(); return;
@@ -2742,7 +2788,7 @@
     var st = ctx.state, L = [], sc = E.scores(st), ks = E.keys(st);
     L.push('KARTENSPIEL DEBUG REPORT — ' + new Date().toISOString());
     L.push('Mode: ' + ctx.kind + (ctx.kind === 'game' ? ' | Round ' + st.round + ' | Current: ' + st.players[st.cur].name + ' | Turn started: ' + !!(st.turn && st.turn.started) + ' | Claim used: ' + !!(st.turn && st.turn.claimed) + ' | Last placed: ' + ((st.turn && st.turn.lastKey) || '—') : ''));
-    L.push('Options: ' + JSON.stringify(st.opts) + ' | Winner: ' + (st.winner != null ? st.players[st.winner].name : '—'));
+    L.push('Options: ' + JSON.stringify(st.opts) + ' | Winner: ' + (st.winner != null ? (st.winner < 0 ? 'the Lindworm' : st.players[st.winner].name) : '—'));
     L.push('Deck ' + st.deck.length + ' | Discard ' + st.discard.length + (st.discard.length ? ' (' + st.discard.map(function (u) { return E.rawDef(st, u).name; }).join(', ') + ')' : ''));
     L.push(''); L.push('PLAYERS');
     st.players.forEach(function (p, i) {
@@ -2945,6 +2991,7 @@
       case 'claim': return 'Claim ' + at(a.k);
       case 'ability': return 'Use the ability of ' + at(a.k);
       case 'buyClaim': return 'Buy a second claim (' + E.CLAIM_PRICE + '●)';
+      case 'strike': return 'Strike the Lindworm (' + E.STRIKE_PRICE + '●)';
       case 'contest': return 'Contest ' + at(a.k) + ' (' + E.CONTEST_PRICE + '●)';
       case 'burn': return 'Burn ' + nm(a.uid) + (a.k ? ', aimed at ' + at(a.k) : '');
       case 'swap': return 'Discard ' + nm(a.uids[0]) + ' and ' + nm(a.uids[1]) + ', and draw 1';
@@ -3194,7 +3241,7 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('button'); if (!b || b.disabled) return;
     if (b.classList.contains('tab')) SFX.play('page');
-    else if (b.classList.contains('btn') && !/^(claim|startTurn|endTurn|buyClaim|contest|play|ability|burn)/.test(b.getAttribute('data-act') || '')) SFX.play('click');
+    else if (b.classList.contains('btn') && !/^(claim|startTurn|endTurn|buyClaim|contest|strike|play|ability|burn)/.test(b.getAttribute('data-act') || '')) SFX.play('click');
   }, true);
   // A hook for browser checks only (index.html?debug): the app, and the way moves reach the engine.
   if (/[?&]debug\b/.test(location.search)) window.csDebug = { app: app, newCtx: newCtx, dispatch: dispatch, render: render };
